@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Rollbux Rain Tracker & Sync
 // @namespace    http://tampermonkey.net/
-// @version      4.7
+// @version      4.8
 // @description  Clean HUD: Auto-syncs live balance, rain pot, countdown, profile & transactions to your live Rollbux stats site on Vercel!
 // @author       Sotarium
 // @match        *://*.rollbux.com/*
@@ -892,6 +892,7 @@
     let targetEndTimestamp = 0;
     let timerInitialized = false;
     let isSendingDots = false;
+    let sentDotsForCurrentRain = false;
     let cycleCompleted = false;
     let joinedForCurrentRain = false;
     let lastKnownPot = parseFloat(sessionStorage.getItem('rollbux_last_pot') || '0') || 0;
@@ -916,6 +917,8 @@
                 if (pendingCheck === 'true' || joinedForCurrentRain) {
                     sessionStorage.removeItem('rollbux_pending_payout_check');
                     joinedForCurrentRain = false;
+                    sentDotsForCurrentRain = false;
+                    cycleCompleted = false;
                     sessionStorage.setItem('rollbux_return_to_main', 'true');
                     updateHUDTimer('SYNCING');
                     setTimeout(() => { window.location.href = 'https://rollbux.com/profile/transactions'; }, 1200);
@@ -923,6 +926,7 @@
                 }
                 cycleCompleted = false;
                 joinedForCurrentRain = false;
+                sentDotsForCurrentRain = false;
             }
 
             // Directly use siteSeconds if available and valid
@@ -941,11 +945,10 @@
                 const mins = Math.floor(currentRemainingSeconds / 60);
                 const secs = currentRemainingSeconds % 60;
                 updateHUDTimer(`${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
-            } else if (currentRemainingSeconds === 0) {
-                updateHUDTimer('00:00');
 
-                if (!cycleCompleted && !isSendingDots) {
-                    cycleCompleted = true;
+                // SEND 3 CHAT MESSAGES AT 1 MINUTE REMAINING (<= 60s)
+                if (currentRemainingSeconds <= 60 && !sentDotsForCurrentRain && !isSendingDots) {
+                    sentDotsForCurrentRain = true;
                     isSendingDots = true;
 
                     (async () => {
@@ -954,7 +957,40 @@
                                 await sendChatDot(i);
                                 if (i < 3) await new Promise(r => setTimeout(r, 3800));
                             }
-                            await new Promise(r => setTimeout(r, 1500));
+                        } catch (err) {
+                        } finally {
+                            isSendingDots = false;
+                        }
+                    })();
+                }
+
+                // If Join button appears early, click it
+                if (currentRemainingSeconds <= 15 && !joinedForCurrentRain) {
+                    if (clickJoinRain()) {
+                        joinedForCurrentRain = true;
+                    }
+                }
+            } else if (currentRemainingSeconds === 0) {
+                updateHUDTimer('00:00');
+
+                // Rain finished: click join rain button if not already joined
+                if (!joinedForCurrentRain) {
+                    clickJoinRain();
+                    joinedForCurrentRain = true;
+                }
+
+                // Fallback: If 1 minute trigger was missed (e.g. tab was asleep), send dots now
+                if (!sentDotsForCurrentRain && !isSendingDots) {
+                    sentDotsForCurrentRain = true;
+                    isSendingDots = true;
+
+                    (async () => {
+                        try {
+                            for (let i = 1; i <= 3; i++) {
+                                await sendChatDot(i);
+                                if (i < 3) await new Promise(r => setTimeout(r, 3800));
+                            }
+                            await new Promise(r => setTimeout(r, 1200));
                             clickJoinRain();
                             joinedForCurrentRain = true;
                         } catch (err) {
