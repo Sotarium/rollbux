@@ -394,10 +394,23 @@
 
     // Clear Function (no window confirmation prompt, executes instantly)
     async function handleClearStats() {
+      // Optimistic UI update: reset locally immediately
+      if (liveUserData && liveUserData.user) {
+        liveUserData.user.transactions = [];
+        liveUserData.user.total_earnings_bux = 0;
+        liveUserData.user.rains_joined = 0;
+        liveUserData.user.history = [];
+        liveUserData.user.first_tx_time = null;
+        renderDashboard(liveUserData);
+      }
       try {
         const res = await fetch(`/api/user/${encodeURIComponent(targetUsername)}/clear`, { method: 'POST' });
         if (res.ok) {
-          fetchUserData();
+          const data = await res.json();
+          if (data && data.user) {
+            liveUserData.user = data.user;
+            renderDashboard(liveUserData);
+          }
         }
       } catch (err) {
         console.error('Error clearing stats:', err);

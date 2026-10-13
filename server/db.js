@@ -102,6 +102,7 @@ export function clearUserStats(username) {
     users[key].history = [];
     users[key].first_tx_time = null;
     users[key].first_seen = new Date().toISOString();
+    users[key].cleared_at = Date.now();
     saveUsers(users);
     return users[key];
   }
@@ -201,6 +202,11 @@ export function handleAction(payload) {
         // Timestamp = right now on the server
         const txTimestamp = Date.now();
         const displayTime = formatFrenchDate(new Date(txTimestamp));
+
+        // If user cleared their stats, do not re-import transactions older than cleared_at
+        if (user.cleared_at && payload.sync_all_history && txTimestamp <= user.cleared_at) {
+          continue;
+        }
 
         // Deduplicate: avoid re-adding transactions that already exist
         const alreadyExists = user.transactions.some(t =>
