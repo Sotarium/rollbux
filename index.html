@@ -546,7 +546,18 @@
       statCurrentBalance.textContent = formatValue(balanceBux);
 
       // Render Rains Table
-      const txs = user.transactions || [];
+      let txs = user.transactions || [];
+      try {
+        const localDeleted = JSON.parse(localStorage.getItem('rollbux_deleted_txs') || '[]');
+        if (localDeleted.length > 0) {
+          txs = txs.filter(t => {
+            if (t.cycle_id && localDeleted.includes(t.cycle_id)) return false;
+            if (localDeleted.includes(`${t.amount_bux}_${t.time || ''}`)) return false;
+            return true;
+          });
+        }
+      } catch (e) {}
+
       const activeRain = user.active_rain;
       const hasActiveRain = activeRain && (activeRain.time_left > 0 || activeRain.pot_amount > 0);
 
@@ -639,11 +650,13 @@
         const idx = parseInt(btn.getAttribute('data-index'), 10);
 
         // Optimistic UI update
+        let removedTx = null;
         if (liveUserData && liveUserData.user && Array.isArray(liveUserData.user.transactions)) {
           if (!isNaN(ts) && ts > 0) {
+            removedTx = liveUserData.user.transactions.find(t => t.timestamp === ts);
             liveUserData.user.transactions = liveUserData.user.transactions.filter(t => t.timestamp !== ts);
           } else if (!isNaN(idx)) {
-            liveUserData.user.transactions.splice(idx, 1);
+            removedTx = liveUserData.user.transactions.splice(idx, 1)[0];
           }
           let total = 0;
           for (const t of liveUserData.user.transactions) {
@@ -654,6 +667,16 @@
           renderDashboard(liveUserData);
         }
 
+        // Keep local blacklist in localStorage as well
+        if (removedTx) {
+          try {
+            const localDeleted = JSON.parse(localStorage.getItem('rollbux_deleted_txs') || '[]');
+            if (removedTx.cycle_id) localDeleted.push(removedTx.cycle_id);
+            localDeleted.push(`${removedTx.amount_bux}_${removedTx.time || ''}`);
+            localStorage.setItem('rollbux_deleted_txs', JSON.stringify(localDeleted));
+          } catch (e) {}
+        }
+
         try {
           await fetch('/api/status', {
             method: 'POST',
@@ -662,7 +685,9 @@
               action: 'delete_transaction',
               username: targetUsername,
               timestamp: !isNaN(ts) && ts > 0 ? ts : undefined,
-              index: !isNaN(idx) ? idx : undefined
+              index: !isNaN(idx) ? idx : undefined,
+              cycle_id: removedTx ? removedTx.cycle_id : undefined,
+              signature: removedTx ? `${removedTx.amount_bux}_${removedTx.time || ''}` : undefined
             })
           });
         } catch (err) {

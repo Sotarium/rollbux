@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Rollbux Rain Tracker & Sync
 // @namespace    http://tampermonkey.net/
-// @version      4.9
+// @version      5.0
 // @description  Clean HUD: Auto-syncs live balance, rain pot, countdown, profile & transactions to your live Rollbux stats site on Vercel!
 // @author       Sotarium
 // @match        *://*.rollbux.com/*
@@ -743,13 +743,17 @@
         async function extractTransactions() {
             let latestReward = null;
 
-            for (let attempt = 0; attempt < 12; attempt++) {
+            for (let attempt = 0; attempt < 15; attempt++) {
                 await new Promise(r => setTimeout(r, 600));
 
                 const rows = document.querySelectorAll('tr, [role="row"], div[class*="grid"], div[class*="row"]');
                 for (const row of rows) {
                     const rowText = (row.innerText || row.textContent || '').trim();
-                    if (!rowText.toLowerCase().includes('rain reward') && !rowText.toLowerCase().includes('rain payout')) continue;
+                    const lowerText = rowText.toLowerCase();
+
+                    // Must mention rain or rain payout/reward, but skip header rows
+                    if (!lowerText.includes('rain')) continue;
+                    if (lowerText.includes('type') && lowerText.includes('details') && lowerText.includes('amount')) continue;
 
                     let amountVal = 0;
                     const cells = Array.from(row.children);
@@ -790,7 +794,7 @@
                         }
                     }
 
-                    // Strategy 3: Standard decimal match in row excluding cycle ID
+                    // Strategy 3: Standard decimal match in row excluding cycle ID and level
                     if (amountVal === 0) {
                         const cleanText = rowText.replace(/cycle\s+[a-zA-Z0-9_-]+/ig, '').replace(/level\s*\d+/ig, '');
                         const decimalMatch = cleanText.match(/\+?\s*([\d,]+\.\d{2,})/);
@@ -824,6 +828,7 @@
                             status: 'Completed',
                             cycle_id: cycleId
                         };
+                        console.log('[Rain HUD] Extracted rain transaction:', latestReward);
                         break;
                     }
                 }

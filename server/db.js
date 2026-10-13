@@ -210,18 +210,35 @@ export function handleAction(payload) {
     user.history = [];
     user.first_tx_time = null;
     user.cleared_at = Date.now();
+    user.deleted_signatures = [];
     saveUsers(users);
     return { ok: true, user };
   }
 
   if (action === 'delete_transaction') {
-    const { timestamp, index } = payload;
+    const { timestamp, index, cycle_id, signature } = payload;
+    if (!user.deleted_signatures) user.deleted_signatures = [];
+
+    let removedTx = null;
     if (Array.isArray(user.transactions)) {
       if (typeof timestamp === 'number') {
+        const found = user.transactions.find(t => t.timestamp === timestamp);
+        if (found) removedTx = found;
         user.transactions = user.transactions.filter(t => t.timestamp !== timestamp);
       } else if (typeof index === 'number' && index >= 0 && index < user.transactions.length) {
-        user.transactions.splice(index, 1);
+        removedTx = user.transactions.splice(index, 1)[0];
       }
+
+      // Add to permanent blacklist signatures
+      if (cycle_id) user.deleted_signatures.push(String(cycle_id));
+      if (signature) user.deleted_signatures.push(String(signature));
+      if (removedTx) {
+        if (removedTx.cycle_id) user.deleted_signatures.push(String(removedTx.cycle_id));
+        const sig = `${removedTx.amount_bux}_${removedTx.time || ''}`;
+        user.deleted_signatures.push(sig);
+        if (removedTx.timestamp) user.deleted_signatures.push(String(removedTx.timestamp));
+      }
+
       let total = 0;
       for (const t of user.transactions) {
         total += (t.amount_bux || 0);
@@ -270,6 +287,7 @@ export function handleAction(payload) {
   if (action === 'sync_transactions') {
     if (Array.isArray(transactions)) {
       if (!user.transactions) user.transactions = [];
+      if (!user.deleted_signatures) user.deleted_signatures = [];
 
       // Use last known pot at time of rain completion
       const knownPot = payload.completed_pot_amount || user.last_completed_pot || null;
@@ -284,6 +302,17 @@ export function handleAction(payload) {
 
         // If user cleared their stats, do not re-import transactions older than cleared_at
         if (user.cleared_at && payload.sync_all_history && txTimestamp <= user.cleared_at) {
+          continue;
+        }
+
+        // Check if permanently blacklisted/deleted by user
+        const txSig = `${amt}_${displayTime}`;
+        const isDeleted = user.deleted_signatures.some(d => {
+          if (tx.cycle_id && String(d) === String(tx.cycle_id)) return true;
+          if (String(d) === txSig) return true;
+          return false;
+        });
+        if (isDeleted) {
           continue;
         }
 
