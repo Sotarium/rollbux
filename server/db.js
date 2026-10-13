@@ -225,11 +225,12 @@ export function handleAction(payload) {
                 : knownPot.toFixed(2))
             : 'X';
 
+          // Permanently store fixed time string so it never shifts or changes
           user.transactions.unshift({
             amount_bux: amt,
             rain_total: rainTotalDisplay,
             status: 'Completed',
-            time: displayTime,
+            time: displayTime, // Fixed forever: e.g. "13 October 15h00"
             timestamp: txTimestamp
           });
         }

@@ -502,11 +502,9 @@
       return `${day} ${month} ${hours}h${mins}`;
     }
 
-    // Clean any messy string if it's too long
+    // Return stored transaction time string untouched
     function sanitizeTime(str) {
-      if (!str || str.length > 25 || str.toLowerCase().includes('reward') || str.toLowerCase().includes('level')) {
-        return '12 October 21h00';
-      }
+      if (!str || typeof str !== 'string') return '';
       return str;
     }
 
