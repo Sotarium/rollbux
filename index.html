@@ -229,17 +229,18 @@
                           <svg id="chartSvg" class="absolute inset-0 size-full" viewBox="0 0 744 330" preserveAspectRatio="none">
                             <defs>
                               <linearGradient id="sp-af-area" x1="0" y1="0" x2="0" y2="1">
-                                <stop stop-color="#7974FF"></stop>
-                                <stop offset="1" stop-color="#7974FF" stop-opacity="0"></stop>
+                                <stop stop-color="#50f07b" stop-opacity="0.32"></stop>
+                                <stop offset="0.6" stop-color="#50f07b" stop-opacity="0.08"></stop>
+                                <stop offset="1" stop-color="#50f07b" stop-opacity="0"></stop>
                               </linearGradient>
                             </defs>
-                            <path id="chartAreaPath" d="M0 330 L744 330 L744 330 L0 330 Z" fill="url(#sp-af-area)" opacity="0.3"></path>
-                            <path id="chartLinePath" d="M0 330 L744 330" fill="none" stroke="#7974FF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
+                            <path id="chartAreaPath" d="M0 330 L744 330 L744 330 L0 330 Z" fill="url(#sp-af-area)"></path>
+                            <path id="chartLinePath" d="M0 330 L744 330" fill="none" stroke="#50f07b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
                             <!-- Hover vertical guide line -->
                             <line id="chartHoverLine" x1="0" y1="0" x2="0" y2="330" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" stroke-dasharray="4 4" class="opacity-0 transition-opacity pointer-events-none"></line>
                             <!-- Hover active point pulse/glow -->
-                            <circle id="chartHoverGlow" cx="-20" cy="-20" r="8" fill="#7974FF" opacity="0.25" class="opacity-0 transition-opacity pointer-events-none"></circle>
-                            <circle id="chartHoverDot" cx="-20" cy="-20" r="4.5" fill="#ffffff" stroke="#7974FF" stroke-width="2.5" class="opacity-0 transition-opacity pointer-events-none"></circle>
+                            <circle id="chartHoverGlow" cx="-20" cy="-20" r="9" fill="#50f07b" opacity="0.35" class="opacity-0 transition-opacity pointer-events-none"></circle>
+                            <circle id="chartHoverDot" cx="-20" cy="-20" r="4.5" fill="#ffffff" stroke="#50f07b" stroke-width="2.5" class="opacity-0 transition-opacity pointer-events-none"></circle>
                           </svg>
 
                           <!-- Floating Tooltip Box -->
@@ -637,7 +638,7 @@
       currentChartPoints = history.map((h, idx) => {
         const val = h.balance_bux || 0;
         const x = (idx / (history.length - 1)) * width;
-        const y = height - (val / maxVal) * (height - 30) - 10;
+        const y = height - (val / maxVal) * (height - 30) - 12;
         return {
           x,
           y,
@@ -647,11 +648,41 @@
         };
       });
 
-      const pointsStr = currentChartPoints.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`);
-      const lineD = 'M ' + pointsStr.join(' L ');
-      const areaD = `M 0,330 L ${pointsStr.join(' L ')} L ${width},330 Z`;
-      chartLinePath.setAttribute('d', lineD);
-      chartAreaPath.setAttribute('d', areaD);
+      // Smooth Cubic Bezier Spline generation (Catmull-Rom interpolation)
+      function buildSmoothBezierPath(pts) {
+        if (!pts || pts.length === 0) return '';
+        if (pts.length === 1) return `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+        if (pts.length === 2) {
+          return `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)} L ${pts[1].x.toFixed(1)} ${pts[1].y.toFixed(1)}`;
+        }
+
+        let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+        const tension = 0.2; // Controls curve smoothness
+
+        for (let i = 0; i < pts.length - 1; i++) {
+          const p0 = pts[Math.max(0, i - 1)];
+          const p1 = pts[i];
+          const p2 = pts[i + 1];
+          const p3 = pts[Math.min(pts.length - 1, i + 2)];
+
+          const cp1x = p1.x + (p2.x - p0.x) * tension;
+          const cp1y = p1.y + (p2.y - p0.y) * tension;
+
+          const cp2x = p2.x - (p3.x - p1.x) * tension;
+          const cp2y = p2.y - (p3.y - p1.y) * tension;
+
+          d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+        }
+        return d;
+      }
+
+      const smoothLine = buildSmoothBezierPath(currentChartPoints);
+      const lastPt = currentChartPoints[currentChartPoints.length - 1];
+      const firstPt = currentChartPoints[0];
+      const smoothArea = `${smoothLine} L ${lastPt.x.toFixed(1)} 330 L ${firstPt.x.toFixed(1)} 330 Z`;
+
+      chartLinePath.setAttribute('d', smoothLine);
+      chartAreaPath.setAttribute('d', smoothArea);
     }
 
     // Chart Interactive Hover Event Handlers
