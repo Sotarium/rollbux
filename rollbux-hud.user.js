@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Rollbux Rain Tracker & Sync
 // @namespace    http://tampermonkey.net/
-// @version      4.4
+// @version      4.5
 // @description  Clean HUD: Auto-syncs live balance, rain pot, countdown, profile & transactions to your live Rollbux stats site on Vercel!
 // @author       Sotarium
 // @match        *://*.rollbux.com/*
@@ -423,48 +423,40 @@
         try {
             const myBalance = queryLiveBalance() || 0;
 
-            // Priority 0: Exact match from Rollbux source code:
-            // <div class="rounded-[6px] px-2.5 py-2 border border-neutral-100 bg-neutral-500 flex items-center space-x-1 min-w-[72px] justify-center tabular-nums">
-            const exactPotContainers = Array.from(document.querySelectorAll('div.bg-neutral-500, div[class*="min-w-[72px]"], div[class*="bg-neutral-500"]'));
-            for (const c of exactPotContainers) {
+            // Priority 0: Exact match for the rain pot badge:
+            // Must have both "token.png" and "tabular-nums" or "min-w-[72px]"
+            const potCandidates = Array.from(document.querySelectorAll('div.tabular-nums, div[class*="min-w-[72px]"], div[class*="tabular-nums"]'));
+            for (const c of potCandidates) {
                 if (c.closest('#rollbux-rain-hud')) continue;
+                // Exclude the user level badge (h-7 w-11.75 [--level-color:...])
+                if (c.className.includes('--level') || c.className.includes('h-7')) continue;
+
+                // Check if it has the coin/token icon
+                const hasToken = c.querySelector('img[src*="token.png"], img[src*="token"], img[alt*="Coin"]');
                 const flow = c.querySelector('number-flow-react');
-                if (flow) {
+                if (flow && (hasToken || c.closest('[class*="rain" i]'))) {
                     const val = parseFlowNumber(flow);
                     if (val !== null && val > 0) return val;
                 }
-                const num = parseNumberFromElement(c);
-                if (num !== null && num > 0) return num;
             }
 
-            // Approach 1: Directly target the pot pill button (contains token.png / token icon)
-            const tokenImgs = Array.from(document.querySelectorAll('img[src*="token.png"], img[src*="token"], img[alt*="token" i]'));
-            for (const img of tokenImgs) {
-                if (img.closest('#rollbux-rain-hud')) continue;
-                const container = img.closest('button, [role="button"], div.bg-neutral-500, div[class*="bg-neutral"], div[class*="rounded"]');
-                if (!container) continue;
+            // Approach 1: Find token image inside the RAIN banner specifically
+            const allRainBanners = Array.from(document.querySelectorAll('div, section, aside')).filter(el => {
+                if (el.closest('#rollbux-rain-hud')) return false;
+                const txt = (el.textContent || '').trim();
+                return (txt.includes('RAIN') || txt.includes('Rain')) && txt.length < 350;
+            });
 
-                const fullTxt = (container.textContent || '').replace(/,/g, '').trim().toLowerCase();
-                const kMatch = fullTxt.match(/([\d.]+)\s*k/);
-                if (kMatch) {
-                    const parsed = parseFloat(kMatch[1]);
-                    if (!isNaN(parsed) && parsed > 0) return Math.round(parsed * 1000 * 100) / 100;
-                }
+            for (const banner of allRainBanners) {
+                const flows = banner.querySelectorAll('number-flow-react');
+                for (const flow of flows) {
+                    // Skip timer flow elements (which are in small container with :)
+                    const parentText = (flow.parentElement?.textContent || '').trim();
+                    if (parentText.includes(':')) continue;
 
-                const flow = container.querySelector('number-flow-react');
-                if (flow) {
-                    let val = parseFlowNumber(flow);
+                    const val = parseFlowNumber(flow);
                     if (val !== null && val > 0 && Math.abs(val - myBalance) > 0.01) {
-                        if (fullTxt.endsWith('k') && val < 1000) val *= 1000;
                         return val;
-                    }
-                }
-
-                const numMatch = fullTxt.match(/([\d.]+)/);
-                if (numMatch) {
-                    const parsed = parseFloat(numMatch[1]);
-                    if (!isNaN(parsed) && parsed > 0 && Math.abs(parsed - myBalance) > 0.01) {
-                        return parsed;
                     }
                 }
             }
