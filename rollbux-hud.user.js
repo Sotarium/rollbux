@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         Rollbux Rain Tracker & Sync
 // @namespace    http://tampermonkey.net/
-// @version      3.7
-// @description  Clean HUD: Auto-syncs live balance (bg-neutral-400), rain pot (bg-neutral-500), countdown, profile & transactions to your stats site!
+// @version      4.0
+// @description  Clean HUD: Auto-syncs live balance, rain pot, countdown, profile & transactions to your live Rollbux stats site on Vercel!
 // @author       Sotarium
 // @match        *://*.rollbux.com/*
 // @match        *://rollbux.com/*
 // @grant        GM_xmlhttpRequest
 // @grant        GM_openInTab
+// @connect      rollbux.vercel.app
 // @connect      127.0.0.1
 // @connect      localhost
 // @run-at       document-idle
@@ -16,9 +17,9 @@
 (function () {
     'use strict';
 
-    const BACKEND_URL = 'http://127.0.0.1:8765/api/status';
-    const FALLBACK_URL = 'http://localhost:3000/api/status';
-    const WEBSITE_BASE = 'http://localhost:3000';
+    const BACKEND_URL = 'https://rollbux.vercel.app/api/status';
+    const FALLBACK_URL = 'http://127.0.0.1:8765/api/status';
+    const WEBSITE_BASE = 'https://rollbux.vercel.app';
 
     function requestLocal(url, method = 'GET', data = null) {
         return new Promise((resolve, reject) => {
