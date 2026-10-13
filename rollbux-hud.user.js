@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Rollbux Rain Tracker & Sync
 // @namespace    http://tampermonkey.net/
-// @version      4.3
+// @version      4.4
 // @description  Clean HUD: Auto-syncs live balance, rain pot, countdown, profile & transactions to your live Rollbux stats site on Vercel!
 // @author       Sotarium
 // @match        *://*.rollbux.com/*
@@ -303,70 +303,49 @@
         }
 
         if (flow.shadowRoot) {
-            // 1. Reconstruct using full section structure (integer + fraction)
-            const integerSec = flow.shadowRoot.querySelector('[part*="integer"]');
-            const fractionSec = flow.shadowRoot.querySelector('[part*="fraction"]');
-
-            function extractSectionDigits(sec) {
-                if (!sec) return '';
-                let result = '';
-                // Check all child elements in order
-                const children = Array.from(sec.children);
-                for (const child of children) {
-                    if (child.classList.contains('symbol')) {
-                        const symVal = child.querySelector('.symbol__value') || child;
-                        const t = symVal.textContent.trim();
-                        if (t === ',' || t === '.') result += t;
-                    } else if (child.classList.contains('digit')) {
-                        // Priority 1: non-inert digit_num
-                        const nonInert = child.querySelector('.digit__num:not([inert])');
-                        if (nonInert) {
-                            result += nonInert.textContent.trim();
-                        } else {
-                            // Priority 2: --current style attribute
-                            const styleStr = child.getAttribute('style') || '';
-                            const m = styleStr.match(/--current:\s*(\d+)/);
-                            if (m) {
-                                result += m[1];
-                            } else {
-                                const anyNum = child.querySelector('.digit__num');
-                                if (anyNum) result += anyNum.textContent.trim();
-                            }
-                        }
-                    }
+            // Reconstruct number by reading --current from digits in integer and fraction sections
+            let intStr = '';
+            const intDigits = Array.from(flow.shadowRoot.querySelectorAll('[part*="integer-digit"]'));
+            for (const d of intDigits) {
+                const styleStr = d.getAttribute('style') || '';
+                const m = styleStr.match(/--current:\s*(\d+)/);
+                if (m) {
+                    intStr += m[1];
+                } else {
+                    const nonInert = d.querySelector('.digit__num:not([inert])');
+                    if (nonInert) intStr += nonInert.textContent.trim();
                 }
-                return result;
             }
 
-            let intStr = extractSectionDigits(integerSec);
-            let fracStr = extractSectionDigits(fractionSec);
+            let fracStr = '';
+            const fracDigits = Array.from(flow.shadowRoot.querySelectorAll('[part*="fraction-digit"]'));
+            for (const d of fracDigits) {
+                const styleStr = d.getAttribute('style') || '';
+                const m = styleStr.match(/--current:\s*(\d+)/);
+                if (m) {
+                    fracStr += m[1];
+                } else {
+                    const nonInert = d.querySelector('.digit__num:not([inert])');
+                    if (nonInert) fracStr += nonInert.textContent.trim();
+                }
+            }
 
             if (intStr) {
-                let fullStr = intStr.replace(/,/g, '');
-                if (fracStr) {
-                    fracStr = fracStr.replace(/^[^\d]*/, '');
-                    fullStr += '.' + fracStr;
-                }
+                let fullStr = intStr;
+                if (fracStr) fullStr += '.' + fracStr;
                 let parsed = parseFloat(fullStr);
                 if (!isNaN(parsed)) {
-                    // Check for trailing suffix inside shadow DOM (e.g. 'k' or 'm')
-                    const fullText = (flow.shadowRoot.textContent || '').trim().toLowerCase();
-                    if (fullText.includes('k') && !fullStr.includes('k')) parsed *= 1000;
-                    else if (fullText.includes('m') && !fullStr.includes('m')) parsed *= 1000000;
+                    // Check for compact symbol K/M/B (e.g. <span part="symbol compact"><span class="symbol__value">K</span></span>)
+                    const compactSym = flow.shadowRoot.querySelector('[part*="compact"]');
+                    const compactText = (compactSym?.textContent || '').trim().toUpperCase();
+                    if (compactText === 'K') {
+                        parsed *= 1000;
+                    } else if (compactText === 'M') {
+                        parsed *= 1000000;
+                    } else if (compactText === 'B') {
+                        parsed *= 1000000000;
+                    }
                     return parsed;
-                }
-            }
-
-            // Fallback: Read non-inert digits and symbol values across shadow root
-            const activeElements = Array.from(flow.shadowRoot.querySelectorAll('.digit__num:not([inert]), .symbol__value'));
-            if (activeElements.length > 0) {
-                const str = activeElements.map(e => e.textContent.trim()).join('').replace(/,/g, '');
-                let val = parseFloat(str);
-                if (!isNaN(val)) {
-                    const fullText = (flow.shadowRoot.textContent || '').trim().toLowerCase();
-                    if (fullText.includes('k')) val *= 1000;
-                    else if (fullText.includes('m')) val *= 1000000;
-                    return val;
                 }
             }
         }
@@ -444,16 +423,27 @@
         try {
             const myBalance = queryLiveBalance() || 0;
 
+            // Priority 0: Exact match from Rollbux source code:
+            // <div class="rounded-[6px] px-2.5 py-2 border border-neutral-100 bg-neutral-500 flex items-center space-x-1 min-w-[72px] justify-center tabular-nums">
+            const exactPotContainers = Array.from(document.querySelectorAll('div.bg-neutral-500, div[class*="min-w-[72px]"], div[class*="bg-neutral-500"]'));
+            for (const c of exactPotContainers) {
+                if (c.closest('#rollbux-rain-hud')) continue;
+                const flow = c.querySelector('number-flow-react');
+                if (flow) {
+                    const val = parseFlowNumber(flow);
+                    if (val !== null && val > 0) return val;
+                }
+                const num = parseNumberFromElement(c);
+                if (num !== null && num > 0) return num;
+            }
+
             // Approach 1: Directly target the pot pill button (contains token.png / token icon)
-            // In the RAIN widget, the pot is inside the dark pill button with token.png
             const tokenImgs = Array.from(document.querySelectorAll('img[src*="token.png"], img[src*="token"], img[alt*="token" i]'));
             for (const img of tokenImgs) {
                 if (img.closest('#rollbux-rain-hud')) continue;
-                // Check if this token is inside or next to the RAIN container
                 const container = img.closest('button, [role="button"], div.bg-neutral-500, div[class*="bg-neutral"], div[class*="rounded"]');
                 if (!container) continue;
 
-                // Check text for k suffix or direct numbers
                 const fullTxt = (container.textContent || '').replace(/,/g, '').trim().toLowerCase();
                 const kMatch = fullTxt.match(/([\d.]+)\s*k/);
                 if (kMatch) {
