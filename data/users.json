@@ -3,9 +3,9 @@
     "username": "sotarium",
     "avatar": "https://cdn.rollbux.com/cdn-cgi/image/width=384,fit=scale-down,quality=100,format=auto,metadata=none,onerror=redirect/avatars/180.png",
     "balance_bux": 0,
-    "total_earnings_bux": 0,
-    "rains_joined": 0,
-    "first_tx_time": null,
+    "total_earnings_bux": 191.42,
+    "rains_joined": 1,
+    "first_tx_time": 1791921600000,
     "active_rain": {
       "pot_amount": 2334.29,
       "time_left": 199,
@@ -13,7 +13,15 @@
     },
     "first_seen": "2026-10-13T18:49:28.274Z",
     "last_seen": "2026-10-13T18:55:44.248Z",
-    "transactions": [],
+    "transactions": [
+      {
+        "amount_bux": 191.42,
+        "rain_total": "11,306.00",
+        "status": "Completed",
+        "time": "13 October 16h00",
+        "timestamp": 1791921600000
+      }
+    ],
     "history": []
   }
 }

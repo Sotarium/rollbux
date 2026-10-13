@@ -214,18 +214,19 @@ export function handleAction(payload) {
 
         // Timestamp = right now on the server
         const txTimestamp = Date.now();
-        const displayTime = formatFrenchDate(new Date(txTimestamp));
+        const displayTime = tx.time || formatFrenchDate(new Date(txTimestamp));
 
         // If user cleared their stats, do not re-import transactions older than cleared_at
         if (user.cleared_at && payload.sync_all_history && txTimestamp <= user.cleared_at) {
           continue;
         }
 
-        // Deduplicate: avoid re-adding transactions that already exist
-        const alreadyExists = user.transactions.some(t =>
-          Math.abs(parseFloat(t.amount_bux) - amt) < 0.001 &&
-          (Math.abs((t.timestamp || 0) - txTimestamp) < 3 * 3600 * 1000)
-        );
+        // Deduplicate: check cycle_id or recent transaction with exact amount
+        const alreadyExists = user.transactions.some(t => {
+          if (tx.cycle_id && t.cycle_id && tx.cycle_id === t.cycle_id) return true;
+          return Math.abs(parseFloat(t.amount_bux) - amt) < 0.001 &&
+            (Math.abs((t.timestamp || 0) - txTimestamp) < 3 * 3600 * 1000);
+        });
 
         if (!alreadyExists) {
           if (!user.first_tx_time) {
@@ -244,7 +245,8 @@ export function handleAction(payload) {
             rain_total: rainTotalDisplay,
             status: 'Completed',
             time: displayTime, // Fixed forever: e.g. "13 October 15h00"
-            timestamp: txTimestamp
+            timestamp: txTimestamp,
+            cycle_id: tx.cycle_id || undefined
           });
         }
       }

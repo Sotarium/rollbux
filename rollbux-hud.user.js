@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Rollbux Rain Tracker & Sync
 // @namespace    http://tampermonkey.net/
-// @version      4.5
+// @version      4.6
 // @description  Clean HUD: Auto-syncs live balance, rain pot, countdown, profile & transactions to your live Rollbux stats site on Vercel!
 // @author       Sotarium
 // @match        *://*.rollbux.com/*
@@ -741,7 +741,8 @@
         updateHUDTimer('SYNCING');
 
         async function extractTransactions() {
-            const rainRewards = [];
+            let latestReward = null;
+
             for (let attempt = 0; attempt < 12; attempt++) {
                 await new Promise(r => setTimeout(r, 600));
 
@@ -777,6 +778,13 @@
                         }
                     }
 
+                    // Extract cycle ID if present in Details column (e.g. "cycle 4e0f..." or hash)
+                    let cycleId = '';
+                    const cycleMatch = rowText.match(/cycle\s+([a-zA-Z0-9_-]+)/i);
+                    if (cycleMatch) {
+                        cycleId = cycleMatch[1];
+                    }
+
                     let timeFormatted = formatNiceDate();
                     const dateMatch = rowText.match(/(\d{1,2}\/\d{1,2}\/\d{2,4}[^,\n]*)/);
                     if (dateMatch) {
@@ -784,31 +792,48 @@
                     }
 
                     if (amountVal > 0) {
-                        rainRewards.push({
+                        // The top-most rain reward in the table is the latest completed rain payout
+                        latestReward = {
                             type: 'Rain Reward',
                             amount_bux: amountVal,
                             time: timeFormatted,
-                            status: 'Completed'
-                        });
+                            status: 'Completed',
+                            cycle_id: cycleId
+                        };
+                        break;
                     }
                 }
 
-                if (rainRewards.length > 0) break;
+                if (latestReward) break;
             }
 
-            if (rainRewards.length > 0) {
-                try {
-                    const lastPot = parseFloat(sessionStorage.getItem('rollbux_last_pot') || '0') || null;
-                    await requestLocal(BACKEND_URL, 'POST', {
-                        username: currentUsername || 'Sotarium',
-                        avatar: currentAvatarUrl,
-                        action: 'sync_transactions',
-                        completed_pot_amount: lastPot,
-                        transactions: rainRewards
-                    });
-                    updateHUDTimer('SYNCED!');
-                } catch (e) {
-                    updateHUDTimer('ERROR');
+            if (latestReward) {
+                // Deduplicate locally so we never sync the exact same rain cycle twice
+                const lastSyncedCycle = localStorage.getItem('rollbux_last_synced_cycle');
+                const lastSyncedSignature = localStorage.getItem('rollbux_last_synced_sig');
+                const currentSignature = `${latestReward.cycle_id || ''}_${latestReward.amount_bux}_${latestReward.time}`;
+
+                if ((latestReward.cycle_id && latestReward.cycle_id === lastSyncedCycle) || (currentSignature === lastSyncedSignature)) {
+                    updateHUDTimer('UP TO DATE');
+                } else {
+                    try {
+                        const lastPot = parseFloat(sessionStorage.getItem('rollbux_last_pot') || '0') || null;
+                        await requestLocal(BACKEND_URL, 'POST', {
+                            username: currentUsername || 'Sotarium',
+                            avatar: currentAvatarUrl,
+                            action: 'sync_transactions',
+                            completed_pot_amount: lastPot,
+                            transactions: [latestReward]
+                        });
+
+                        if (latestReward.cycle_id) {
+                            localStorage.setItem('rollbux_last_synced_cycle', latestReward.cycle_id);
+                        }
+                        localStorage.setItem('rollbux_last_synced_sig', currentSignature);
+                        updateHUDTimer('SYNCED!');
+                    } catch (e) {
+                        updateHUDTimer('ERROR');
+                    }
                 }
             } else {
                 updateHUDTimer('NO DATA');
