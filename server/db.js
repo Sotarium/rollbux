@@ -22,8 +22,13 @@ async function updateSolPrice() {
     }
   } catch (err) {}
 }
-updateSolPrice();
-setInterval(updateSolPrice, 60000);
+
+// Only run recurring price timer if not in a build process
+if (process.env.npm_lifecycle_event !== 'build') {
+  updateSolPrice();
+  const timer = setInterval(updateSolPrice, 60000);
+  if (timer.unref) timer.unref(); // Prevent timer from keeping the process alive
+}
 
 export function getSolPrice() {
   return SOL_PRICE_USD;
