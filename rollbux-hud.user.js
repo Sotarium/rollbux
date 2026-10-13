@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Rollbux Rain Tracker & Sync
 // @namespace    http://tampermonkey.net/
-// @version      4.1
+// @version      4.2
 // @description  Clean HUD: Auto-syncs live balance, rain pot, countdown, profile & transactions to your live Rollbux stats site on Vercel!
 // @author       Sotarium
 // @match        *://*.rollbux.com/*
@@ -347,24 +347,40 @@
                     fracStr = fracStr.replace(/^[^\d]*/, '');
                     fullStr += '.' + fracStr;
                 }
-                const parsed = parseFloat(fullStr);
-                if (!isNaN(parsed)) return parsed;
+                let parsed = parseFloat(fullStr);
+                if (!isNaN(parsed)) {
+                    // Check for trailing suffix inside shadow DOM (e.g. 'k' or 'm')
+                    const fullText = (flow.shadowRoot.textContent || '').trim().toLowerCase();
+                    if (fullText.includes('k') && !fullStr.includes('k')) parsed *= 1000;
+                    else if (fullText.includes('m') && !fullStr.includes('m')) parsed *= 1000000;
+                    return parsed;
+                }
             }
 
             // Fallback: Read non-inert digits and symbol values across shadow root
             const activeElements = Array.from(flow.shadowRoot.querySelectorAll('.digit__num:not([inert]), .symbol__value'));
             if (activeElements.length > 0) {
                 const str = activeElements.map(e => e.textContent.trim()).join('').replace(/,/g, '');
-                const val = parseFloat(str);
-                if (!isNaN(val)) return val;
+                let val = parseFloat(str);
+                if (!isNaN(val)) {
+                    const fullText = (flow.shadowRoot.textContent || '').trim().toLowerCase();
+                    if (fullText.includes('k')) val *= 1000;
+                    else if (fullText.includes('m')) val *= 1000000;
+                    return val;
+                }
             }
         }
 
-        const text = (flow.innerText || flow.textContent || '').replace(/,/g, '').trim();
-        const m = text.match(/[\d.]+/);
+        const text = (flow.innerText || flow.textContent || '').replace(/,/g, '').trim().toLowerCase();
+        const m = text.match(/([\d.]+)\s*([kmb])?/);
         if (m) {
-            const val = parseFloat(m[0]);
-            if (!isNaN(val)) return val;
+            let val = parseFloat(m[1]);
+            if (!isNaN(val)) {
+                if (m[2] === 'k') val *= 1000;
+                else if (m[2] === 'm') val *= 1000000;
+                else if (m[2] === 'b') val *= 1000000000;
+                return val;
+            }
         }
         return null;
     }
@@ -376,11 +392,16 @@
             const v = parseFlowNumber(nf);
             if (v !== null) return v;
         }
-        const text = (el.innerText || el.textContent || '').replace(/,/g, '').trim();
-        const m = text.match(/[\d.]+/);
+        const text = (el.innerText || el.textContent || '').replace(/,/g, '').trim().toLowerCase();
+        const m = text.match(/([\d.]+)\s*([kmb])?/);
         if (m) {
-            const val = parseFloat(m[0]);
-            if (!isNaN(val)) return val;
+            let val = parseFloat(m[1]);
+            if (!isNaN(val)) {
+                if (m[2] === 'k') val *= 1000;
+                else if (m[2] === 'm') val *= 1000000;
+                else if (m[2] === 'b') val *= 1000000000;
+                return val;
+            }
         }
         return null;
     }
@@ -434,14 +455,32 @@
             });
 
             for (const headerEl of rainHeaders) {
+                // If container contains e.g. "11.232K" or text with K/M
+                const containerText = (headerEl.textContent || '').replace(/,/g, '').trim().toLowerCase();
+                const textMatch = containerText.match(/([\d.]+)\s*k/);
+                if (textMatch) {
+                    const parsedK = parseFloat(textMatch[1]);
+                    if (!isNaN(parsedK) && parsedK > 0) {
+                        return Math.round(parsedK * 1000 * 100) / 100;
+                    }
+                }
+
                 const flows = headerEl.querySelectorAll('number-flow-react');
                 for (const flow of flows) {
                     if (flow.closest('#rollbux-rain-hud')) continue;
-                    const val = parseFlowNumber(flow);
-                    if (val !== null && val >= 5 && val <= 999999) {
+                    let val = parseFlowNumber(flow);
+                    if (val !== null && val >= 5) {
+                        // Check if the surrounding wrapper has 'k'
+                        const wrapperText = (flow.parentElement?.textContent || '').trim().toLowerCase();
+                        if (wrapperText.endsWith('k') && val < 1000) val *= 1000;
                         if (Math.abs(val - myBalance) < 0.01) continue;
                         return val;
                     }
+                }
+
+                const fallbackNum = parseNumberFromElement(headerEl);
+                if (fallbackNum !== null && fallbackNum >= 5 && Math.abs(fallbackNum - myBalance) > 0.01) {
+                    return fallbackNum;
                 }
             }
 
