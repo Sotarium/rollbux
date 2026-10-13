@@ -108,6 +108,14 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 3000,
   },
+  build: {
+    rollupOptions: {
+      input: {
+        main: './index.html',
+        users: './users.html'
+      }
+    }
+  },
   plugins: [
     {
       name: 'rollbux-api-middleware',
