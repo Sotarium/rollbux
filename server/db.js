@@ -170,6 +170,17 @@ export function handleAction(payload) {
   user.last_seen = now;
   if (avatar) user.avatar = avatar;
 
+  if (action === 'clear_stats') {
+    user.transactions = [];
+    user.total_earnings_bux = 0;
+    user.rains_joined = 0;
+    user.history = [];
+    user.first_tx_time = null;
+    user.cleared_at = Date.now();
+    saveUsers(users);
+    return { ok: true, user };
+  }
+
   if (action === 'rain_tick') {
     if (!user.active_rain) user.active_rain = {};
     if (typeof pot_amount === 'number' && pot_amount > 0) {
