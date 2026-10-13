@@ -1,0 +1,118 @@
+{
+  "sotarium": {
+    "username": "Sotarium",
+    "avatar": "https://cdn.rollbux.com/cdn-cgi/image/width=384,fit=scale-down,quality=100,format=auto,metadata=none,onerror=redirect/avatars/180.png",
+    "balance_bux": 15,
+    "total_earnings_bux": 588.69,
+    "rains_joined": 1,
+    "active_rain": {
+      "pot_amount": 645.14,
+      "time_left": 1240,
+      "updated_at": 1791913101288
+    },
+    "first_seen": "2026-10-13T16:24:58.911Z",
+    "last_seen": "2026-10-13T17:38:21.288Z",
+    "transactions": [
+      {
+        "amount_bux": 37,
+        "rain_total": "683,66",
+        "status": "Completed",
+        "time": "16 August 00h00",
+        "timestamp": 1791912845655
+      },
+      {
+        "amount_bux": 39.89,
+        "rain_total": "683,66",
+        "status": "Completed",
+        "time": "13 October 00h00",
+        "timestamp": 1791912843473
+      },
+      {
+        "amount_bux": 33.05,
+        "rain_total": "683,66",
+        "status": "Completed",
+        "time": "13 October 00h00",
+        "timestamp": 1791912843473
+      },
+      {
+        "amount_bux": 19.37,
+        "rain_total": "683,66",
+        "status": "Completed",
+        "time": "13 October 00h00",
+        "timestamp": 1791912843473
+      },
+      {
+        "amount_bux": 8.03,
+        "rain_total": "683,66",
+        "status": "Completed",
+        "time": "13 October 00h00",
+        "timestamp": 1791912843473
+      },
+      {
+        "amount_bux": 12.28,
+        "rain_total": "683,66",
+        "status": "Completed",
+        "time": "13 October 00h00",
+        "timestamp": 1791912843473
+      },
+      {
+        "amount_bux": 8.76,
+        "rain_total": "683,66",
+        "status": "Completed",
+        "time": "13 October 00h00",
+        "timestamp": 1791912843473
+      },
+      {
+        "amount_bux": 38.65,
+        "rain_total": "683,66",
+        "status": "Completed",
+        "time": "13 October 00h00",
+        "timestamp": 1791912843473
+      },
+      {
+        "amount_bux": 120.19,
+        "rain_total": "683,66",
+        "status": "Completed",
+        "time": "13 October 00h00",
+        "timestamp": 1791912843473
+      },
+      {
+        "amount_bux": 60.96,
+        "rain_total": "683,66",
+        "status": "Completed",
+        "time": "13 October 00h00",
+        "timestamp": 1791912843473
+      },
+      {
+        "amount_bux": 89.16,
+        "rain_total": "683,66",
+        "status": "Completed",
+        "time": "13 October 00h00",
+        "timestamp": 1791912843473
+      },
+      {
+        "amount_bux": 99.08,
+        "rain_total": "683,66",
+        "status": "Completed",
+        "time": "13 October 00h00",
+        "timestamp": 1791912843473
+      },
+      {
+        "amount_bux": 5.86,
+        "rain_total": "683,66",
+        "status": "Completed",
+        "time": "13 October 00h00",
+        "timestamp": 1791912843473
+      },
+      {
+        "amount_bux": 16.41,
+        "rain_total": "683,66",
+        "status": "Completed",
+        "time": "13 October 00h00",
+        "timestamp": 1791912843469
+      }
+    ],
+    "history": [],
+    "first_tx_time": 1791912843469
+  }
+}

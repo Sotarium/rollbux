@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" fill="none">
+  <defs>
+    <!-- Ambient Radial Glows -->
+    <radialGradient id="glow-top-left" cx="15%" cy="15%" r="45%">
+      <stop offset="0%" stop-color="#4f46e5" stop-opacity="0.14" />
+      <stop offset="60%" stop-color="#312e81" stop-opacity="0.04" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+    
+    <radialGradient id="glow-center" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#1e1b4b" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+
+    <radialGradient id="glow-bottom-right" cx="85%" cy="85%" r="50%">
+      <stop offset="0%" stop-color="#0d9488" stop-opacity="0.06" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Linear subtle gradient for contour lines -->
+    <linearGradient id="line-grad-1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.05" />
+      <stop offset="50%" stop-color="#7974ff" stop-opacity="0.08" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.02" />
+    </linearGradient>
+
+    <linearGradient id="line-grad-2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#7974ff" stop-opacity="0.06" />
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.04" />
+      <stop offset="100%" stop-color="#14b8a6" stop-opacity="0.03" />
+    </linearGradient>
+  </defs>
+
+  <!-- Ambient Glow Rectangles -->
+  <rect width="1920" height="1080" fill="url(#glow-top-left)" />
+  <rect width="1920" height="1080" fill="url(#glow-center)" />
+  <rect width="1920" height="1080" fill="url(#glow-bottom-right)" />
+
+  <!-- RoStake Signature Topographic Contour Waves -->
+  <!-- Low wave 1 -->
+  <path d="M-100 880 C 250 840, 480 690, 850 720 C 1200 750, 1500 640, 2020 660" 
+        stroke="url(#line-grad-1)" stroke-width="2.5" fill="none" />
+  
+  <!-- Low wave 2 (inner parallel contour) -->
+  <path d="M-100 960 C 240 920, 450 760, 840 790 C 1220 820, 1480 720, 2020 740" 
+        stroke="url(#line-grad-1)" stroke-width="2" fill="none" />
+
+  <!-- Mid wave 3 -->
+  <path d="M-100 750 C 300 710, 520 540, 920 560 C 1300 580, 1600 480, 2020 490" 
+        stroke="url(#line-grad-2)" stroke-width="2" fill="none" />
+
+  <!-- Top wave 4 -->
+  <path d="M-100 520 C 350 490, 580 320, 1020 340 C 1420 360, 1700 240, 2020 260" 
+        stroke="url(#line-grad-1)" stroke-width="1.8" fill="none" stroke-dasharray="14 0" />
+
+  <!-- High wave 5 -->
+  <path d="M-100 340 C 380 300, 620 160, 1080 180 C 1480 200, 1780 90, 2020 110" 
+        stroke="url(#line-grad-2)" stroke-width="1.5" fill="none" />
+
+  <!-- Bottom loop contour (seen in bottom-left of screenshot) -->
+  <path d="M-80 1020 C 180 980, 320 860, 580 890 C 820 920, 1050 870, 1300 980" 
+        stroke="url(#line-grad-1)" stroke-width="2" fill="none" />
+</svg>

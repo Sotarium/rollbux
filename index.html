@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rollbux - Live Affiliate Stats</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,600;1,700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #121418;
+      background-image: linear-gradient(180deg, #15171d 0%, #101115 100%);
+      background-attachment: fixed;
+      color: #ffffff;
+      min-height: 100vh;
+      font-family: 'Inter', sans-serif;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #1c2538;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="selection:bg-[#acff46] selection:text-[#0e131f]">
+  <!-- Main Container -->
+  <div class="flex w-full justify-center pb-[40px] pt-[35px]" bis_skin_checked="1">
+    <div data-node-id="671:32993" class="flex w-full max-w-[1201px] flex-col items-start gap-[32px] px-[16px] xl:gap-[52px] xl:px-0" bis_skin_checked="1">
+      <div data-node-id="671:32994" class="flex w-full flex-col items-start gap-[28px]" bis_skin_checked="1">
+        
+        <!-- Header -->
+        <div data-node-id="671:32995" class="flex w-full flex-col items-center justify-center" bis_skin_checked="1">
+          <div data-node-id="671:32996" class="flex w-full items-center justify-between" bis_skin_checked="1">
+            <div data-node-id="671:32997" class="flex w-full shrink-0 flex-col items-start gap-[20px] xl:w-[420px]" bis_skin_checked="1">
+              <div data-node-id="671:32998" class="flex w-full shrink-0 flex-wrap items-center gap-[12px] xl:flex-nowrap xl:gap-[20px]" bis_skin_checked="1">
+                <div data-node-id="671:32999" class="flex shrink-0 items-center gap-[10px]" bis_skin_checked="1">
+                  <h1 id="headerUsername" data-node-id="671:33002" class="whitespace-nowrap text-[25px] tracking-[0.5px] text-white font-bold italic">Sotarium</h1>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Layout Body -->
+        <div data-node-id="671:33011" class="flex w-full shrink-0 flex-col items-start xl:w-[1201px]" bis_skin_checked="1">
+          <div data-node-id="671:33012" class="flex w-full shrink-0 flex-col items-start xl:w-[1200px]" bis_skin_checked="1">
+            <div data-node-id="671:33013" class="flex w-full flex-col items-start gap-[24px] xl:flex-row xl:gap-[32px]" bis_skin_checked="1">
+              
+              <!-- Left Sidebar: Referral Code -->
+              <div data-node-id="671:33014" class="flex w-full shrink-0 flex-col items-start gap-[16px] xl:w-[320px]" bis_skin_checked="1">
+                <div data-node-id="671:33050" class="relative flex w-full flex-col items-start gap-[16px] overflow-clip rounded-[12px] bg-[#0e131f] p-[24px] shadow-sm border border-white/[0.03]" bis_skin_checked="1">
+                  <p data-node-id="671:33051" class="whitespace-nowrap text-[16px] font-bold leading-[24px] text-white">Your Referral code</p>
+                  
+                  <div data-node-id="671:33052" class="flex w-full shrink-0 flex-col items-start gap-[16px]" bis_skin_checked="1">
+                    <div class="flex w-full shrink-0 flex-col items-start gap-[10px]" bis_skin_checked="1">
+                      
+                      <!-- Referral Code Box -->
+                      <button id="copyCodeBtn" type="button" data-node-id="671:33053" class="group relative flex w-full shrink-0 items-center justify-between overflow-clip rounded-[7px] px-[12px] py-[10px] text-left transition hover:brightness-110 active:scale-[0.99]">
+                        <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[7px] bg-[#131a29]"></span>
+                        <span id="refCodeDisplay" class="relative font-mono text-[14px] font-bold leading-[20px] tracking-[1px] text-[#acff46]">Sotarium</span>
+                        <span id="copyCodeText" class="relative text-[12px] font-semibold leading-[18px] text-[#9aa3a8] transition group-hover:text-white">Copy</span>
+                        <span aria-hidden="true" class="pointer-events-none absolute inset-0" style="border-radius: 7px; box-shadow: rgb(66, 66, 66) 0px 2px 0px 0px inset; mix-blend-mode: color-dodge;"></span>
+                      </button>
+
+                      <!-- Referral Link Box -->
+                      <button id="copyLinkBtn" type="button" data-node-id="671:33057" class="group relative flex w-full shrink-0 items-center justify-between gap-[8px] overflow-clip rounded-[7px] px-[12px] py-[10px] text-left transition hover:brightness-110 active:scale-[0.99]">
+                        <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[7px] bg-[#131a29]"></span>
+                        <span id="refLinkDisplay" class="relative min-w-0 truncate text-[14px] font-medium leading-[20px] text-[#9aa3a8]">https://rollbux.com/r/sotarium</span>
+                        <span data-node-id="671:33059" data-name="fi_9321839" class="relative size-[20px] shrink-0 transition group-hover:scale-105">
+                          <img alt="Copy link" class="absolute inset-0 block size-full max-w-none opacity-80 group-hover:opacity-100" src="/figma/af-copy.svg">
+                        </span>
+                        <span aria-hidden="true" class="pointer-events-none absolute inset-0" style="border-radius: 7px; box-shadow: rgb(66, 66, 66) 0px 2px 0px 0px inset; mix-blend-mode: color-dodge;"></span>
+                      </button>
+
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Currency Switcher Pill -->
+                <div class="w-full flex items-center justify-between bg-[#0e131f] p-3 rounded-[12px] border border-white/[0.03] text-[12px]">
+                  <span class="text-[#9aa3a8] font-medium">Display Unit:</span>
+                  <div class="flex gap-1 bg-[#131a29] p-1 rounded-md">
+                    <button id="unitBuxBtn" type="button" class="px-2.5 py-1 rounded text-[11px] font-bold bg-[#acff46] text-[#121418] transition">BUX</button>
+                    <button id="unitUsdBtn" type="button" class="px-2.5 py-1 rounded text-[11px] font-bold text-[#9aa3a8] hover:text-white transition">USD</button>
+                    <button id="unitSolBtn" type="button" class="px-2.5 py-1 rounded text-[11px] font-bold text-[#9aa3a8] hover:text-white transition">SOL</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Main Content -->
+              <div data-node-id="671:33061" class="flex w-full min-w-0 shrink-0 flex-col items-start gap-[24px] xl:w-[848px]" bis_skin_checked="1">
+                
+                <!-- Overview Section -->
+                <div data-node-id="671:33062" class="flex w-full shrink-0 flex-col items-start justify-center gap-[16px]" bis_skin_checked="1">
+                  <div class="flex w-full shrink-0 items-center justify-between" bis_skin_checked="1">
+                    <div data-node-id="671:33063" class="flex shrink-0 items-center gap-[10px]" bis_skin_checked="1">
+                      <p data-node-id="671:33065" class="whitespace-nowrap text-[20px] leading-[30px] text-white font-bold italic">Overview</p>
+                    </div>
+                    <button id="clearOverviewBtn" type="button" class="relative flex h-[32px] shrink-0 items-center justify-center overflow-clip rounded-[7px] px-[14px] py-[6px] bg-[#acff46] text-[#121418] font-bold text-[13px] hover:brightness-110 active:scale-95 transition shadow-sm">
+                      <span>Clear</span>
+                    </button>
+                  </div>
+
+                  <!-- 4 Stats Cards Grid -->
+                  <div data-node-id="671:33067" class="flex w-full shrink-0 flex-wrap content-start items-start gap-[16px]" bis_skin_checked="1">
+                    
+                    <!-- 1. Rains Joined -->
+                    <div data-node-id="671:33068" class="relative flex min-w-full flex-[1_0_0] xl:min-w-[300px] flex-col items-start gap-[6px] overflow-clip rounded-[12px] px-[20px] py-[16px] border border-white/[0.03]" bis_skin_checked="1">
+                      <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
+                      <p class="relative w-full text-[14px] font-medium leading-[20px] text-[#9aa3a8]">Rains Joined</p>
+                      <p id="statRainsJoined" class="relative whitespace-nowrap text-[20px] font-bold leading-[30px] text-white">0 Rains</p>
+                      <span aria-hidden="true" class="pointer-events-none absolute inset-0" style="border-radius: 12px; box-shadow: rgba(114, 144, 231, 0.04) 0px 4px 0px 0px inset;"></span>
+                    </div>
+
+                    <!-- 2. How Much Time -->
+                    <div data-node-id="671:33071" class="relative flex min-w-full flex-[1_0_0] xl:min-w-[300px] flex-col items-start gap-[6px] overflow-clip rounded-[12px] px-[20px] py-[16px] border border-white/[0.03]" bis_skin_checked="1">
+                      <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
+                      <p class="relative w-full text-[14px] font-medium leading-[20px] text-[#9aa3a8]">How Much Time</p>
+                      <div class="relative flex shrink-0 items-center gap-[8px]" bis_skin_checked="1">
+                        <p id="statHowMuchTime" class="whitespace-nowrap text-[20px] font-bold leading-[30px] text-white">X Days</p>
+                      </div>
+                      <span aria-hidden="true" class="pointer-events-none absolute inset-0" style="border-radius: 12px; box-shadow: rgba(114, 144, 231, 0.04) 0px 4px 0px 0px inset;"></span>
+                    </div>
+
+                    <!-- 3. Total Earnings -->
+                    <div data-node-id="671:33086" class="relative flex min-w-full flex-[1_0_0] xl:min-w-[300px] flex-col items-start gap-[6px] overflow-clip rounded-[12px] px-[20px] py-[16px] border border-white/[0.03]" bis_skin_checked="1">
+                      <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
+                      <p class="relative w-full text-[14px] font-medium leading-[20px] text-[#9aa3a8]">Total Earnings</p>
+                      <div class="relative flex shrink-0 items-center gap-[8px]" bis_skin_checked="1">
+                        <span id="earningsCoinIcon" data-name="cryptocurrency-color:eth" class="relative size-[24px] shrink-0 overflow-clip">
+                          <img alt="" class="absolute inset-0 block size-full max-w-none" src="/figma/af-coin-24.svg">
+                        </span>
+                        <p id="statTotalEarnings" class="whitespace-nowrap text-[20px] font-bold leading-[30px] text-white">0.00</p>
+                      </div>
+                      <span aria-hidden="true" class="pointer-events-none absolute inset-0" style="border-radius: 12px; box-shadow: rgba(114, 144, 231, 0.04) 0px 4px 0px 0px inset;"></span>
+                    </div>
+
+                    <!-- 4. Current Balance -->
+                    <div data-node-id="671:33100" class="relative flex min-w-full flex-[1_0_0] xl:min-w-[300px] items-center justify-between gap-[12px] overflow-clip rounded-[12px] border border-solid border-[rgba(172,255,70,0.12)] px-[20px] py-[16px]" bis_skin_checked="1">
+                      <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px]" style="background-image: linear-gradient(90deg, rgba(172, 255, 70, 0.16) 0%, rgba(172, 255, 70, 0) 100%), linear-gradient(90deg, rgb(14, 19, 31) 0%, rgb(14, 19, 31) 100%);"></span>
+                      <div data-node-id="671:33101" class="relative flex min-w-0 shrink flex-col items-start gap-[6px]" bis_skin_checked="1">
+                        <p data-node-id="671:33102" class="whitespace-nowrap text-[14px] font-medium leading-[20px] text-[#acff46]">Current Balance</p>
+                        <div data-node-id="671:33103" class="flex shrink-0 items-center gap-[8px]" bis_skin_checked="1">
+                          <span id="balanceCoinIcon" data-node-id="671:33104" data-name="cryptocurrency-color:eth" class="relative size-[24px] shrink-0 overflow-clip">
+                            <img alt="" class="absolute inset-0 block size-full max-w-none" src="/figma/af-coin-24.svg">
+                          </span>
+                          <p id="statCurrentBalance" class="whitespace-nowrap text-[20px] font-bold leading-[30px] text-white">0.00</p>
+                        </div>
+                      </div>
+                      <span aria-hidden="true" class="pointer-events-none absolute inset-0" style="border-radius: 12px; box-shadow: rgba(114, 144, 231, 0.04) 0px 4px 0px 0px inset;"></span>
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- Statistics Section -->
+                <div data-node-id="671:33117" class="flex w-full shrink-0 flex-col items-start gap-[16px]" bis_skin_checked="1">
+                  <div class="flex w-full shrink-0 items-center justify-between" bis_skin_checked="1">
+                    <p data-node-id="671:33118" class="whitespace-nowrap text-[20px] font-bold italic leading-[30px] text-white">Statistics</p>
+                    <div class="flex items-center gap-3">
+                      <!-- Green Clear Button for Stats Graph -->
+                      <button id="clearStatsBtn" type="button" class="relative flex h-[32px] shrink-0 items-center justify-center overflow-clip rounded-[7px] px-[14px] py-[6px] bg-[#acff46] text-[#121418] font-bold text-[13px] hover:brightness-110 active:scale-95 transition shadow-sm">
+                        <span>Clear</span>
+                      </button>
+                      <!-- Timeframe Pills -->
+                      <div class="relative flex shrink-0 items-center gap-[2px] rounded-[8px] p-[2px] bg-[#0e131f] border border-white/[0.04]" bis_skin_checked="1">
+                        <button type="button" class="tab-btn active relative flex h-[32px] shrink-0 items-center justify-center overflow-clip rounded-[7px] px-[12px] py-[8px] transition" data-tab="24h">
+                          <span aria-hidden="true" class="tab-bg pointer-events-none absolute inset-0 rounded-[7px] bg-[#131a29]"></span>
+                          <span class="tab-text relative whitespace-nowrap text-[14px] font-semibold leading-[20px] text-white">24H</span>
+                        </button>
+                        <button type="button" class="tab-btn relative flex h-[32px] shrink-0 items-center justify-center overflow-clip rounded-[7px] px-[12px] py-[8px] transition" data-tab="week">
+                          <span aria-hidden="true" class="tab-bg pointer-events-none absolute inset-0 rounded-[7px] hidden bg-[#131a29]"></span>
+                          <span class="tab-text relative whitespace-nowrap text-[14px] font-semibold leading-[20px] text-[#9aa3a8] hover:text-white">Week</span>
+                        </button>
+                        <button type="button" class="tab-btn relative flex h-[32px] shrink-0 items-center justify-center overflow-clip rounded-[7px] px-[12px] py-[8px] transition" data-tab="month">
+                          <span aria-hidden="true" class="tab-bg pointer-events-none absolute inset-0 rounded-[7px] hidden bg-[#131a29]"></span>
+                          <span class="tab-text relative whitespace-nowrap text-[14px] font-semibold leading-[20px] text-[#9aa3a8] hover:text-white">Month</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Chart Container Card -->
+                  <div data-node-id="671:33119" class="relative flex w-full shrink-0 flex-col items-start justify-center overflow-clip rounded-[12px] p-[24px] border border-white/[0.03]" bis_skin_checked="1">
+                    <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
+                    
+                    <div data-node-id="671:33120" class="custom-scroll relative h-[348px] w-full shrink-0 overflow-x-auto overflow-y-clip xl:overflow-clip" bis_skin_checked="1">
+                      <div class="relative h-full w-[800px] xl:w-full" bis_skin_checked="1">
+                        <!-- Y-Axis Labels -->
+                        <div id="chartYLabels" data-node-id="671:33121" class="absolute left-0 top-0 flex flex-col items-start justify-between h-[330px] whitespace-nowrap text-[12px] font-bold text-[#6d7680]" bis_skin_checked="1">
+                          <p id="yAxisTop" class="leading-[18px]">100</p>
+                          <p class="leading-[18px]">&nbsp;</p>
+                          <p class="leading-[18px]">&nbsp;</p>
+                          <p class="leading-[18px]">&nbsp;</p>
+                          <p class="leading-[18px]">&nbsp;</p>
+                          <p class="leading-[18px]">&nbsp;</p>
+                          <p class="leading-[18px] text-white font-bold">0</p>
+                        </div>
+
+                        <!-- Dashed horizontal grid lines -->
+                        <span class="absolute left-[56px] h-0 right-0" style="top: 9px;"><span class="absolute bottom-0 left-0 right-0 top-[-1px]"><img alt="" class="block w-full max-w-none opacity-60" src="/figma/af-grid-line.svg"></span></span>
+                        <span class="absolute left-[56px] h-0 right-0" style="top: 64px;"><span class="absolute bottom-0 left-0 right-0 top-[-1px]"><img alt="" class="block w-full max-w-none opacity-60" src="/figma/af-grid-line.svg"></span></span>
+                        <span class="absolute left-[56px] h-0 right-0" style="top: 119px;"><span class="absolute bottom-0 left-0 right-0 top-[-1px]"><img alt="" class="block w-full max-w-none opacity-60" src="/figma/af-grid-line.svg"></span></span>
+                        <span class="absolute left-[56px] h-0 right-0" style="top: 174px;"><span class="absolute bottom-0 left-0 right-0 top-[-1px]"><img alt="" class="block w-full max-w-none opacity-60" src="/figma/af-grid-line.svg"></span></span>
+                        <span class="absolute left-[56px] h-0 right-0" style="top: 229px;"><span class="absolute bottom-0 left-0 right-0 top-[-1px]"><img alt="" class="block w-full max-w-none opacity-60" src="/figma/af-grid-line.svg"></span></span>
+                        <span class="absolute left-[56px] h-0 right-0" style="top: 284px;"><span class="absolute bottom-0 left-0 right-0 top-[-1px]"><img alt="" class="block w-full max-w-none opacity-60" src="/figma/af-grid-line.svg"></span></span>
+                        <span class="absolute left-[56px] h-0 right-0" style="top: 339px;"><span class="absolute bottom-0 left-0 right-0 top-[-1px]"><img alt="" class="block w-full max-w-none opacity-60" src="/figma/af-grid-line.svg"></span></span>
+
+                        <!-- SVG Chart Area & Path -->
+                        <div id="chartInteractiveWrap" class="absolute cursor-crosshair" style="left: 56px; top: 9px; width: calc(100% - 56px); height: 330px;">
+                          <svg id="chartSvg" class="absolute inset-0 size-full" viewBox="0 0 744 330" preserveAspectRatio="none">
+                            <defs>
+                              <linearGradient id="sp-af-area" x1="0" y1="0" x2="0" y2="1">
+                                <stop stop-color="#7974FF"></stop>
+                                <stop offset="1" stop-color="#7974FF" stop-opacity="0"></stop>
+                              </linearGradient>
+                            </defs>
+                            <path id="chartAreaPath" d="M0 330 L744 330 L744 330 L0 330 Z" fill="url(#sp-af-area)" opacity="0.3"></path>
+                            <path id="chartLinePath" d="M0 330 L744 330" fill="none" stroke="#7974FF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
+                            <!-- Hover vertical guide line -->
+                            <line id="chartHoverLine" x1="0" y1="0" x2="0" y2="330" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" stroke-dasharray="4 4" class="opacity-0 transition-opacity pointer-events-none"></line>
+                            <!-- Hover active point pulse/glow -->
+                            <circle id="chartHoverGlow" cx="-20" cy="-20" r="8" fill="#7974FF" opacity="0.25" class="opacity-0 transition-opacity pointer-events-none"></circle>
+                            <circle id="chartHoverDot" cx="-20" cy="-20" r="4.5" fill="#ffffff" stroke="#7974FF" stroke-width="2.5" class="opacity-0 transition-opacity pointer-events-none"></circle>
+                          </svg>
+
+                          <!-- Floating Tooltip Box -->
+                          <div id="chartTooltip" class="pointer-events-none absolute z-20 flex flex-col items-start gap-1 rounded-lg bg-[#161b26] border border-white/10 px-3 py-2 shadow-2xl transition-all duration-75 opacity-0 transform -translate-x-1/2 -translate-y-full mb-2">
+                            <span id="chartTooltipTime" class="text-[11px] font-semibold text-[#9aa3a8]">--</span>
+                            <div class="flex items-center gap-1.5">
+                              <img id="chartTooltipCoinIcon" src="https://rollbux.com/icons/token.png" alt="Coin" class="size-3.5 object-contain">
+                              <span id="chartTooltipValue" class="text-[13px] font-extrabold text-white">0.00</span>
+                            </div>
+                            <span id="chartTooltipEarning" class="text-[10px] font-semibold text-[#50f07b]">+0.00</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <span aria-hidden="true" class="pointer-events-none absolute inset-0" style="border-radius: 12px; box-shadow: rgba(114, 144, 231, 0.04) 0px 4px 0px 0px inset;"></span>
+                  </div>
+                </div>
+
+                <!-- Spacer -->
+                <div class="flex w-full shrink-0 flex-col items-start gap-[16px]" bis_skin_checked="1"></div>
+
+                <!-- Rains Section -->
+                <div data-node-id="671:33156" class="flex w-full shrink-0 flex-col items-start gap-[16px]" bis_skin_checked="1">
+                  <div data-node-id="671:33157" class="flex w-full shrink-0 items-center justify-between" bis_skin_checked="1">
+                    <p data-node-id="671:33158" class="whitespace-nowrap text-[20px] leading-[30px] text-white font-bold italic">Rains</p>
+                    <div class="flex items-center gap-3">
+                      <!-- Green Clear Button for Rains List -->
+                      <button id="clearRainsBtn" type="button" class="relative flex h-[30px] shrink-0 items-center justify-center overflow-clip rounded-[7px] px-[12px] py-[5px] bg-[#acff46] text-[#121418] font-bold text-[12px] hover:brightness-110 active:scale-95 transition shadow-sm">
+                        <span>Clear Rains</span>
+                      </button>
+                      <span id="rainCountBadge" class="text-[13px] text-[#9aa3a8]">1 rain</span>
+                    </div>
+                  </div>
+                  
+                  <div data-node-id="671:33164" class="flex w-full shrink-0 flex-col items-center gap-[12px] xl:w-[848px]" bis_skin_checked="1">
+                    <div class="custom-scroll w-full max-w-full overflow-x-auto overflow-y-hidden xl:overflow-visible" bis_skin_checked="1">
+                      <div data-node-id="671:33165" class="relative w-[848px] shrink-0 rounded-[12px] xl:w-full border border-white/[0.03] overflow-hidden" style="min-height: 164px;" bis_skin_checked="1">
+                        <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
+                        
+                        <!-- Table Column Headers: Amount | Rain Total | Time Left | Time -->
+                        <div class="relative z-10 grid grid-cols-[minmax(180px,1.5fr)_minmax(140px,1.1fr)_minmax(120px,0.9fr)_minmax(160px,1fr)] items-center gap-[12px] px-[16px] py-[14px] text-[13px] font-semibold tracking-[0.28px] text-[#9aa3a8] border-b border-white/[0.04]">
+                          <div>Amount</div>
+                          <div>Rain Total</div>
+                          <div>Time Left</div>
+                          <div>Time</div>
+                        </div>
+                        
+                        <!-- Rains Table Rows Container -->
+                        <div id="transactionsList" class="relative z-10 flex flex-col divide-y divide-white/[0.02]">
+                          <!-- Empty State Message -->
+                          <div id="emptyState" class="flex h-[120px] items-center justify-center px-[32px] text-center">
+                            <p class="text-[13px] leading-[20px] text-[#9aa3a8]">Nobody is using your code yet. Share the link above — a referee appears here as soon as they attach it.</p>
+                          </div>
+                        </div>
+                        
+                        <span aria-hidden="true" class="pointer-events-none absolute inset-0" style="border-radius: 12px; box-shadow: rgb(66, 66, 66) 0px 2px 0px 0px inset; mix-blend-mode: color-dodge;"></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Script for Live User Stats & Dynamic Countdown -->
+  <script>
+    let currentUnit = 'BUX';
+    let liveUserData = null;
+    let liveSolPrice = 150.00;
+
+    function getUsernameFromUrl() {
+      const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
+      if (!path) return 'Sotarium';
+      if (path === 'users') {
+        window.location.replace('/users.html');
+        return 'Sotarium';
+      }
+      const parts = path.split('/');
+      if (parts[0] === 'user' && parts[1]) {
+        return decodeURIComponent(parts[1]);
+      }
+      if (parts[0] && parts[0] !== 'user' && parts[0] !== 'users') {
+        return decodeURIComponent(parts[0]);
+      }
+      return 'Sotarium';
+    }
+
+    const targetUsername = getUsernameFromUrl();
+
+    // DOM Elements
+    const headerUsername = document.getElementById('headerUsername');
+    const userAvatarImg = document.getElementById('userAvatarImg');
+    const refCodeDisplay = document.getElementById('refCodeDisplay');
+    const refLinkDisplay = document.getElementById('refLinkDisplay');
+    const statRainsJoined = document.getElementById('statRainsJoined');
+    const statHowMuchTime = document.getElementById('statHowMuchTime');
+    const statTotalEarnings = document.getElementById('statTotalEarnings');
+    const statCurrentBalance = document.getElementById('statCurrentBalance');
+    const rainCountBadge = document.getElementById('rainCountBadge');
+    const transactionsList = document.getElementById('transactionsList');
+    const emptyState = document.getElementById('emptyState');
+    const chartAreaPath = document.getElementById('chartAreaPath');
+    const chartLinePath = document.getElementById('chartLinePath');
+    const yAxisTop = document.getElementById('yAxisTop');
+    const chartInteractiveWrap = document.getElementById('chartInteractiveWrap');
+    const chartHoverLine = document.getElementById('chartHoverLine');
+    const chartHoverDot = document.getElementById('chartHoverDot');
+    const chartHoverGlow = document.getElementById('chartHoverGlow');
+    const chartTooltip = document.getElementById('chartTooltip');
+    const chartTooltipTime = document.getElementById('chartTooltipTime');
+    const chartTooltipValue = document.getElementById('chartTooltipValue');
+    const chartTooltipEarning = document.getElementById('chartTooltipEarning');
+    const chartTooltipCoinIcon = document.getElementById('chartTooltipCoinIcon');
+
+    const unitSolBtn = document.getElementById('unitSolBtn');
+    const unitUsdBtn = document.getElementById('unitUsdBtn');
+    const unitBuxBtn = document.getElementById('unitBuxBtn');
+
+    function updateCurrencyIcons() {
+      const earningsIcon = document.querySelector('#earningsCoinIcon img');
+      const balanceIcon = document.querySelector('#balanceCoinIcon img');
+      let iconUrl = '/figma/af-coin-24.svg';
+      if (currentUnit === 'BUX') {
+        iconUrl = 'https://rollbux.com/icons/token.png';
+      } else if (currentUnit === 'USD') {
+        iconUrl = 'https://betdice.net/currency/USD.svg';
+      }
+      if (earningsIcon) earningsIcon.src = iconUrl;
+      if (balanceIcon) balanceIcon.src = iconUrl;
+      if (chartTooltipCoinIcon) chartTooltipCoinIcon.src = iconUrl;
+    }
+
+    function setUnit(unit) {
+      currentUnit = unit;
+      [unitSolBtn, unitUsdBtn, unitBuxBtn].forEach(b => {
+        b.className = 'px-2.5 py-1 rounded text-[11px] font-bold text-[#9aa3a8] hover:text-white transition';
+      });
+      if (unit === 'SOL') unitSolBtn.className = 'px-2.5 py-1 rounded text-[11px] font-bold bg-[#acff46] text-[#121418] transition';
+      if (unit === 'USD') unitUsdBtn.className = 'px-2.5 py-1 rounded text-[11px] font-bold bg-[#acff46] text-[#121418] transition';
+      if (unit === 'BUX') unitBuxBtn.className = 'px-2.5 py-1 rounded text-[11px] font-bold bg-[#acff46] text-[#121418] transition';
+      updateCurrencyIcons();
+      if (liveUserData) renderDashboard(liveUserData);
+    }
+
+    updateCurrencyIcons();
+
+    // Clear Function (no window confirmation prompt, executes instantly)
+    async function handleClearStats() {
+      try {
+        const res = await fetch(`/api/user/${encodeURIComponent(targetUsername)}/clear`, { method: 'POST' });
+        if (res.ok) {
+          fetchUserData();
+        }
+      } catch (err) {
+        console.error('Error clearing stats:', err);
+      }
+    }
+
+    const clearOverviewBtn = document.getElementById('clearOverviewBtn');
+    if (clearOverviewBtn) clearOverviewBtn.addEventListener('click', handleClearStats);
+
+    const clearStatsBtn = document.getElementById('clearStatsBtn');
+    if (clearStatsBtn) clearStatsBtn.addEventListener('click', handleClearStats);
+
+    const clearRainsBtn = document.getElementById('clearRainsBtn');
+    if (clearRainsBtn) clearRainsBtn.addEventListener('click', handleClearStats);
+
+    unitSolBtn.addEventListener('click', () => setUnit('SOL'));
+    unitUsdBtn.addEventListener('click', () => setUnit('USD'));
+    unitBuxBtn.addEventListener('click', () => setUnit('BUX'));
+
+    function formatValue(bux) {
+      const buxVal = parseFloat(bux) || 0;
+      const usdVal = buxVal * 0.002;
+      const solVal = liveSolPrice > 0 ? (usdVal / liveSolPrice) : 0;
+
+      if (currentUnit === 'SOL') {
+        return solVal.toFixed(4).replace(/\.?0+$/, '') || '0.00';
+      }
+      if (currentUnit === 'USD') {
+        return '$' + usdVal.toFixed(2);
+      }
+      return (Number.isInteger(buxVal) ? buxVal.toLocaleString() : buxVal.toFixed(2));
+    }
+
+    function formatHowMuchTime(user) {
+      let startTime = null;
+      if (user.first_tx_time) {
+        startTime = user.first_tx_time;
+      } else if (user.transactions && user.transactions.length > 0) {
+        const lastTx = user.transactions[user.transactions.length - 1];
+        startTime = lastTx.timestamp;
+      }
+
+      if (!startTime) {
+        return '0S';
+      }
+
+      const startMs = new Date(startTime).getTime();
+      if (isNaN(startMs)) return '0S';
+      const diffSec = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+
+      const years = Math.floor(diffSec / (365 * 24 * 3600));
+      const days = Math.floor((diffSec % (365 * 24 * 3600)) / (24 * 3600));
+      const hours = Math.floor((diffSec % (24 * 3600)) / 3600);
+      const minutes = Math.floor((diffSec % 3600) / 60);
+      const seconds = diffSec % 60;
+
+      if (years > 0) return `${years}Y`;
+      if (days > 0) return `${days}D`;
+      if (hours > 0) return `${hours}H`;
+      if (minutes > 0) return `${minutes}M`;
+      return `${seconds}S`;
+    }
+
+    function formatSeconds(sec) {
+      if (!sec || sec <= 0) return '00:00';
+      const mins = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${String(mins).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function getRainEndTime(secondsLeft) {
+      const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      let targetDate;
+      if (typeof secondsLeft === 'number' && secondsLeft > 0) {
+        targetDate = new Date(Date.now() + (secondsLeft * 1000));
+        if (targetDate.getMinutes() >= 50) {
+          targetDate.setHours(targetDate.getHours() + 1);
+          targetDate.setMinutes(0);
+        }
+      } else {
+        targetDate = new Date();
+        targetDate.setHours(targetDate.getHours() + 1);
+        targetDate.setMinutes(0);
+      }
+      const day = targetDate.getDate();
+      const month = months[targetDate.getMonth()];
+      const hours = String(targetDate.getHours()).padStart(2, '0');
+      const mins = String(targetDate.getMinutes()).padStart(2, '0');
+      return `${day} ${month} ${hours}h${mins}`;
+    }
+
+    // Clean any messy string if it's too long
+    function sanitizeTime(str) {
+      if (!str || str.length > 25 || str.toLowerCase().includes('reward') || str.toLowerCase().includes('level')) {
+        return '12 October 21h00';
+      }
+      return str;
+    }
+
+    let activeTimerLeft = 0;
+    setInterval(() => {
+      if (activeTimerLeft > 0) {
+        activeTimerLeft--;
+        const activeTimerEl = document.getElementById('activeRainTimer');
+        if (activeTimerEl) {
+          activeTimerEl.textContent = formatSeconds(activeTimerLeft);
+        }
+      }
+    }, 1000);
+
+    function renderDashboard(data) {
+      const user = data.user;
+      liveSolPrice = data.solPrice || 150.00;
+
+      headerUsername.textContent = user.username;
+      refCodeDisplay.textContent = user.username;
+      refLinkDisplay.textContent = `https://rollbux.com/r/${user.username.toLowerCase()}`;
+
+      statRainsJoined.textContent = `${user.rains_joined || 0} Rains`;
+      statHowMuchTime.textContent = formatHowMuchTime(user);
+
+      const balanceBux = user.balance_bux || 0;
+      const earningsBux = user.total_earnings_bux || 0;
+
+      statTotalEarnings.textContent = formatValue(earningsBux);
+      statCurrentBalance.textContent = formatValue(balanceBux);
+
+      // Render Rains Table
+      const txs = user.transactions || [];
+      const activeRain = user.active_rain;
+      const hasActiveRain = activeRain && (activeRain.time_left > 0 || activeRain.pot_amount > 0);
+
+      if (hasActiveRain && activeRain.time_left > 0) {
+        activeTimerLeft = activeRain.time_left;
+      }
+
+      rainCountBadge.textContent = `${txs.length + (hasActiveRain ? 1 : 0)} rain${txs.length === 0 && !hasActiveRain ? '' : 's'}`;
+
+      let rowsHtml = '';
+
+      // 1. Current Active Rain Row
+      if (hasActiveRain) {
+        const potFormatted = activeRain.pot_amount > 0 ? formatValue(activeRain.pot_amount) : 'X';
+        const timerFormatted = formatSeconds(activeTimerLeft);
+        const endTimeStr = getRainEndTime(activeTimerLeft);
+
+        rowsHtml += `
+          <div class="grid grid-cols-[minmax(180px,1.5fr)_minmax(140px,1.1fr)_minmax(120px,0.9fr)_minmax(160px,1fr)] items-center gap-[12px] relative min-h-[64px] cursor-pointer px-[16px] py-[10px] transition-colors hover:bg-[rgba(255,255,255,0.02)] bg-[rgba(172,255,70,0.03)]" role="button" tabindex="0">
+            <span class="flex min-w-0 items-center gap-[12px]">
+              <span class="flex min-w-0 flex-col">
+                <span class="truncate text-[15px] font-bold italic tracking-[0.3px] text-[#acff46]">In Progress</span>
+              </span>
+            </span>
+            <span class="whitespace-nowrap text-[14px] font-semibold text-white">
+              <span>${potFormatted}</span>
+            </span>
+            <span class="flex items-center gap-[6px]">
+              <span id="activeRainTimer" class="whitespace-nowrap text-[14px] font-bold leading-[20px] tracking-[0.5px] text-[#acff46] font-mono">${timerFormatted}</span>
+            </span>
+            <span class="flex">
+              <span class="flex h-[24px] items-center rounded-[6px] px-[8px] text-[12px] font-semibold leading-[16px] text-[#50f07b] bg-[rgba(80,240,123,0.12)]">${endTimeStr}</span>
+            </span>
+          </div>`;
+      }
+
+      // 2. Completed Rains Rows
+      if (txs.length > 0) {
+        rowsHtml += txs.map(tx => {
+          const formattedAmt = formatValue(tx.amount_bux);
+          const potDisplay = tx.rain_total ? (typeof tx.rain_total === 'number' ? formatValue(tx.rain_total) : tx.rain_total) : 'X';
+          const timeDisplay = sanitizeTime(tx.time);
+
+          return `
+            <div class="grid grid-cols-[minmax(180px,1.5fr)_minmax(140px,1.1fr)_minmax(120px,0.9fr)_minmax(160px,1fr)] items-center gap-[12px] relative min-h-[64px] cursor-pointer px-[16px] py-[10px] transition-colors hover:bg-[rgba(255,255,255,0.02)]" role="button" tabindex="0">
+              <span class="flex min-w-0 items-center gap-[12px]">
+                <span class="flex min-w-0 flex-col">
+                  <span class="truncate text-[15px] font-bold italic tracking-[0.3px] text-[#c2c6db]">${formattedAmt}</span>
+                </span>
+              </span>
+              <span class="whitespace-nowrap text-[14px] font-semibold text-[#9aa3a8]">${potDisplay}</span>
+              <span class="flex items-center gap-[6px]">
+                <span class="whitespace-nowrap text-[14px] font-semibold leading-[20px] tracking-[0.28px]" style="color: rgb(255, 107, 107);">Completed</span>
+              </span>
+              <span class="flex">
+                <span class="flex h-[24px] items-center rounded-[6px] px-[8px] text-[12px] font-semibold leading-[16px] text-[#50f07b] bg-[rgba(80,240,123,0.12)]">${timeDisplay}</span>
+              </span>
+            </div>`;
+        }).join('');
+      }
+
+      if (!rowsHtml) {
+        transactionsList.innerHTML = `
+          <div id="emptyState" class="flex h-[120px] items-center justify-center px-[32px] text-center">
+            <p class="text-[13px] leading-[20px] text-[#9aa3a8]">Nobody is using your code yet. Share the link above — a referee appears here as soon as they attach it.</p>
+          </div>`;
+      } else {
+        transactionsList.innerHTML = rowsHtml;
+      }
+
+      renderChart(user);
+    }
+
+    let currentChartPoints = [];
+
+    function renderChart(user) {
+      // Use history if available, otherwise build from transactions
+      let history = (user.history && user.history.length >= 2) ? user.history : [];
+
+      if (history.length < 2 && user.transactions && user.transactions.length >= 2) {
+        // Build cumulative earnings from transactions (oldest first)
+        const sorted = [...user.transactions].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        let cumulative = 0;
+        history = sorted.map(tx => {
+          cumulative += (tx.amount_bux || 0);
+          return {
+            time: new Date(tx.timestamp || Date.now()).toISOString(),
+            balance_bux: cumulative,
+            earnings_bux: tx.amount_bux
+          };
+        });
+      }
+
+      if (history.length < 2) {
+        chartAreaPath.setAttribute('d', 'M0 330 L744 330 L744 330 L0 330 Z');
+        chartLinePath.setAttribute('d', 'M0 330 L744 330');
+        yAxisTop.textContent = formatValue(0);
+        currentChartPoints = [];
+        return;
+      }
+
+      const values = history.map(h => h.balance_bux || 0);
+      const maxVal = Math.max(...values, 10);
+      yAxisTop.textContent = formatValue(maxVal);
+
+      const width = 744;
+      const height = 330;
+      currentChartPoints = history.map((h, idx) => {
+        const val = h.balance_bux || 0;
+        const x = (idx / (history.length - 1)) * width;
+        const y = height - (val / maxVal) * (height - 30) - 10;
+        return {
+          x,
+          y,
+          val,
+          earning: h.earnings_bux,
+          time: h.time
+        };
+      });
+
+      const pointsStr = currentChartPoints.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`);
+      const lineD = 'M ' + pointsStr.join(' L ');
+      const areaD = `M 0,330 L ${pointsStr.join(' L ')} L ${width},330 Z`;
+      chartLinePath.setAttribute('d', lineD);
+      chartAreaPath.setAttribute('d', areaD);
+    }
+
+    // Chart Interactive Hover Event Handlers
+    if (chartInteractiveWrap) {
+      function formatTooltipDate(isoStr) {
+        if (!isoStr) return '';
+        const d = new Date(isoStr);
+        if (isNaN(d.getTime())) return '';
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const day = d.getDate();
+        const m = months[d.getMonth()];
+        const h = String(d.getHours()).padStart(2, '0');
+        const min = String(d.getMinutes()).padStart(2, '0');
+        return `${day} ${m} ${h}:${min}`;
+      }
+
+      chartInteractiveWrap.addEventListener('mousemove', (e) => {
+        if (!currentChartPoints || currentChartPoints.length < 2) return;
+        const rect = chartInteractiveWrap.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const svgRatio = 744 / rect.width;
+        const targetSvgX = mouseX * svgRatio;
+
+        // Find closest point
+        let closest = currentChartPoints[0];
+        let minDist = Infinity;
+        for (const pt of currentChartPoints) {
+          const dist = Math.abs(pt.x - targetSvgX);
+          if (dist < minDist) {
+            minDist = dist;
+            closest = pt;
+          }
+        }
+
+        const pointPixelX = (closest.x / 744) * rect.width;
+        const pointPixelY = (closest.y / 330) * rect.height;
+
+        // Position guideline & dot
+        chartHoverLine.setAttribute('x1', closest.x);
+        chartHoverLine.setAttribute('x2', closest.x);
+        chartHoverLine.classList.remove('opacity-0');
+
+        chartHoverDot.setAttribute('cx', closest.x);
+        chartHoverDot.setAttribute('cy', closest.y);
+        chartHoverDot.classList.remove('opacity-0');
+
+        chartHoverGlow.setAttribute('cx', closest.x);
+        chartHoverGlow.setAttribute('cy', closest.y);
+        chartHoverGlow.classList.remove('opacity-0');
+
+        // Update Tooltip Content
+        chartTooltipTime.textContent = formatTooltipDate(closest.time) || 'Rain Milestone';
+        chartTooltipValue.textContent = formatValue(closest.val);
+        if (closest.earning) {
+          chartTooltipEarning.textContent = `+${formatValue(closest.earning)}`;
+          chartTooltipEarning.classList.remove('hidden');
+        } else {
+          chartTooltipEarning.classList.add('hidden');
+        }
+
+        // Keep Tooltip within bounds
+        const tooltipX = Math.max(60, Math.min(rect.width - 60, pointPixelX));
+        const tooltipY = Math.max(45, pointPixelY);
+
+        chartTooltip.style.left = `${tooltipX}px`;
+        chartTooltip.style.top = `${tooltipY}px`;
+        chartTooltip.classList.remove('opacity-0');
+      });
+
+      chartInteractiveWrap.addEventListener('mouseleave', () => {
+        chartHoverLine.classList.add('opacity-0');
+        chartHoverDot.classList.add('opacity-0');
+        chartHoverGlow.classList.add('opacity-0');
+        chartTooltip.classList.add('opacity-0');
+      });
+    }
+
+
+    async function fetchUserData() {
+      try {
+        const res = await fetch(`/api/user/${encodeURIComponent(targetUsername)}`);
+        if (res.ok) {
+          const data = await res.json();
+          liveUserData = data;
+          renderDashboard(data);
+        }
+      } catch (err) {
+        console.error('Error fetching user data:', err);
+      }
+    }
+
+    fetchUserData();
+    setInterval(fetchUserData, 2500);
+
+    const copyCodeBtn = document.getElementById('copyCodeBtn');
+    const copyCodeText = document.getElementById('copyCodeText');
+    if (copyCodeBtn) {
+      copyCodeBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(refCodeDisplay.textContent);
+        copyCodeText.textContent = 'Copied!';
+        copyCodeText.classList.add('text-[#acff46]');
+        setTimeout(() => {
+          copyCodeText.textContent = 'Copy';
+          copyCodeText.classList.remove('text-[#acff46]');
+        }, 1800);
+      });
+    }
+
+    const copyLinkBtn = document.getElementById('copyLinkBtn');
+    if (copyLinkBtn) {
+      copyLinkBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(refLinkDisplay.textContent);
+        copyLinkBtn.style.outline = '1px solid #acff46';
+        setTimeout(() => {
+          copyLinkBtn.style.outline = 'none';
+        }, 1500);
+      });
+    }
+
+    const tabs = document.querySelectorAll('.tab-btn');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => {
+          t.querySelector('.tab-bg')?.classList.add('hidden');
+          const txt = t.querySelector('.tab-text');
+          if (txt) {
+            txt.classList.remove('text-white');
+            txt.classList.add('text-[#9aa3a8]');
+          }
+        });
+        tab.querySelector('.tab-bg')?.classList.remove('hidden');
+        const currentTxt = tab.querySelector('.tab-text');
+        if (currentTxt) {
+          currentTxt.classList.add('text-white');
+          currentTxt.classList.remove('text-[#9aa3a8]');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
