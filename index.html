@@ -229,18 +229,17 @@
                           <svg id="chartSvg" class="absolute inset-0 size-full" viewBox="0 0 744 330" preserveAspectRatio="none">
                             <defs>
                               <linearGradient id="sp-af-area" x1="0" y1="0" x2="0" y2="1">
-                                <stop stop-color="#50f07b" stop-opacity="0.32"></stop>
-                                <stop offset="0.6" stop-color="#50f07b" stop-opacity="0.08"></stop>
-                                <stop offset="1" stop-color="#50f07b" stop-opacity="0"></stop>
+                                <stop stop-color="#7974FF"></stop>
+                                <stop offset="1" stop-color="#7974FF" stop-opacity="0"></stop>
                               </linearGradient>
                             </defs>
-                            <path id="chartAreaPath" d="M0 330 L744 330 L744 330 L0 330 Z" fill="url(#sp-af-area)"></path>
-                            <path id="chartLinePath" d="M0 330 L744 330" fill="none" stroke="#50f07b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
+                            <path id="chartAreaPath" d="M0 330 L744 330 L744 330 L0 330 Z" fill="url(#sp-af-area)" opacity="0.3"></path>
+                            <path id="chartLinePath" d="M0 330 L744 330" fill="none" stroke="#7974FF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
                             <!-- Hover vertical guide line -->
                             <line id="chartHoverLine" x1="0" y1="0" x2="0" y2="330" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" stroke-dasharray="4 4" class="opacity-0 transition-opacity pointer-events-none"></line>
                             <!-- Hover active point pulse/glow -->
-                            <circle id="chartHoverGlow" cx="-20" cy="-20" r="9" fill="#50f07b" opacity="0.35" class="opacity-0 transition-opacity pointer-events-none"></circle>
-                            <circle id="chartHoverDot" cx="-20" cy="-20" r="4.5" fill="#ffffff" stroke="#50f07b" stroke-width="2.5" class="opacity-0 transition-opacity pointer-events-none"></circle>
+                            <circle id="chartHoverGlow" cx="-20" cy="-20" r="8" fill="#7974FF" opacity="0.25" class="opacity-0 transition-opacity pointer-events-none"></circle>
+                            <circle id="chartHoverDot" cx="-20" cy="-20" r="4.5" fill="#ffffff" stroke="#7974FF" stroke-width="2.5" class="opacity-0 transition-opacity pointer-events-none"></circle>
                           </svg>
 
                           <!-- Floating Tooltip Box -->
