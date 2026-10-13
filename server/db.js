@@ -1,8 +1,21 @@
 import fs from 'fs';
 import path from 'path';
 
-const DATA_DIR = path.resolve(process.cwd(), 'data');
+const IS_SERVERLESS = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const DATA_DIR = IS_SERVERLESS ? '/tmp' : path.resolve(process.cwd(), 'data');
 const DATA_FILE = path.join(DATA_DIR, 'users.json');
+
+// On serverless, initialize /tmp/users.json from project repo if missing
+if (IS_SERVERLESS && !fs.existsSync(DATA_FILE)) {
+  try {
+    const defaultDataPath = path.resolve(process.cwd(), 'data', 'users.json');
+    if (fs.existsSync(defaultDataPath)) {
+      fs.copyFileSync(defaultDataPath, DATA_FILE);
+    } else {
+      fs.writeFileSync(DATA_FILE, '{}', 'utf-8');
+    }
+  } catch (e) {}
+}
 
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
