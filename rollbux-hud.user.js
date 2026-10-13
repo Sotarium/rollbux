@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Rollbux Rain Tracker & Sync
 // @namespace    http://tampermonkey.net/
-// @version      4.0
+// @version      4.1
 // @description  Clean HUD: Auto-syncs live balance, rain pot, countdown, profile & transactions to your live Rollbux stats site on Vercel!
 // @author       Sotarium
 // @match        *://*.rollbux.com/*
@@ -423,63 +423,41 @@
         try {
             const myBalance = queryLiveBalance() || 0;
 
-            // Approach 1: Find the rain banner and pick number-flow-react inside it
-            // Rain banner identified by text "RAIN" or "rain" in its text content
-            const allDivs = Array.from(document.querySelectorAll('div, span, section, aside'));
-            for (const el of allDivs) {
-                if (el.closest('#rollbux-rain-hud')) continue;
+            // Approach 1: Directly look inside the RAIN header / widget container
+            // The rain widget has "RAIN" label and a token icon
+            const rainHeaders = Array.from(document.querySelectorAll('div, section, aside')).filter(el => {
+                if (el.closest('#rollbux-rain-hud')) return false;
+                // Exclude case battles, games, tables, chat messages
+                if (el.closest('.case-battle') || el.closest('[class*="battle"]') || el.closest('table') || el.closest('[role="row"]')) return false;
                 const txt = (el.textContent || '').trim();
-                // Rain banner tends to contain "RAIN" and a coin number
-                if (!txt.includes('RAIN') && !txt.includes('Rain')) continue;
-                // Only look at small containers
-                if (txt.length > 500) continue;
+                return (txt.includes('RAIN') || txt.includes('Rain')) && txt.length < 300;
+            });
 
-                const flows = el.querySelectorAll('number-flow-react');
+            for (const headerEl of rainHeaders) {
+                const flows = headerEl.querySelectorAll('number-flow-react');
                 for (const flow of flows) {
                     if (flow.closest('#rollbux-rain-hud')) continue;
                     const val = parseFlowNumber(flow);
-                    // Must be a non-trivial pot value (>= 10) and not timer (>= 3600 unreasonable)
-                    if (val !== null && val >= 10 && val <= 999999) {
-                        // Skip values that look like mm:ss pairs (< 60)
-                        if (val < 60) continue;
-                        // Skip if it's the user's own balance
+                    if (val !== null && val >= 5 && val <= 999999) {
                         if (Math.abs(val - myBalance) < 0.01) continue;
                         return val;
                     }
                 }
             }
 
-            // Approach 2: Scan every number-flow-react on page, collect all candidates
-            const allFlows = Array.from(document.querySelectorAll('number-flow-react'));
-            const candidates = [];
-            for (const flow of allFlows) {
-                if (flow.closest('#rollbux-rain-hud')) continue;
-                // Skip if inside balance container
-                if (flow.closest('div.bg-neutral-400') || flow.closest('[class*="bg-neutral-400"]')) continue;
-                const val = parseFlowNumber(flow);
-                if (val !== null && val >= 10 && val < 1000000) {
-                    // Skip timer-like values (small integers under 60)
-                    if (val < 60) continue;
-                    if (Math.abs(val - myBalance) < 0.01) continue;
-                    // Check proximity to a token image (within 3 ancestor levels)
-                    let el = flow;
-                    let hasCoin = false;
-                    for (let i = 0; i < 5; i++) {
-                        el = el.parentElement;
-                        if (!el) break;
-                        if (el.querySelector('img[src*="token.png"]')) { hasCoin = true; break; }
+            // Approach 2: Look for number-flow-react next to a token.png that is NOT in case battle lists
+            const tokenImages = Array.from(document.querySelectorAll('img[src*="token.png"]'));
+            for (const img of tokenImages) {
+                if (img.closest('#rollbux-rain-hud') || img.closest('[class*="battle"]') || img.closest('table')) continue;
+                const parent = img.parentElement;
+                if (!parent) continue;
+                const flow = parent.querySelector('number-flow-react') || parent.parentElement?.querySelector('number-flow-react');
+                if (flow && !flow.closest('div.bg-neutral-400')) {
+                    const val = parseFlowNumber(flow);
+                    if (val !== null && val >= 5 && Math.abs(val - myBalance) > 0.01) {
+                        return val;
                     }
-                    candidates.push({ val, hasCoin });
                 }
-            }
-
-            // Prefer candidates with a coin icon, then largest value
-            const withCoin = candidates.filter(c => c.hasCoin);
-            if (withCoin.length > 0) {
-                return Math.max(...withCoin.map(c => c.val));
-            }
-            if (candidates.length > 0) {
-                return Math.max(...candidates.map(c => c.val));
             }
         } catch (e) {}
         return 0;
@@ -851,19 +829,13 @@
                 joinedForCurrentRain = false;
             }
 
-            if (!timerInitialized || (targetEndTimestamp > 0 && Date.now() > targetEndTimestamp + 18000)) {
-                if (siteSeconds > 0) {
-                    currentRemainingSeconds = Math.max(0, siteSeconds - 60);
-                    targetEndTimestamp = Date.now() + (currentRemainingSeconds * 1000);
-                    timerInitialized = true;
-                }
-            }
-
-            if (timerInitialized && targetEndTimestamp > 0) {
+            // Directly use siteSeconds if available and valid
+            if (siteSeconds >= 0) {
+                currentRemainingSeconds = siteSeconds;
+                targetEndTimestamp = Date.now() + (siteSeconds * 1000);
+            } else if (targetEndTimestamp > 0) {
                 const msLeft = targetEndTimestamp - Date.now();
                 currentRemainingSeconds = Math.max(0, Math.ceil(msLeft / 1000));
-            } else if (siteSeconds >= 0) {
-                currentRemainingSeconds = siteSeconds;
             }
 
             // Sync all three live values to the website
