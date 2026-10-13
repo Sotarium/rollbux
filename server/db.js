@@ -214,6 +214,28 @@ export function handleAction(payload) {
     return { ok: true, user };
   }
 
+  if (action === 'delete_transaction') {
+    const { timestamp, index } = payload;
+    if (Array.isArray(user.transactions)) {
+      if (typeof timestamp === 'number') {
+        user.transactions = user.transactions.filter(t => t.timestamp !== timestamp);
+      } else if (typeof index === 'number' && index >= 0 && index < user.transactions.length) {
+        user.transactions.splice(index, 1);
+      }
+      let total = 0;
+      for (const t of user.transactions) {
+        total += (t.amount_bux || 0);
+      }
+      user.total_earnings_bux = total;
+      user.rains_joined = user.transactions.length;
+      if (user.transactions.length === 0) {
+        user.first_tx_time = null;
+      }
+      saveUsers(users);
+    }
+    return { ok: true, user };
+  }
+
   if (action === 'rain_tick') {
     if (!user.active_rain) user.active_rain = {};
     if (typeof pot_amount === 'number' && pot_amount > 0) {

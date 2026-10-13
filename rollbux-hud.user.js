@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Rollbux Rain Tracker & Sync
 // @namespace    http://tampermonkey.net/
-// @version      4.8
+// @version      4.9
 // @description  Clean HUD: Auto-syncs live balance, rain pot, countdown, profile & transactions to your live Rollbux stats site on Vercel!
 // @author       Sotarium
 // @match        *://*.rollbux.com/*
@@ -911,17 +911,18 @@
 
             const siteSeconds = querySiteTimer();
 
-            // Detect timer restart to fresh cycle (~55-60 minutes)
-            if (siteSeconds > 600) {
-                const pendingCheck = sessionStorage.getItem('rollbux_pending_payout_check');
+            // 1. Detect timer restart to fresh cycle (~50-60 minutes) or pending sync
+            const pendingCheck = localStorage.getItem('rollbux_pending_payout_check');
+            if (siteSeconds > 600 || pendingCheck === 'true') {
                 if (pendingCheck === 'true' || joinedForCurrentRain) {
+                    localStorage.removeItem('rollbux_pending_payout_check');
                     sessionStorage.removeItem('rollbux_pending_payout_check');
                     joinedForCurrentRain = false;
                     sentDotsForCurrentRain = false;
                     cycleCompleted = false;
                     sessionStorage.setItem('rollbux_return_to_main', 'true');
                     updateHUDTimer('SYNCING');
-                    setTimeout(() => { window.location.href = 'https://rollbux.com/profile/transactions'; }, 1200);
+                    setTimeout(() => { window.location.href = 'https://rollbux.com/profile/transactions'; }, 1000);
                     return;
                 }
                 cycleCompleted = false;
@@ -979,6 +980,17 @@
                     joinedForCurrentRain = true;
                 }
 
+                // Schedule automated check to navigate to transactions in 12s even if tab stays in background
+                if (!sessionStorage.getItem('rollbux_sync_timeout_set')) {
+                    sessionStorage.setItem('rollbux_sync_timeout_set', 'true');
+                    localStorage.setItem('rollbux_pending_payout_check', 'true');
+                    setTimeout(() => {
+                        sessionStorage.removeItem('rollbux_sync_timeout_set');
+                        sessionStorage.setItem('rollbux_return_to_main', 'true');
+                        window.location.href = 'https://rollbux.com/profile/transactions';
+                    }, 12000);
+                }
+
                 // Fallback: If 1 minute trigger was missed (e.g. tab was asleep), send dots now
                 if (!sentDotsForCurrentRain && !isSendingDots) {
                     sentDotsForCurrentRain = true;
@@ -1006,6 +1018,6 @@
     setInterval(tickCountdown, 1000);
     window.addEventListener('focus', tickCountdown);
     document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') tickCountdown();
+        tickCountdown();
     });
 })();
