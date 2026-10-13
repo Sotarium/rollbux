@@ -24,13 +24,46 @@ if (!fs.existsSync(DATA_DIR)) {
 let SOL_PRICE_USD = 150.00;
 
 async function updateSolPrice() {
+  // 1. Try CoinGecko API
   try {
-    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
+    const headers = { 'Accept': 'application/json' };
+    if (process.env.COINGECKO_API_KEY) {
+      headers['x-cg-demo-api-key'] = process.env.COINGECKO_API_KEY;
+    }
+    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd', {
+      headers
+    });
     if (res.ok) {
       const json = await res.json();
-      if (json.solana && json.solana.usd) {
-        SOL_PRICE_USD = json.solana.usd;
-        console.log(`[Price] Live SOL price updated: $${SOL_PRICE_USD}`);
+      if (json && json.solana && json.solana.usd) {
+        SOL_PRICE_USD = parseFloat(json.solana.usd);
+        console.log(`[CoinGecko API] Live SOL price updated: $${SOL_PRICE_USD}`);
+        return;
+      }
+    }
+  } catch (err) {}
+
+  // 2. Fallback to Coinbase if CoinGecko is rate-limited (HTTP 429)
+  try {
+    const res = await fetch('https://api.coinbase.com/v2/prices/SOL-USD/spot');
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.data && json.data.amount) {
+        SOL_PRICE_USD = parseFloat(json.data.amount);
+        console.log(`[Coinbase Fallback] Live SOL price updated: $${SOL_PRICE_USD}`);
+        return;
+      }
+    }
+  } catch (err) {}
+
+  // 3. Fallback to Binance
+  try {
+    const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT');
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.price) {
+        SOL_PRICE_USD = parseFloat(json.price);
+        console.log(`[Binance Fallback] Live SOL price updated: $${SOL_PRICE_USD}`);
       }
     }
   } catch (err) {}
