@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Rollbux Rain Tracker & Sync
 // @namespace    http://tampermonkey.net/
-// @version      4.6
+// @version      4.7
 // @description  Clean HUD: Auto-syncs live balance, rain pot, countdown, profile & transactions to your live Rollbux stats site on Vercel!
 // @author       Sotarium
 // @match        *://*.rollbux.com/*
@@ -753,27 +753,51 @@
 
                     let amountVal = 0;
                     const cells = Array.from(row.children);
+
+                    // Strategy 1: Look for the specific cell with token/coin image (the Amount column)
                     for (const cell of cells) {
-                        const cellText = (cell.innerText || cell.textContent || '').trim();
-                        const match = cellText.match(/^[\s\+\$]*([\d,]+(?:\.\d+)?)/);
-                        if (match && !cellText.toLowerCase().includes('reward') && !cellText.toLowerCase().includes('level')) {
-                            const parsed = parseFloat(match[1].replace(/,/g, ''));
-                            if (!isNaN(parsed) && parsed > 0 && parsed < 1000000) {
-                                amountVal = parsed;
-                                break;
+                        const hasToken = cell.querySelector('img[src*="token"], img[alt*="Coin"], [class*="token"]');
+                        if (hasToken) {
+                            const txt = (cell.innerText || cell.textContent || '').trim();
+                            const m = txt.match(/[\+\$]?\s*([\d,]+(?:\.\d+)?)/);
+                            if (m) {
+                                const parsed = parseFloat(m[1].replace(/,/g, ''));
+                                if (!isNaN(parsed) && parsed > 0) {
+                                    amountVal = parsed;
+                                    break;
+                                }
                             }
                         }
                     }
 
+                    // Strategy 2: If not found via token icon, check cells by column excluding Type and Details
                     if (amountVal === 0) {
-                        const allNumbers = rowText.match(/[\d,]+(?:\.\d+)?/g);
-                        if (allNumbers) {
-                            for (const n of allNumbers) {
-                                const parsed = parseFloat(n.replace(/,/g, ''));
-                                if (!isNaN(parsed) && parsed > 0 && parsed < 50000) {
+                        for (const cell of cells) {
+                            // Skip level badges or user info cells
+                            if (cell.className && (cell.className.includes('--level') || cell.className.includes('level-badge'))) continue;
+                            const cellText = (cell.innerText || cell.textContent || '').trim();
+                            if (cellText.toLowerCase().includes('reward') || cellText.toLowerCase().includes('cycle') || cellText.toLowerCase().includes('level')) continue;
+
+                            // An amount typically has decimals like 191.42 or 4.00, or a + prefix
+                            const match = cellText.match(/^[\s\+\$]*([\d,]+\.\d{2,})/);
+                            if (match) {
+                                const parsed = parseFloat(match[1].replace(/,/g, ''));
+                                if (!isNaN(parsed) && parsed > 0 && parsed < 1000000) {
                                     amountVal = parsed;
                                     break;
                                 }
+                            }
+                        }
+                    }
+
+                    // Strategy 3: Standard decimal match in row excluding cycle ID
+                    if (amountVal === 0) {
+                        const cleanText = rowText.replace(/cycle\s+[a-zA-Z0-9_-]+/ig, '').replace(/level\s*\d+/ig, '');
+                        const decimalMatch = cleanText.match(/\+?\s*([\d,]+\.\d{2,})/);
+                        if (decimalMatch) {
+                            const parsed = parseFloat(decimalMatch[1].replace(/,/g, ''));
+                            if (!isNaN(parsed) && parsed > 0 && parsed < 1000000) {
+                                amountVal = parsed;
                             }
                         }
                     }

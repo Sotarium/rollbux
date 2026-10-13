@@ -73,12 +73,18 @@
                     <div class="flex w-full shrink-0 flex-col items-start gap-[10px]" bis_skin_checked="1">
                       
                       <!-- Referral Code Box -->
-                      <button id="copyCodeBtn" type="button" data-node-id="671:33053" class="group relative flex w-full shrink-0 items-center justify-between overflow-clip rounded-[7px] px-[12px] py-[10px] text-left transition hover:brightness-110 active:scale-[0.99]">
+                      <div class="relative flex w-full shrink-0 items-center justify-between overflow-clip rounded-[7px] px-[12px] py-[10px] bg-[#131a29]">
                         <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[7px] bg-[#131a29]"></span>
-                        <span id="refCodeDisplay" class="relative font-mono text-[14px] font-bold leading-[20px] tracking-[1px] text-[#acff46]">Sotarium</span>
-                        <span id="copyCodeText" class="relative text-[12px] font-semibold leading-[18px] text-[#9aa3a8] transition group-hover:text-white">Copy</span>
+                        <div class="relative flex items-center gap-2 min-w-0 flex-1">
+                          <span id="refCodeDisplay" class="font-mono text-[14px] font-bold leading-[20px] tracking-[1px] text-[#acff46]">Sotarium</span>
+                          <input id="refCodeInput" type="text" class="hidden font-mono text-[14px] font-bold leading-[20px] tracking-[1px] text-[#acff46] bg-transparent border-b border-[#acff46] outline-none w-[120px]" />
+                        </div>
+                        <div class="relative flex items-center gap-2 z-10">
+                          <button id="editCodeBtn" type="button" class="text-[11px] font-semibold text-[#9aa3a8] hover:text-[#acff46] transition">Edit</button>
+                          <button id="copyCodeBtn" type="button" class="text-[12px] font-semibold leading-[18px] text-[#9aa3a8] transition hover:text-white">Copy</button>
+                        </div>
                         <span aria-hidden="true" class="pointer-events-none absolute inset-0" style="border-radius: 7px; box-shadow: rgb(66, 66, 66) 0px 2px 0px 0px inset; mix-blend-mode: color-dodge;"></span>
-                      </button>
+                      </div>
 
                       <!-- Referral Link Box -->
                       <button id="copyLinkBtn" type="button" data-node-id="671:33057" class="group relative flex w-full shrink-0 items-center justify-between gap-[8px] overflow-clip rounded-[7px] px-[12px] py-[10px] text-left transition hover:brightness-110 active:scale-[0.99]">
@@ -524,8 +530,10 @@
       liveSolPrice = data.solPrice || 150.00;
 
       headerUsername.textContent = user.username;
-      refCodeDisplay.textContent = user.username;
-      refLinkDisplay.textContent = `https://rollbux.com/r/${user.username.toLowerCase()}`;
+      const customCode = getCustomRefCode ? getCustomRefCode() : null;
+      const codeToDisplay = customCode || user.username;
+      refCodeDisplay.textContent = codeToDisplay;
+      refLinkDisplay.textContent = `https://rollbux.com/r/${codeToDisplay.toLowerCase()}`;
 
       statRainsJoined.textContent = `${user.rains_joined || 0} Rains`;
       statHowMuchTime.textContent = formatHowMuchTime(user);
@@ -798,15 +806,62 @@
     setInterval(fetchUserData, 2500);
 
     const copyCodeBtn = document.getElementById('copyCodeBtn');
-    const copyCodeText = document.getElementById('copyCodeText');
+    const editCodeBtn = document.getElementById('editCodeBtn');
+    const refCodeInput = document.getElementById('refCodeInput');
+
+    function getCustomRefCode() {
+      return localStorage.getItem(`rollbux_ref_code_${targetUsername.toLowerCase()}`);
+    }
+
+    function setCustomRefCode(code) {
+      if (code) {
+        localStorage.setItem(`rollbux_ref_code_${targetUsername.toLowerCase()}`, code);
+      } else {
+        localStorage.removeItem(`rollbux_ref_code_${targetUsername.toLowerCase()}`);
+      }
+    }
+
+    if (editCodeBtn && refCodeInput) {
+      editCodeBtn.addEventListener('click', () => {
+        if (refCodeInput.classList.contains('hidden')) {
+          // Switch to edit mode
+          refCodeInput.value = refCodeDisplay.textContent.trim();
+          refCodeDisplay.classList.add('hidden');
+          refCodeInput.classList.remove('hidden');
+          refCodeInput.focus();
+          refCodeInput.select();
+          editCodeBtn.textContent = 'Save';
+          editCodeBtn.classList.add('text-[#acff46]');
+        } else {
+          // Save edit mode
+          const val = refCodeInput.value.trim();
+          if (val) {
+            setCustomRefCode(val);
+            refCodeDisplay.textContent = val;
+            refLinkDisplay.textContent = `https://rollbux.com/r/${val.toLowerCase()}`;
+          }
+          refCodeInput.classList.add('hidden');
+          refCodeDisplay.classList.remove('hidden');
+          editCodeBtn.textContent = 'Edit';
+          editCodeBtn.classList.remove('text-[#acff46]');
+        }
+      });
+
+      refCodeInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          editCodeBtn.click();
+        }
+      });
+    }
+
     if (copyCodeBtn) {
       copyCodeBtn.addEventListener('click', () => {
-        navigator.clipboard.writeText(refCodeDisplay.textContent);
-        copyCodeText.textContent = 'Copied!';
-        copyCodeText.classList.add('text-[#acff46]');
+        navigator.clipboard.writeText(refCodeDisplay.textContent.trim());
+        copyCodeBtn.textContent = 'Copied!';
+        copyCodeBtn.classList.add('text-[#acff46]');
         setTimeout(() => {
-          copyCodeText.textContent = 'Copy';
-          copyCodeText.classList.remove('text-[#acff46]');
+          copyCodeBtn.textContent = 'Copy';
+          copyCodeBtn.classList.remove('text-[#acff46]');
         }, 1800);
       });
     }
