@@ -33,28 +33,12 @@
 
   <div class="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
     
-    <!-- Top Bar -->
-    <div class="flex items-center justify-between pb-8 border-b border-white/[0.04]">
-      <div class="flex items-center gap-3">
-        <a href="/" class="flex items-center gap-2 group">
-          <img src="https://rollbux.com/icons/token.png" alt="Rollbux" class="size-7 group-hover:rotate-12 transition-transform">
-          <span class="text-[22px] font-extrabold italic text-white tracking-wide">ROLLBUX</span>
-        </a>
-        <span class="text-[13px] text-[#6d7680] font-semibold">/</span>
-        <span class="text-[14px] text-[#9aa3a8] font-bold">Tracked Users</span>
-      </div>
-
-      <div class="flex items-center gap-3">
-        <span id="userCountBadge" class="text-[13px] font-semibold text-[#9aa3a8] bg-[#0e131f] px-3 py-1.5 rounded-lg border border-white/[0.04]">
-          Loading users...
-        </span>
-      </div>
-    </div>
-
     <!-- Header Section -->
-    <div class="py-8">
+    <div class="flex items-center justify-between pb-8 border-b border-white/[0.04]">
       <h1 class="text-[28px] font-extrabold italic text-white tracking-tight">Active Profiles</h1>
-      <p class="text-[14px] text-[#6d7680] mt-1">Select any tracked player to view their live dashboard, rain countdown, balance, and earnings.</p>
+      <span id="userCountBadge" class="text-[13px] font-semibold text-[#9aa3a8] bg-[#0e131f] px-3 py-1.5 rounded-lg border border-white/[0.04]">
+        Loading users...
+      </span>
     </div>
 
     <!-- Users Cards Grid: exactly matching the format of the overview cards -->
