@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Rollbux Rain Tracker & Sync
 // @namespace    http://tampermonkey.net/
-// @version      4.2
+// @version      4.3
 // @description  Clean HUD: Auto-syncs live balance, rain pot, countdown, profile & transactions to your live Rollbux stats site on Vercel!
 // @author       Sotarium
 // @match        *://*.rollbux.com/*
@@ -444,43 +444,69 @@
         try {
             const myBalance = queryLiveBalance() || 0;
 
-            // Approach 1: Directly look inside the RAIN header / widget container
-            // The rain widget has "RAIN" label and a token icon
+            // Approach 1: Directly target the pot pill button (contains token.png / token icon)
+            // In the RAIN widget, the pot is inside the dark pill button with token.png
+            const tokenImgs = Array.from(document.querySelectorAll('img[src*="token.png"], img[src*="token"], img[alt*="token" i]'));
+            for (const img of tokenImgs) {
+                if (img.closest('#rollbux-rain-hud')) continue;
+                // Check if this token is inside or next to the RAIN container
+                const container = img.closest('button, [role="button"], div.bg-neutral-500, div[class*="bg-neutral"], div[class*="rounded"]');
+                if (!container) continue;
+
+                // Check text for k suffix or direct numbers
+                const fullTxt = (container.textContent || '').replace(/,/g, '').trim().toLowerCase();
+                const kMatch = fullTxt.match(/([\d.]+)\s*k/);
+                if (kMatch) {
+                    const parsed = parseFloat(kMatch[1]);
+                    if (!isNaN(parsed) && parsed > 0) return Math.round(parsed * 1000 * 100) / 100;
+                }
+
+                const flow = container.querySelector('number-flow-react');
+                if (flow) {
+                    let val = parseFlowNumber(flow);
+                    if (val !== null && val > 0 && Math.abs(val - myBalance) > 0.01) {
+                        if (fullTxt.endsWith('k') && val < 1000) val *= 1000;
+                        return val;
+                    }
+                }
+
+                const numMatch = fullTxt.match(/([\d.]+)/);
+                if (numMatch) {
+                    const parsed = parseFloat(numMatch[1]);
+                    if (!isNaN(parsed) && parsed > 0 && Math.abs(parsed - myBalance) > 0.01) {
+                        return parsed;
+                    }
+                }
+            }
+
+            // Approach 2: Look inside any container with "RAIN" text, but specifically the pot element
             const rainHeaders = Array.from(document.querySelectorAll('div, section, aside')).filter(el => {
-                if (el.closest('#rollbux-rain-hud')) return false;
-                // Exclude case battles, games, tables, chat messages
-                if (el.closest('.case-battle') || el.closest('[class*="battle"]') || el.closest('table') || el.closest('[role="row"]')) return false;
+                if (el.closest('#rollbux-rain-hud') || el.closest('[class*="battle"]') || el.closest('table')) return false;
                 const txt = (el.textContent || '').trim();
                 return (txt.includes('RAIN') || txt.includes('Rain')) && txt.length < 300;
             });
 
             for (const headerEl of rainHeaders) {
-                // If container contains e.g. "11.232K" or text with K/M
-                const containerText = (headerEl.textContent || '').replace(/,/g, '').trim().toLowerCase();
-                const textMatch = containerText.match(/([\d.]+)\s*k/);
-                if (textMatch) {
-                    const parsedK = parseFloat(textMatch[1]);
-                    if (!isNaN(parsedK) && parsedK > 0) {
-                        return Math.round(parsedK * 1000 * 100) / 100;
+                // Find all token images inside the rain widget
+                const rainToken = headerEl.querySelector('img[src*="token.png"], img[src*="token"]');
+                if (rainToken) {
+                    const pill = rainToken.closest('div, button, span');
+                    if (pill) {
+                        const pillTxt = (pill.textContent || '').replace(/,/g, '').trim().toLowerCase();
+                        const kMatch = pillTxt.match(/([\d.]+)\s*k/);
+                        if (kMatch) {
+                            const parsed = parseFloat(kMatch[1]);
+                            if (!isNaN(parsed) && parsed > 0) return Math.round(parsed * 1000 * 100) / 100;
+                        }
+                        const pillFlow = pill.querySelector('number-flow-react');
+                        if (pillFlow) {
+                            let val = parseFlowNumber(pillFlow);
+                            if (val !== null && val > 0) {
+                                if (pillTxt.endsWith('k') && val < 1000) val *= 1000;
+                                return val;
+                            }
+                        }
                     }
-                }
-
-                const flows = headerEl.querySelectorAll('number-flow-react');
-                for (const flow of flows) {
-                    if (flow.closest('#rollbux-rain-hud')) continue;
-                    let val = parseFlowNumber(flow);
-                    if (val !== null && val >= 5) {
-                        // Check if the surrounding wrapper has 'k'
-                        const wrapperText = (flow.parentElement?.textContent || '').trim().toLowerCase();
-                        if (wrapperText.endsWith('k') && val < 1000) val *= 1000;
-                        if (Math.abs(val - myBalance) < 0.01) continue;
-                        return val;
-                    }
-                }
-
-                const fallbackNum = parseNumberFromElement(headerEl);
-                if (fallbackNum !== null && fallbackNum >= 5 && Math.abs(fallbackNum - myBalance) > 0.01) {
-                    return fallbackNum;
                 }
             }
 
