@@ -327,11 +327,10 @@ export function handleAction(payload) {
           continue;
         }
 
-        // Deduplicate: check cycle_id or recent transaction with exact amount
+        // Deduplicate: check cycle_id or same exact time and amount
         const alreadyExists = user.transactions.some(t => {
           if (tx.cycle_id && t.cycle_id && tx.cycle_id === t.cycle_id) return true;
-          return Math.abs(parseFloat(t.amount_bux) - amt) < 0.001 &&
-            (Math.abs((t.timestamp || 0) - txTimestamp) < 3 * 3600 * 1000);
+          return t.time === displayTime && Math.abs(parseFloat(t.amount_bux) - amt) < 0.001;
         });
 
         if (!alreadyExists) {

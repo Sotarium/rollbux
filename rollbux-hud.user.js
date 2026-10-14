@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Rollbux Rain Tracker & Sync
 // @namespace    http://tampermonkey.net/
-// @version      5.4
+// @version      5.5
 // @description  Clean HUD: Auto-syncs live balance, rain pot, countdown, profile & transactions to your live Rollbux stats site on Vercel!
 // @author       Sotarium
 // @match        *://*.rollbux.com/*
@@ -758,7 +758,7 @@
         updateHUDTimer('SYNCING');
 
         async function extractTransactions() {
-            let latestReward = null;
+            const extractedRewards = [];
 
             for (let attempt = 0; attempt < 15; attempt++) {
                 await new Promise(r => setTimeout(r, 600));
@@ -838,49 +838,43 @@
                     }
 
                     if (amountVal > 0) {
-                        // The top-most rain reward in the table is the latest completed rain payout
-                        latestReward = {
+                        const txItem = {
                             type: 'Rain Reward',
                             amount_bux: amountVal,
                             time: timeFormatted,
                             status: 'Completed',
                             cycle_id: cycleId
                         };
-                        console.log('[Rain HUD] Extracted rain transaction:', latestReward);
-                        break;
+                        const alreadyInList = extractedRewards.some(r => 
+                            (cycleId && r.cycle_id === cycleId) || 
+                            (r.amount_bux === amountVal && r.time === timeFormatted)
+                        );
+                        if (!alreadyInList) {
+                            extractedRewards.push(txItem);
+                        }
                     }
                 }
 
-                if (latestReward) break;
+                if (extractedRewards.length > 0) break;
             }
 
-            if (latestReward) {
-                // Deduplicate locally so we never sync the exact same rain cycle twice
-                const lastSyncedCycle = localStorage.getItem('rollbux_last_synced_cycle');
-                const lastSyncedSignature = localStorage.getItem('rollbux_last_synced_sig');
-                const currentSignature = `${latestReward.cycle_id || ''}_${latestReward.amount_bux}_${latestReward.time}`;
+            if (extractedRewards.length > 0) {
+                console.log(`[Rain HUD] Found ${extractedRewards.length} rain reward(s):`, extractedRewards);
+                try {
+                    await requestLocal(BACKEND_URL, 'POST', {
+                        username: currentUsername || 'Sotarium',
+                        avatar: currentAvatarUrl,
+                        action: 'sync_transactions',
+                        transactions: extractedRewards
+                    });
 
-                if ((latestReward.cycle_id && latestReward.cycle_id === lastSyncedCycle) || (currentSignature === lastSyncedSignature)) {
-                    updateHUDTimer('UP TO DATE');
-                } else {
-                    try {
-                        const lastPot = parseFloat(sessionStorage.getItem('rollbux_last_pot') || localStorage.getItem('rollbux_last_pot') || '0') || null;
-                        await requestLocal(BACKEND_URL, 'POST', {
-                            username: currentUsername || 'Sotarium',
-                            avatar: currentAvatarUrl,
-                            action: 'sync_transactions',
-                            completed_pot_amount: lastPot,
-                            transactions: [latestReward]
-                        });
-
-                        if (latestReward.cycle_id) {
-                            localStorage.setItem('rollbux_last_synced_cycle', latestReward.cycle_id);
-                        }
-                        localStorage.setItem('rollbux_last_synced_sig', currentSignature);
-                        updateHUDTimer('SYNCED!');
-                    } catch (e) {
-                        updateHUDTimer('ERROR');
+                    if (extractedRewards[0].cycle_id) {
+                        localStorage.setItem('rollbux_last_synced_cycle', extractedRewards[0].cycle_id);
                     }
+                    localStorage.setItem('rollbux_last_synced_sig', `${extractedRewards[0].cycle_id || ''}_${extractedRewards[0].amount_bux}_${extractedRewards[0].time}`);
+                    updateHUDTimer('SYNCED!');
+                } catch (e) {
+                    updateHUDTimer('ERROR');
                 }
             } else {
                 updateHUDTimer('NO DATA');
