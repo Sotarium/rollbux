@@ -226,6 +226,33 @@ export function handleAction(payload) {
     return { ok: true, user };
   }
 
+  if (action === 'delete_active_rain') {
+    if (!user.deleted_signatures) user.deleted_signatures = [];
+    const { cycle_id, signature } = payload;
+    if (cycle_id) user.deleted_signatures.push(String(cycle_id));
+    if (signature) user.deleted_signatures.push(String(signature));
+    // Also add any signatures stored on the active_rain itself
+    if (user.active_rain) {
+      if (user.active_rain.cycle_id) user.deleted_signatures.push(String(user.active_rain.cycle_id));
+      if (user.active_rain.amount_bux && user.active_rain.time) {
+        user.deleted_signatures.push(`${user.active_rain.amount_bux}_${user.active_rain.time}`);
+      }
+      if (user.active_rain.timestamp) user.deleted_signatures.push(String(user.active_rain.timestamp));
+      // Reset active_rain: keep pot/time_left for the current live rain but clear completed state
+      user.active_rain = {
+        pot_amount: user.active_rain.pot_amount || 0,
+        time_left: user.active_rain.time_left || 0,
+        updated_at: Date.now()
+      };
+      // Recalculate total without the deleted active rain
+      let total = 0;
+      for (const t of user.transactions) total += (t.amount_bux || 0);
+      user.total_earnings_bux = total;
+    }
+    saveUsers(users);
+    return { ok: true, user };
+  }
+
   if (action === 'delete_transaction') {
     const { timestamp, index, cycle_id, signature } = payload;
     if (!user.deleted_signatures) user.deleted_signatures = [];
