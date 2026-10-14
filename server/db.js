@@ -365,13 +365,8 @@ export function handleAction(payload) {
           if (tx.cycle_id && t.cycle_id && tx.cycle_id === t.cycle_id) return true;
           return t.time === displayTime && Math.abs(parseFloat(t.amount_bux) - amt) < 0.001;
         });
-        // Also deduplicate against an already-promoted active_rain row
-        const alreadyPromoted = user.active_rain &&
-          user.active_rain.status === 'completed' &&
-          Math.abs((user.active_rain.amount_bux || 0) - amt) < 0.001 &&
-          user.active_rain.time === displayTime;
 
-        if (!alreadyInTxs && !alreadyPromoted) {
+        if (!alreadyInTxs) {
           if (!user.first_tx_time) {
             user.first_tx_time = txTimestamp;
           }
@@ -382,43 +377,28 @@ export function handleAction(payload) {
                 : knownPot.toFixed(2))
             : 'X';
 
-          // If there is an "in_progress" active_rain, PROMOTE it in-place instead of a new row
-          const hasInProgress = user.active_rain && user.active_rain.status === 'in_progress';
-          if (hasInProgress) {
-            user.active_rain.amount_bux = amt;
-            user.active_rain.time = displayTime;
-            user.active_rain.rain_total = rainTotalDisplay;
-            user.active_rain.status = 'completed';
-            user.active_rain.timestamp = txTimestamp;
-            if (tx.cycle_id) user.active_rain.cycle_id = tx.cycle_id;
-          } else {
-            // No in_progress row — insert new completed transaction
-            user.transactions.unshift({
-              amount_bux: amt,
-              rain_total: rainTotalDisplay,
-              status: 'Completed',
-              time: displayTime,
-              timestamp: txTimestamp,
-              cycle_id: tx.cycle_id || undefined
-            });
-          }
+          user.transactions.unshift({
+            amount_bux: amt,
+            rain_total: rainTotalDisplay,
+            status: 'Completed',
+            time: displayTime,
+            timestamp: txTimestamp,
+            cycle_id: tx.cycle_id || undefined
+          });
         }
+      }
+
+      // Ensure active_rain stays in progress for the new upcoming rain
+      if (user.active_rain) {
+        user.active_rain.status = 'in_progress';
       }
 
       let total = 0;
       for (const t of user.transactions) {
         total += (t.amount_bux || 0);
       }
-      // Also count a promoted active_rain row in totals
-      if (user.active_rain && user.active_rain.status === 'completed' && user.active_rain.amount_bux) {
-        total += user.active_rain.amount_bux;
-      }
       user.total_earnings_bux = total;
-      // Keep rains_joined in sync with actual completed transactions
-      user.rains_joined = Math.max(
-        user.rains_joined || 0,
-        user.transactions.length + (user.active_rain && user.active_rain.status === 'completed' ? 1 : 0)
-      );
+      user.rains_joined = user.transactions.length;
     }
   }
 
