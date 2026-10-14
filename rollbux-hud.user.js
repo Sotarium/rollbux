@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Rollbux Rain Tracker & Sync
 // @namespace    http://tampermonkey.net/
-// @version      5.0
+// @version      5.1
 // @description  Clean HUD: Auto-syncs live balance, rain pot, countdown, profile & transactions to your live Rollbux stats site on Vercel!
 // @author       Sotarium
 // @match        *://*.rollbux.com/*
@@ -602,8 +602,8 @@
             input.dispatchEvent(new Event('input', { bubbles: true }));
             await new Promise(r => setTimeout(r, 80));
 
-            const dotPatterns = ['.', '..', '...'];
-            const messageText = dotPatterns[(dotIndex - 1) % dotPatterns.length] || '.';
+            // User specifically wants single dot '.' 3 times, not '.' '..' '...'
+            const messageText = '.';
 
             setNativeValue(input, messageText);
             input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -952,38 +952,39 @@
                 const secs = currentRemainingSeconds % 60;
                 updateHUDTimer(`${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
 
-                // SEND 3 CHAT MESSAGES AT 1 MINUTE REMAINING (<= 60s)
+                // WHEN SITE TIMER HITS 1 MINUTE (<= 60s):
+                // Send 3 times '.' (1 dot 3 times), and click Join Rain immediately when done!
                 if (currentRemainingSeconds <= 60 && !sentDotsForCurrentRain && !isSendingDots) {
                     sentDotsForCurrentRain = true;
                     isSendingDots = true;
 
                     (async () => {
                         try {
+                            console.log('[Rain HUD] 1 minute reached! Sending 3 dots (".") and joining rain...');
                             for (let i = 1; i <= 3; i++) {
                                 await sendChatDot(i);
+                                console.log(`[Rain HUD] Sent dot #${i}`);
                                 if (i < 3) await new Promise(r => setTimeout(r, 3800));
                             }
+                            // Right after sending 3 dots, click Join Rain immediately!
+                            await new Promise(r => setTimeout(r, 600));
+                            for (let j = 0; j < 5; j++) {
+                                if (clickJoinRain()) {
+                                    joinedForCurrentRain = true;
+                                    console.log('[Rain HUD] Successfully clicked Join Rain after 3 dots!');
+                                    break;
+                                }
+                                await new Promise(r => setTimeout(r, 800));
+                            }
                         } catch (err) {
+                            console.error('[Rain HUD] Error during chat/join sequence:', err);
                         } finally {
                             isSendingDots = false;
                         }
                     })();
                 }
-
-                // If Join button appears early, click it
-                if (currentRemainingSeconds <= 15 && !joinedForCurrentRain) {
-                    if (clickJoinRain()) {
-                        joinedForCurrentRain = true;
-                    }
-                }
             } else if (currentRemainingSeconds === 0) {
                 updateHUDTimer('00:00');
-
-                // Rain finished: click join rain button if not already joined
-                if (!joinedForCurrentRain) {
-                    clickJoinRain();
-                    joinedForCurrentRain = true;
-                }
 
                 // Schedule automated check to navigate to transactions in 12s even if tab stays in background
                 if (!sessionStorage.getItem('rollbux_sync_timeout_set')) {
@@ -994,27 +995,6 @@
                         sessionStorage.setItem('rollbux_return_to_main', 'true');
                         window.location.href = 'https://rollbux.com/profile/transactions';
                     }, 12000);
-                }
-
-                // Fallback: If 1 minute trigger was missed (e.g. tab was asleep), send dots now
-                if (!sentDotsForCurrentRain && !isSendingDots) {
-                    sentDotsForCurrentRain = true;
-                    isSendingDots = true;
-
-                    (async () => {
-                        try {
-                            for (let i = 1; i <= 3; i++) {
-                                await sendChatDot(i);
-                                if (i < 3) await new Promise(r => setTimeout(r, 3800));
-                            }
-                            await new Promise(r => setTimeout(r, 1200));
-                            clickJoinRain();
-                            joinedForCurrentRain = true;
-                        } catch (err) {
-                        } finally {
-                            isSendingDots = false;
-                        }
-                    })();
                 }
             }
         } catch (e) {}
