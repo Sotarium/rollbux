@@ -48,6 +48,20 @@ export default async function handler(req, res) {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = url.pathname;
 
+  if (pathname === '/api/check-ip') {
+    res.setHeader('Content-Type', 'application/json');
+    res.statusCode = 200;
+    res.end(JSON.stringify({
+      detectedIp: getClientIp(req),
+      allowedIp: ALLOWED_IP,
+      isAllowed: isAllowedIp(req),
+      xVercelForwardedFor: req.headers['x-vercel-forwarded-for'],
+      xRealIp: req.headers['x-real-ip'],
+      xForwardedFor: req.headers['x-forwarded-for']
+    }));
+    return;
+  }
+
   if (pathname === '/api/status' && req.method === 'POST') {
     const payload = req.body || await parseBody(req);
     const result = handleAction(payload);
