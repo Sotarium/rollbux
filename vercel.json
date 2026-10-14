@@ -1,7 +1,8 @@
 {
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" },
-    { "source": "/users", "destination": "/api/users-page" },
+    { "source": "/users", "destination": "/api?view=users" },
+    { "source": "/users.html", "destination": "/api?view=users" },
     { "source": "/user/(.*)", "destination": "/index.html" }
   ]
 }

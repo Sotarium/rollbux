@@ -81,15 +81,18 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (pathname === '/api/users-page') {
+  const isUsersPage = pathname === '/users' || pathname === '/users.html' || pathname === '/api/users-page' || url.searchParams.get('view') === 'users';
+
+  if (isUsersPage) {
     if (!isAllowedIp(req)) {
-      res.status(403).end();
+      res.statusCode = 403;
+      res.end('Forbidden');
       return;
     }
     try {
       const candidates = [
-        path.resolve(process.cwd(), 'users.html'),
-        path.resolve(process.cwd(), 'dist', 'users.html')
+        path.resolve(process.cwd(), 'dist', 'users.html'),
+        path.resolve(process.cwd(), 'users.html')
       ];
       let html = null;
       for (const p of candidates) {
@@ -99,28 +102,35 @@ export default async function handler(req, res) {
         }
       }
       if (!html) {
-        res.status(404).send('Users page not found');
+        res.statusCode = 404;
+        res.end('Users page not found');
         return;
       }
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.status(200).send(html);
+      res.statusCode = 200;
+      res.end(html);
       return;
     } catch (err) {
-      res.status(500).send('Internal Server Error');
+      res.statusCode = 500;
+      res.end('Internal Server Error');
       return;
     }
   }
 
   if (pathname === '/api/users') {
     if (!isAllowedIp(req)) {
-      res.status(403).end();
+      res.statusCode = 403;
+      res.end('Forbidden');
       return;
     }
 
     const users = getAllUsers();
-    res.status(200).json({ users, solPrice: getSolPrice() });
+    res.setHeader('Content-Type', 'application/json');
+    res.statusCode = 200;
+    res.end(JSON.stringify({ users, solPrice: getSolPrice() }));
     return;
   }
 
-  res.status(404).json({ error: 'Not found' });
+  res.statusCode = 404;
+  res.end(JSON.stringify({ error: 'Not found' }));
 }
