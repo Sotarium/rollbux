@@ -275,6 +275,10 @@ export function handleAction(payload) {
       user.active_rain.time_left = time_left;
     }
     user.active_rain.updated_at = Date.now();
+    // Mark as in_progress so sync_transactions can promote it to completed in-place
+    if (user.active_rain.status !== 'completed') {
+      user.active_rain.status = 'in_progress';
+    }
     if (typeof balance === 'number' && balance >= 0) {
       user.balance_bux = balance;
     }
@@ -328,12 +332,17 @@ export function handleAction(payload) {
         }
 
         // Deduplicate: check cycle_id or same exact time and amount
-        const alreadyExists = user.transactions.some(t => {
+        const alreadyInTxs = user.transactions.some(t => {
           if (tx.cycle_id && t.cycle_id && tx.cycle_id === t.cycle_id) return true;
           return t.time === displayTime && Math.abs(parseFloat(t.amount_bux) - amt) < 0.001;
         });
+        // Also deduplicate against an already-promoted active_rain row
+        const alreadyPromoted = user.active_rain &&
+          user.active_rain.status === 'completed' &&
+          Math.abs((user.active_rain.amount_bux || 0) - amt) < 0.001 &&
+          user.active_rain.time === displayTime;
 
-        if (!alreadyExists) {
+        if (!alreadyInTxs && !alreadyPromoted) {
           if (!user.first_tx_time) {
             user.first_tx_time = txTimestamp;
           }
@@ -344,15 +353,26 @@ export function handleAction(payload) {
                 : knownPot.toFixed(2))
             : 'X';
 
-          // Permanently store fixed time string so it never shifts or changes
-          user.transactions.unshift({
-            amount_bux: amt,
-            rain_total: rainTotalDisplay,
-            status: 'Completed',
-            time: displayTime, // Fixed forever: e.g. "13 October 15h00"
-            timestamp: txTimestamp,
-            cycle_id: tx.cycle_id || undefined
-          });
+          // If there is an "in_progress" active_rain, PROMOTE it in-place instead of a new row
+          const hasInProgress = user.active_rain && user.active_rain.status === 'in_progress';
+          if (hasInProgress) {
+            user.active_rain.amount_bux = amt;
+            user.active_rain.time = displayTime;
+            user.active_rain.rain_total = rainTotalDisplay;
+            user.active_rain.status = 'completed';
+            user.active_rain.timestamp = txTimestamp;
+            if (tx.cycle_id) user.active_rain.cycle_id = tx.cycle_id;
+          } else {
+            // No in_progress row — insert new completed transaction
+            user.transactions.unshift({
+              amount_bux: amt,
+              rain_total: rainTotalDisplay,
+              status: 'Completed',
+              time: displayTime,
+              timestamp: txTimestamp,
+              cycle_id: tx.cycle_id || undefined
+            });
+          }
         }
       }
 
@@ -360,9 +380,16 @@ export function handleAction(payload) {
       for (const t of user.transactions) {
         total += (t.amount_bux || 0);
       }
+      // Also count a promoted active_rain row in totals
+      if (user.active_rain && user.active_rain.status === 'completed' && user.active_rain.amount_bux) {
+        total += user.active_rain.amount_bux;
+      }
       user.total_earnings_bux = total;
       // Keep rains_joined in sync with actual completed transactions
-      user.rains_joined = Math.max(user.rains_joined || 0, user.transactions.length);
+      user.rains_joined = Math.max(
+        user.rains_joined || 0,
+        user.transactions.length + (user.active_rain && user.active_rain.status === 'completed' ? 1 : 0)
+      );
     }
   }
 

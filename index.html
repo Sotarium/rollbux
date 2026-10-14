@@ -304,6 +304,8 @@
                         <span aria-hidden="true" class="pointer-events-none absolute inset-0" style="border-radius: 12px; box-shadow: rgb(66, 66, 66) 0px 2px 0px 0px inset; mix-blend-mode: color-dodge;"></span>
                       </div>
                     </div>
+                    <!-- Pagination Bar -->
+                    <div id="rainPagination" class="hidden flex items-center justify-center gap-[6px] pt-[10px] pb-[2px] select-none"></div>
                   </div>
                 </div>
 
@@ -321,6 +323,8 @@
     let currentUnit = 'BUX';
     let liveUserData = null;
     let liveSolPrice = 150.00;
+    let currentRainPage = 1;
+    const RAINS_PER_PAGE = 10;
 
     function getUsernameFromUrl() {
       const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
@@ -352,6 +356,7 @@
     const statCurrentBalance = document.getElementById('statCurrentBalance');
     const rainCountBadge = document.getElementById('rainCountBadge');
     const transactionsList = document.getElementById('transactionsList');
+    const rainPagination = document.getElementById('rainPagination');
     const emptyState = document.getElementById('emptyState');
     const chartAreaPath = document.getElementById('chartAreaPath');
     const chartLinePath = document.getElementById('chartLinePath');
@@ -491,18 +496,14 @@
       const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
       let targetDate;
       if (typeof secondsLeft === 'number' && secondsLeft > 0) {
-        targetDate = new Date(Date.now() + (secondsLeft * 1000));
-        // Round to nearest top-of-the-hour since rains finish hourly (e.g. at 23h00)
-        if (targetDate.getMinutes() > 0 || targetDate.getSeconds() > 0) {
-          targetDate.setHours(targetDate.getHours() + 1);
-          targetDate.setMinutes(0);
-          targetDate.setSeconds(0);
-        }
+        const targetMs = Date.now() + (secondsLeft * 1000);
+        // Round to NEAREST top-of-hour (not always +1) — e.g. 08:00:21 → 08h00, not 09h00
+        const rounded = Math.round(targetMs / 3600000) * 3600000;
+        targetDate = new Date(rounded);
       } else {
+        // Fallback: next top-of-hour
         targetDate = new Date();
-        targetDate.setHours(targetDate.getHours() + 1);
-        targetDate.setMinutes(0);
-        targetDate.setSeconds(0);
+        targetDate.setHours(targetDate.getHours() + 1, 0, 0, 0);
       }
       const day = targetDate.getDate();
       const month = months[targetDate.getMonth()];
@@ -567,12 +568,23 @@
         activeTimerLeft = activeRain.time_left;
       }
 
-      rainCountBadge.textContent = `${txs.length + (hasActiveRain ? 1 : 0)} rain${txs.length === 0 && !hasActiveRain ? '' : 's'}`;
+      const totalCount = txs.length + (hasActiveRain ? 1 : 0);
+      rainCountBadge.textContent = `${totalCount} rain${totalCount !== 1 ? 's' : ''}`;
+
+      // --- Pagination helpers ---
+      const totalPages = Math.max(1, Math.ceil(txs.length / RAINS_PER_PAGE));
+      // Clamp page to valid range
+      if (currentRainPage > totalPages) currentRainPage = totalPages;
+      if (currentRainPage < 1) currentRainPage = 1;
+
+      // Slice completed txs for current page (txs[0] = newest, txs[last] = oldest)
+      const pageStart = (currentRainPage - 1) * RAINS_PER_PAGE;
+      const pageTxs = txs.slice(pageStart, pageStart + RAINS_PER_PAGE);
 
       let rowsHtml = '';
 
-      // 1. Current Active Rain Row
-      if (hasActiveRain) {
+      // 1. Active Rain Row — always shown on page 1 only
+      if (hasActiveRain && currentRainPage === 1) {
         const timerFormatted = formatSeconds(activeTimerLeft);
         const endTimeStr = getRainEndTime(activeTimerLeft);
 
@@ -593,9 +605,10 @@
           </div>`;
       }
 
-      // 2. Completed Rains Rows
-      if (txs.length > 0) {
-        rowsHtml += txs.map((tx, idx) => {
+      // 2. Completed Rains Rows (current page slice)
+      if (pageTxs.length > 0) {
+        rowsHtml += pageTxs.map((tx, localIdx) => {
+          const globalIdx = pageStart + localIdx;
           const formattedAmt = formatValue(tx.amount_bux);
           const timeDisplay = sanitizeTime(tx.time);
           const txTimestamp = tx.timestamp || 0;
@@ -615,7 +628,7 @@
               </span>
               <!-- Red X Delete Button -->
               <span class="flex items-center justify-center">
-                <button type="button" class="delete-rain-btn flex items-center justify-center size-[26px] rounded-[6px] text-[#ff4b4b] hover:bg-[#ff4b4b]/20 hover:text-white transition active:scale-90" data-timestamp="${txTimestamp}" data-index="${idx}" title="Delete this rain">
+                <button type="button" class="delete-rain-btn flex items-center justify-center size-[26px] rounded-[6px] text-[#ff4b4b] hover:bg-[#ff4b4b]/20 hover:text-white transition active:scale-90" data-timestamp="${txTimestamp}" data-index="${globalIdx}" title="Delete this rain">
                   <svg class="size-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -634,8 +647,92 @@
         transactionsList.innerHTML = rowsHtml;
       }
 
+      // --- Render Pagination Bar ---
+      renderRainPagination(totalPages);
+
       renderChart(user);
     }
+
+    function renderRainPagination(totalPages) {
+      if (!rainPagination) return;
+      if (totalPages <= 1) {
+        rainPagination.classList.add('hidden');
+        rainPagination.innerHTML = '';
+        return;
+      }
+      rainPagination.classList.remove('hidden');
+
+      const p = currentRainPage;
+      const btnBase = 'flex items-center justify-center h-[32px] min-w-[32px] px-[8px] rounded-[7px] text-[13px] font-semibold transition cursor-pointer select-none';
+      const btnActive = `${btnBase} bg-[#acff46] text-[#121418]`;
+      const btnIdle = `${btnBase} text-[#9aa3a8] hover:bg-white/[0.06] hover:text-white`;
+      const btnArrow = `${btnBase} text-[#9aa3a8] hover:bg-white/[0.06] hover:text-white`;
+      const btnDisabled = `${btnBase} text-[#3a3f4a] cursor-not-allowed`;
+
+      // Build page numbers to show: always first, last, current and neighbours, ellipsis elsewhere
+      const pages = new Set([1, totalPages, p, p - 1, p + 1].filter(x => x >= 1 && x <= totalPages));
+      const sorted = [...pages].sort((a, b) => a - b);
+
+      let html = '';
+
+      // Prev arrow
+      html += `<button class="${p === 1 ? btnDisabled : btnArrow}" id="pgPrev" ${p === 1 ? 'disabled' : ''}>&#8249;</button>`;
+
+      let prev = 0;
+      for (const n of sorted) {
+        if (n - prev > 1) {
+          // Ellipsis — clicking it opens an inline input to jump to any page
+          html += `<button class="${btnIdle} rain-page-ellipsis" title="Jump to page…">…</button>`;
+        }
+        html += `<button class="${n === p ? btnActive : btnIdle} rain-page-btn" data-page="${n}">${n}</button>`;
+        prev = n;
+      }
+
+      // Next arrow
+      html += `<button class="${p === totalPages ? btnDisabled : btnArrow}" id="pgNext" ${p === totalPages ? 'disabled' : ''}>&#8250;</button>`;
+
+      rainPagination.innerHTML = html;
+
+      // Prev / Next handlers
+      rainPagination.querySelector('#pgPrev')?.addEventListener('click', () => {
+        if (currentRainPage > 1) { currentRainPage--; renderDashboard(liveUserData); }
+      });
+      rainPagination.querySelector('#pgNext')?.addEventListener('click', () => {
+        if (currentRainPage < totalPages) { currentRainPage++; renderDashboard(liveUserData); }
+      });
+
+      // Page number buttons
+      rainPagination.querySelectorAll('.rain-page-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const pg = parseInt(btn.getAttribute('data-page'), 10);
+          if (pg !== currentRainPage) { currentRainPage = pg; renderDashboard(liveUserData); }
+        });
+      });
+
+      // Ellipsis → inline page input
+      rainPagination.querySelectorAll('.rain-page-ellipsis').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const input = document.createElement('input');
+          input.type = 'number';
+          input.min = 1;
+          input.max = totalPages;
+          input.value = currentRainPage;
+          input.className = 'w-[52px] h-[32px] rounded-[7px] bg-[#1a1f2e] border border-white/[0.1] text-center text-[13px] text-white font-semibold outline-none focus:border-[#acff46] transition [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none';
+          btn.replaceWith(input);
+          input.focus();
+          input.select();
+          const go = () => {
+            const val = Math.max(1, Math.min(totalPages, parseInt(input.value, 10) || 1));
+            currentRainPage = val;
+            renderDashboard(liveUserData);
+          };
+          input.addEventListener('keydown', e => { if (e.key === 'Enter') go(); if (e.key === 'Escape') renderDashboard(liveUserData); });
+          input.addEventListener('blur', go);
+        });
+      });
+    }
+
+
 
     // Handle Individual Rain Deletion
     if (transactionsList) {
