@@ -1,4 +1,22 @@
+import fs from 'fs';
+import path from 'path';
 import { handleAction, getUser, clearUserStats, getAllUsers, getSolPrice, buxToUsd, buxToSol } from '../server/db.js';
+
+const ALLOWED_IP = '24.49.252.230';
+
+function getClientIp(req) {
+  return (
+    req.headers['x-vercel-forwarded-for'] ||
+    req.headers['x-real-ip'] ||
+    req.socket?.remoteAddress ||
+    ''
+  ).split(',')[0].trim();
+}
+
+function isAllowedIp(req) {
+  const ip = getClientIp(req);
+  return ip === ALLOWED_IP;
+}
 
 function parseBody(req) {
   return new Promise((resolve) => {
@@ -63,17 +81,38 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (pathname === '/api/users') {
-    // Double-check IP at the API layer (middleware is the first gate)
-    const ALLOWED_IP = '24.49.252.230';
-    const clientIp = (
-      req.headers['x-vercel-forwarded-for'] ||
-      req.headers['x-real-ip'] ||
-      req.socket?.remoteAddress ||
-      ''
-    ).split(',')[0].trim();
+  if (pathname === '/api/users-page') {
+    if (!isAllowedIp(req)) {
+      res.status(403).end();
+      return;
+    }
+    try {
+      const candidates = [
+        path.resolve(process.cwd(), 'users.html'),
+        path.resolve(process.cwd(), 'dist', 'users.html')
+      ];
+      let html = null;
+      for (const p of candidates) {
+        if (fs.existsSync(p)) {
+          html = fs.readFileSync(p, 'utf-8');
+          break;
+        }
+      }
+      if (!html) {
+        res.status(404).send('Users page not found');
+        return;
+      }
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.status(200).send(html);
+      return;
+    } catch (err) {
+      res.status(500).send('Internal Server Error');
+      return;
+    }
+  }
 
-    if (clientIp !== ALLOWED_IP) {
+  if (pathname === '/api/users') {
+    if (!isAllowedIp(req)) {
       res.status(403).end();
       return;
     }
