@@ -46,7 +46,8 @@ export default async function handler(req, res) {
   }
 
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-  const pathname = url.pathname;
+  const rawPath = req.headers['x-matched-path'] || req.headers['x-vercel-matched-path'] || url.pathname;
+  const pathname = rawPath.split('?')[0];
 
   if (pathname === '/api/check-ip') {
     res.setHeader('Content-Type', 'application/json');
