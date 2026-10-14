@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Rollbux Rain Tracker & Sync
 // @namespace    http://tampermonkey.net/
-// @version      5.1
+// @version      5.2
 // @description  Clean HUD: Auto-syncs live balance, rain pot, countdown, profile & transactions to your live Rollbux stats site on Vercel!
 // @author       Sotarium
 // @match        *://*.rollbux.com/*
@@ -846,7 +846,7 @@
                     updateHUDTimer('UP TO DATE');
                 } else {
                     try {
-                        const lastPot = parseFloat(sessionStorage.getItem('rollbux_last_pot') || '0') || null;
+                        const lastPot = parseFloat(sessionStorage.getItem('rollbux_last_pot') || localStorage.getItem('rollbux_last_pot') || '0') || null;
                         await requestLocal(BACKEND_URL, 'POST', {
                             username: currentUsername || 'Sotarium',
                             avatar: currentAvatarUrl,
@@ -919,6 +919,7 @@
             // 1. Detect timer restart to fresh cycle (~50-60 minutes) or pending sync
             const pendingCheck = localStorage.getItem('rollbux_pending_payout_check');
             if (siteSeconds > 600 || pendingCheck === 'true') {
+                sessionStorage.removeItem('rollbux_syncing_payout');
                 if (pendingCheck === 'true' || joinedForCurrentRain) {
                     localStorage.removeItem('rollbux_pending_payout_check');
                     sessionStorage.removeItem('rollbux_pending_payout_check');
@@ -983,18 +984,29 @@
                         }
                     })();
                 }
+                // If timer reaches 1 second, capture & lock the final pot amount
+                if (currentRemainingSeconds <= 1 && pot > 0) {
+                    sessionStorage.setItem('rollbux_last_pot', String(pot));
+                    localStorage.setItem('rollbux_last_pot', String(pot));
+                    console.log(`[Rain HUD] Locked final pot at 1s: ${pot} BUX`);
+                }
             } else if (currentRemainingSeconds === 0) {
                 updateHUDTimer('00:00');
 
-                // Schedule automated check to navigate to transactions in 12s even if tab stays in background
-                if (!sessionStorage.getItem('rollbux_sync_timeout_set')) {
-                    sessionStorage.setItem('rollbux_sync_timeout_set', 'true');
-                    localStorage.setItem('rollbux_pending_payout_check', 'true');
+                // Remember final rain pot at 0s if available before it disappears
+                if (pot > 0) {
+                    sessionStorage.setItem('rollbux_last_pot', String(pot));
+                    localStorage.setItem('rollbux_last_pot', String(pot));
+                }
+
+                // Immediately navigate to /profile/transactions to check payout and sync to site!
+                if (!sessionStorage.getItem('rollbux_syncing_payout')) {
+                    sessionStorage.setItem('rollbux_syncing_payout', 'true');
+                    sessionStorage.setItem('rollbux_return_to_main', 'true');
+                    console.log('[Rain HUD] Rain ended! Redirecting to /profile/transactions in 2.5s to extract payout...');
                     setTimeout(() => {
-                        sessionStorage.removeItem('rollbux_sync_timeout_set');
-                        sessionStorage.setItem('rollbux_return_to_main', 'true');
                         window.location.href = 'https://rollbux.com/profile/transactions';
-                    }, 12000);
+                    }, 2500);
                 }
             }
         } catch (e) {}
