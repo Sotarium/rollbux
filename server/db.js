@@ -295,19 +295,20 @@ export function handleAction(payload) {
 
   if (action === 'rain_tick') {
     if (!user.active_rain) user.active_rain = {};
-    if (typeof pot_amount === 'number' && pot_amount > 0) {
-      // Track the last known pot before it resets
-      user.active_rain.pot_amount = pot_amount;
-      user.last_completed_pot = pot_amount; // save so sync_transactions can use it
-    }
     if (typeof time_left === 'number') {
       user.active_rain.time_left = time_left;
     }
-    user.active_rain.updated_at = Date.now();
-    // Mark as in_progress so sync_transactions can promote it to completed in-place
-    if (user.active_rain.status !== 'completed') {
-      user.active_rain.status = 'in_progress';
+    // Freeze pot when timer is <= 3 seconds like site timer
+    if (typeof time_left === 'number' && time_left <= 3) {
+      if (!user.active_rain.pot_amount && user.last_completed_pot) {
+        user.active_rain.pot_amount = user.last_completed_pot;
+      }
+    } else if (typeof pot_amount === 'number' && pot_amount > 0) {
+      user.active_rain.pot_amount = pot_amount;
+      user.last_completed_pot = pot_amount;
     }
+    user.active_rain.updated_at = Date.now();
+    user.active_rain.status = 'in_progress';
     if (typeof balance === 'number' && balance >= 0) {
       user.balance_bux = balance;
     }

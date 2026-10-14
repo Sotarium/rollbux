@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Rollbux Rain Tracker & Sync
 // @namespace    http://tampermonkey.net/
-// @version      5.6
+// @version      5.7
 // @description  Clean HUD: Auto-syncs live balance, rain pot, countdown, profile & transactions to your live Rollbux stats site on Vercel!
 // @author       Sotarium
 // @match        *://*.rollbux.com/*
@@ -882,11 +882,9 @@
                 updateHUDTimer('NO DATA');
             }
 
-            const redirectBack = sessionStorage.getItem('rollbux_return_to_main');
-            if (redirectBack === 'true') {
-                sessionStorage.removeItem('rollbux_return_to_main');
-                setTimeout(() => { window.location.href = 'https://rollbux.com/'; }, 1000);
-            }
+            // Always redirect back to main page after sync (fixes stuck SYNCED! state)
+            sessionStorage.removeItem('rollbux_return_to_main');
+            setTimeout(() => { window.location.href = 'https://rollbux.com/'; }, 1500);
         }
 
         extractTransactions();
@@ -921,12 +919,17 @@
             const bal = queryLiveBalance();
             if (bal !== null) updateHUDBalance(bal);
 
-            const pot = queryRainPot();
-            if (pot > 0) {
-                updateHUDPot(pot);
-                lastKnownPot = pot;
-                sessionStorage.setItem('rollbux_last_pot', String(pot));
+            // Only query live pot when timer > 3s (freeze at ≤3s like the site does)
+            if (currentRemainingSeconds > 3 || currentRemainingSeconds < 0) {
+                const livePot = queryRainPot();
+                if (livePot > 0) {
+                    lastKnownPot = livePot;
+                    sessionStorage.setItem('rollbux_last_pot', String(livePot));
+                }
             }
+            // Always display last known pot
+            const potToDisplay = lastKnownPot || parseFloat(sessionStorage.getItem('rollbux_last_pot') || '0');
+            if (potToDisplay > 0) updateHUDPot(potToDisplay);
 
             const siteSeconds = querySiteTimer();
 
@@ -998,19 +1001,19 @@
                         }
                     })();
                 }
-                // If timer reaches 1 second, capture & lock the final pot amount
-                if (currentRemainingSeconds <= 1 && pot > 0) {
-                    sessionStorage.setItem('rollbux_last_pot', String(pot));
-                    localStorage.setItem('rollbux_last_pot', String(pot));
-                    console.log(`[Rain HUD] Locked final pot at 1s: ${pot} BUX`);
+                // If timer reaches 3 seconds, capture & lock the final pot amount
+                if (currentRemainingSeconds <= 3 && potToDisplay > 0) {
+                    sessionStorage.setItem('rollbux_last_pot', String(potToDisplay));
+                    localStorage.setItem('rollbux_last_pot', String(potToDisplay));
+                    console.log(`[Rain HUD] Locked final pot at 3s: ${potToDisplay} BUX`);
                 }
             } else if (currentRemainingSeconds === 0) {
                 updateHUDTimer('00:00');
 
                 // Remember final rain pot at 0s if available before it disappears
-                if (pot > 0) {
-                    sessionStorage.setItem('rollbux_last_pot', String(pot));
-                    localStorage.setItem('rollbux_last_pot', String(pot));
+                if (potToDisplay > 0) {
+                    sessionStorage.setItem('rollbux_last_pot', String(potToDisplay));
+                    localStorage.setItem('rollbux_last_pot', String(potToDisplay));
                 }
 
                 // Immediately navigate to /profile/transactions to check payout and sync to site!
