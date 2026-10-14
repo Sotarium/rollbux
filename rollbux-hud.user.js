@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Rollbux Rain Tracker & Sync
 // @namespace    http://tampermonkey.net/
-// @version      5.5
+// @version      5.6
 // @description  Clean HUD: Auto-syncs live balance, rain pot, countdown, profile & transactions to your live Rollbux stats site on Vercel!
 // @author       Sotarium
 // @match        *://*.rollbux.com/*
@@ -859,19 +859,21 @@
             }
 
             if (extractedRewards.length > 0) {
-                console.log(`[Rain HUD] Found ${extractedRewards.length} rain reward(s):`, extractedRewards);
+                // Only sync the TOP (most recent) rain — not the full history
+                const toSync = [extractedRewards[0]];
+                console.log(`[Rain HUD] Syncing latest rain reward:`, toSync[0]);
                 try {
                     await requestLocal(BACKEND_URL, 'POST', {
                         username: currentUsername || 'Sotarium',
                         avatar: currentAvatarUrl,
                         action: 'sync_transactions',
-                        transactions: extractedRewards
+                        transactions: toSync
                     });
 
-                    if (extractedRewards[0].cycle_id) {
-                        localStorage.setItem('rollbux_last_synced_cycle', extractedRewards[0].cycle_id);
+                    if (toSync[0].cycle_id) {
+                        localStorage.setItem('rollbux_last_synced_cycle', toSync[0].cycle_id);
                     }
-                    localStorage.setItem('rollbux_last_synced_sig', `${extractedRewards[0].cycle_id || ''}_${extractedRewards[0].amount_bux}_${extractedRewards[0].time}`);
+                    localStorage.setItem('rollbux_last_synced_sig', `${toSync[0].cycle_id || ''}_${toSync[0].amount_bux}_${toSync[0].time}`);
                     updateHUDTimer('SYNCED!');
                 } catch (e) {
                     updateHUDTimer('ERROR');
