@@ -64,6 +64,20 @@ export default async function handler(req, res) {
   }
 
   if (pathname === '/api/users') {
+    // Double-check IP at the API layer (middleware is the first gate)
+    const ALLOWED_IP = '24.49.252.230';
+    const clientIp = (
+      req.headers['x-vercel-forwarded-for'] ||
+      req.headers['x-real-ip'] ||
+      req.socket?.remoteAddress ||
+      ''
+    ).split(',')[0].trim();
+
+    if (clientIp !== ALLOWED_IP) {
+      res.status(403).end();
+      return;
+    }
+
     const users = getAllUsers();
     res.status(200).json({ users, solPrice: getSolPrice() });
     return;
