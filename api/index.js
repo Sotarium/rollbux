@@ -81,7 +81,8 @@ export default async function handler(req, res) {
     return;
   }
 
-  const isUsersPage = pathname === '/users' || pathname === '/users.html' || pathname === '/api/users-page' || url.searchParams.get('view') === 'users';
+  const matchedPath = req.headers['x-matched-path'] || req.headers['x-vercel-matched-path'] || pathname;
+  const isUsersPage = matchedPath === '/users' || matchedPath === '/users.html' || pathname === '/users' || pathname === '/users.html' || pathname === '/api/users-page' || url.searchParams.get('view') === 'users';
 
   if (isUsersPage) {
     if (!isAllowedIp(req)) {
