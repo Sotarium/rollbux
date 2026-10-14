@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Rollbux Rain Tracker & Sync
 // @namespace    http://tampermonkey.net/
-// @version      5.2
+// @version      5.3
 // @description  Clean HUD: Auto-syncs live balance, rain pot, countdown, profile & transactions to your live Rollbux stats site on Vercel!
 // @author       Sotarium
 // @match        *://*.rollbux.com/*
@@ -760,13 +760,13 @@
 
                     // Strategy 1: Look for the specific cell with token/coin image (the Amount column)
                     for (const cell of cells) {
-                        const hasToken = cell.querySelector('img[src*="token"], img[alt*="Coin"], [class*="token"]');
+                        const hasToken = cell.querySelector('img[src*="token"], img[alt*="Coin"], [class*="token"], img');
                         if (hasToken) {
                             const txt = (cell.innerText || cell.textContent || '').trim();
                             const m = txt.match(/[\+\$]?\s*([\d,]+(?:\.\d+)?)/);
                             if (m) {
                                 const parsed = parseFloat(m[1].replace(/,/g, ''));
-                                if (!isNaN(parsed) && parsed > 0) {
+                                if (!isNaN(parsed) && parsed > 0 && parsed < 1000000) {
                                     amountVal = parsed;
                                     break;
                                 }
@@ -782,8 +782,8 @@
                             const cellText = (cell.innerText || cell.textContent || '').trim();
                             if (cellText.toLowerCase().includes('reward') || cellText.toLowerCase().includes('cycle') || cellText.toLowerCase().includes('level')) continue;
 
-                            // An amount typically has decimals like 191.42 or 4.00, or a + prefix
-                            const match = cellText.match(/^[\s\+\$]*([\d,]+\.\d{2,})/);
+                            // An amount typically has decimals like 60.15 or 191.42 or 4.00, or a + prefix
+                            const match = cellText.match(/^[\s\+\$]*([\d,]+\.\d{1,4})/);
                             if (match) {
                                 const parsed = parseFloat(match[1].replace(/,/g, ''));
                                 if (!isNaN(parsed) && parsed > 0 && parsed < 1000000) {
@@ -797,7 +797,7 @@
                     // Strategy 3: Standard decimal match in row excluding cycle ID and level
                     if (amountVal === 0) {
                         const cleanText = rowText.replace(/cycle\s+[a-zA-Z0-9_-]+/ig, '').replace(/level\s*\d+/ig, '');
-                        const decimalMatch = cleanText.match(/\+?\s*([\d,]+\.\d{2,})/);
+                        const decimalMatch = cleanText.match(/\+?\s*([\d,]+\.\d{1,4})/);
                         if (decimalMatch) {
                             const parsed = parseFloat(decimalMatch[1].replace(/,/g, ''));
                             if (!isNaN(parsed) && parsed > 0 && parsed < 1000000) {
@@ -814,7 +814,8 @@
                     }
 
                     let timeFormatted = formatNiceDate();
-                    const dateMatch = rowText.match(/(\d{1,2}\/\d{1,2}\/\d{2,4}[^,\n]*)/);
+                    // Match full datetime e.g. 10/13/26, 9:00 PM
+                    const dateMatch = rowText.match(/(\d{1,2}\/\d{1,2}\/\d{2,4}(?:,\s*\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?)?)/i);
                     if (dateMatch) {
                         timeFormatted = formatNiceDate(dateMatch[1]);
                     }
