@@ -210,7 +210,9 @@ export function handleAction(payload) {
     user.history = [];
     user.first_tx_time = null;
     user.cleared_at = Date.now();
-    user.deleted_signatures = [];
+    // Do NOT clear deleted_signatures — the blacklist must survive Clear so
+    // manually-deleted transactions never come back after a re-sync
+    if (!user.deleted_signatures) user.deleted_signatures = [];
     saveUsers(users);
     return { ok: true, user };
   }
