@@ -492,14 +492,17 @@
       let targetDate;
       if (typeof secondsLeft === 'number' && secondsLeft > 0) {
         targetDate = new Date(Date.now() + (secondsLeft * 1000));
-        if (targetDate.getMinutes() >= 50) {
+        // Round to nearest top-of-the-hour since rains finish hourly (e.g. at 23h00)
+        if (targetDate.getMinutes() > 0 || targetDate.getSeconds() > 0) {
           targetDate.setHours(targetDate.getHours() + 1);
           targetDate.setMinutes(0);
+          targetDate.setSeconds(0);
         }
       } else {
         targetDate = new Date();
         targetDate.setHours(targetDate.getHours() + 1);
         targetDate.setMinutes(0);
+        targetDate.setSeconds(0);
       }
       const day = targetDate.getDate();
       const month = months[targetDate.getMonth()];
