@@ -215,6 +215,17 @@ export function handleAction(payload) {
     return { ok: true, user };
   }
 
+  if (action === 'update_transaction') {
+    const { index, time, rain_total, amount_bux } = payload;
+    if (Array.isArray(user.transactions) && typeof index === 'number' && index >= 0 && index < user.transactions.length) {
+      if (time) user.transactions[index].time = time;
+      if (rain_total) user.transactions[index].rain_total = rain_total;
+      if (typeof amount_bux === 'number') user.transactions[index].amount_bux = amount_bux;
+      saveUsers(users);
+    }
+    return { ok: true, user };
+  }
+
   if (action === 'delete_transaction') {
     const { timestamp, index, cycle_id, signature } = payload;
     if (!user.deleted_signatures) user.deleted_signatures = [];

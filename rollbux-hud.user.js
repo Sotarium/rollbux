@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Rollbux Rain Tracker & Sync
 // @namespace    http://tampermonkey.net/
-// @version      5.3
+// @version      5.4
 // @description  Clean HUD: Auto-syncs live balance, rain pot, countdown, profile & transactions to your live Rollbux stats site on Vercel!
 // @author       Sotarium
 // @match        *://*.rollbux.com/*
@@ -655,6 +655,23 @@
         const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         let d = new Date();
         if (rawStr) {
+            const timeMatch = rawStr.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?/i);
+            const datePartMatch = rawStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+            if (datePartMatch) {
+                let m = parseInt(datePartMatch[1], 10) - 1;
+                let day = parseInt(datePartMatch[2], 10);
+                let h = d.getHours();
+                let min = d.getMinutes();
+                if (timeMatch) {
+                    h = parseInt(timeMatch[1], 10);
+                    min = parseInt(timeMatch[2], 10);
+                    const meridiem = (timeMatch[3] || '').toUpperCase();
+                    if (meridiem === 'PM' && h < 12) h += 12;
+                    if (meridiem === 'AM' && h === 12) h = 0;
+                }
+                const monthName = months[m] || months[d.getMonth()];
+                return `${day} ${monthName} ${String(h).padStart(2, '0')}h${String(min).padStart(2, '0')}`;
+            }
             const parsed = new Date(rawStr);
             if (!isNaN(parsed.getTime())) d = parsed;
         }
