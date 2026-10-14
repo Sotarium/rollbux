@@ -56,6 +56,11 @@ export default async function handler(req, res) {
   }
 
   if (pathname.startsWith('/api/user/') && pathname.endsWith('/clear') && req.method === 'POST') {
+    if (!isAllowedIp(req)) {
+      res.statusCode = 403;
+      res.end('Forbidden');
+      return;
+    }
     const username = decodeURIComponent(pathname.replace('/api/user/', '').replace('/clear', '')).trim();
     const user = clearUserStats(username);
     res.status(200).json({ ok: true, user });
@@ -63,6 +68,11 @@ export default async function handler(req, res) {
   }
 
   if (pathname.startsWith('/api/user/')) {
+    if (!isAllowedIp(req)) {
+      res.statusCode = 403;
+      res.end('Forbidden');
+      return;
+    }
     const username = decodeURIComponent(pathname.replace('/api/user/', '')).trim();
     const user = getUser(username);
     if (!user) {
@@ -83,7 +93,44 @@ export default async function handler(req, res) {
 
   const matchedPath = req.headers['x-matched-path'] || req.headers['x-vercel-matched-path'] || pathname;
   const isUsersPage = matchedPath === '/users' || matchedPath === '/users.html' || pathname === '/users' || pathname === '/users.html' || pathname === '/api/users-page' || url.searchParams.get('view') === 'users';
+  const isUserDashboardPage = matchedPath.startsWith('/user/') || pathname.startsWith('/user/');
 
+  // Protect the Individual User Profile Dashboard HTML page (/user/:username)
+  if (isUserDashboardPage) {
+    if (!isAllowedIp(req)) {
+      res.statusCode = 403;
+      res.end('Forbidden');
+      return;
+    }
+    try {
+      const candidates = [
+        path.resolve(process.cwd(), 'dist', 'index.html'),
+        path.resolve(process.cwd(), 'index.html')
+      ];
+      let html = null;
+      for (const p of candidates) {
+        if (fs.existsSync(p)) {
+          html = fs.readFileSync(p, 'utf-8');
+          break;
+        }
+      }
+      if (!html) {
+        res.statusCode = 404;
+        res.end('Dashboard not found');
+        return;
+      }
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.statusCode = 200;
+      res.end(html);
+      return;
+    } catch (err) {
+      res.statusCode = 500;
+      res.end('Internal Server Error');
+      return;
+    }
+  }
+
+  // Protect the Active Users List HTML page (/users)
   if (isUsersPage) {
     if (!isAllowedIp(req)) {
       res.statusCode = 403;
@@ -92,8 +139,9 @@ export default async function handler(req, res) {
     }
     try {
       const candidates = [
-        path.resolve(process.cwd(), 'dist', 'users.html'),
-        path.resolve(process.cwd(), 'users.html')
+        path.resolve(process.cwd(), 'server', 'users.html'),
+        path.resolve(process.cwd(), 'users.html'),
+        path.resolve(process.cwd(), 'dist', 'users.html')
       ];
       let html = null;
       for (const p of candidates) {
@@ -118,6 +166,7 @@ export default async function handler(req, res) {
     }
   }
 
+  // Protect the Users List JSON endpoint (/api/users)
   if (pathname === '/api/users') {
     if (!isAllowedIp(req)) {
       res.statusCode = 403;

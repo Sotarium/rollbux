@@ -3,6 +3,6 @@
     { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/users", "destination": "/api" },
     { "source": "/users.html", "destination": "/api" },
-    { "source": "/user/(.*)", "destination": "/index.html" }
+    { "source": "/user/(.*)", "destination": "/api" }
   ]
 }
