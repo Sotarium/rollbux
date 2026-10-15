@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Rollbux Rain Tracker & Sync
 // @namespace    http://tampermonkey.net/
-// @version      5.7
+// @version      5.8
 // @description  Clean HUD: Auto-syncs live balance, rain pot, countdown, profile & transactions to your live Rollbux stats site on Vercel!
 // @author       Sotarium
 // @match        *://*.rollbux.com/*
@@ -963,7 +963,7 @@
             }
 
             // Sync all three live values to the website
-            syncRainTick(pot, currentRemainingSeconds, bal);
+            syncRainTick(potToDisplay, currentRemainingSeconds, bal);
 
             if (currentRemainingSeconds > 0) {
                 const mins = Math.floor(currentRemainingSeconds / 60);
