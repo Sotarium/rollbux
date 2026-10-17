@@ -215,7 +215,7 @@ export default async function handler(req, res) {
           "Origin": "https://rollbux.com",
           "Referer": "https://rollbux.com/"
         },
-        body: JSON.stringify({ content: payload.message || "." })
+        body: JSON.stringify({ message: payload.message || "." })
       });
 
       const chatText = await chatResp.text();

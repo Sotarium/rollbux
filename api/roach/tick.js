@@ -140,7 +140,7 @@ export default async function handler(req, res) {
         const chatRes = await rollbuxFetch('/users/chat', token, {
           method: 'POST',
           headers: { "Content-Type": "application/json" },
-          body: { content: randomMsg }
+          body: { message: randomMsg }
         });
 
         if (chatRes.ok) {
