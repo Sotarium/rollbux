@@ -609,6 +609,7 @@
 
     let activeTimerLeft = 0;
     let lockedActivePot = null;
+    let joinTickFired = false; // prevent firing join tick multiple times per cycle
     setInterval(() => {
       if (activeTimerLeft > 0) {
         activeTimerLeft--;
@@ -616,6 +617,18 @@
         if (activeTimerEl) {
           activeTimerEl.textContent = formatSeconds(activeTimerLeft);
         }
+        // Auto-trigger join tick when rain timer hits 60s window
+        if (activeTimerLeft <= 60 && !joinTickFired) {
+          joinTickFired = true;
+          console.log('[RainRoach] Join window reached, firing tick for auto-join...');
+          fetch('/api/roach/tick', { method: 'POST' })
+            .then(r => r.json())
+            .then(d => console.log('[RainRoach] Join tick response:', d.accounts?.map(a => `${a.name}: ${a.join_status}`)))
+            .catch(e => console.error('[RainRoach] Join tick error:', e));
+        }
+      } else if (activeTimerLeft === 0 && joinTickFired) {
+        // Reset flag when cycle ends (new cycle will have fresh timer > 0)
+        joinTickFired = false;
       }
     }, 1000);
 
@@ -1415,6 +1428,13 @@
         if (chatCountdownSub) chatCountdownSub.textContent = 'Active';
         return;
       }
+      if (chatIntervalTimer === -3) {
+        // Pending: tick was fired, waiting for server response
+        chatCountdownText.textContent = 'Sending';
+        if (chatCountdownSub) chatCountdownSub.textContent = 'Now';
+        chatCountdownRing.setAttribute('stroke-dasharray', '100, 100');
+        return;
+      }
       if (chatIntervalTimer === 0) {
         chatCountdownText.textContent = 'Sending';
         if (chatCountdownSub) chatCountdownSub.textContent = 'Now';
@@ -1423,6 +1443,7 @@
         // Automatically trigger tick to send message immediately when countdown finishes
         if (!isTriggeringTick) {
           isTriggeringTick = true;
+          chatIntervalTimer = -3; // -3 = "pending" — prevents re-triggering while waiting
           fetch('/api/roach/tick', { method: 'POST' })
             .then(() => checkFarmerStatus())
             .catch(() => {})
