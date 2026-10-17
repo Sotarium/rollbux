@@ -1327,7 +1327,9 @@
           }
         }
         const liveList = sData?.status?.accounts || [];
-        updateChatCountdownCircle(secondsRemaining, accs, liveList);
+        if (secondsRemaining > 0) {
+          updateChatCountdownCircle(secondsRemaining, accs, liveList);
+        }
       } catch (e) {
         console.error('checkFarmerStatus error:', e);
       }
@@ -1337,8 +1339,8 @@
     const chatCountdownText = document.getElementById('chatCountdownText');
     const chatCountdownSub = document.getElementById('chatCountdownSub');
 
-    let chatIntervalTimer = 0;
-    const CHAT_INTERVAL_SEC = 1100; // ~18.3 minutes between automated messages
+    let chatIntervalTimer = -1; // -1 means uninitialized / waiting for cycle data
+    const CHAT_INTERVAL_SEC = 1100;
 
     function updateChatCountdownCircle(secondsRemaining, accs, liveList) {
       if (!chatCountdownText || !chatCountdownRing) return;
@@ -1383,7 +1385,12 @@
 
     function tickChatCountdown() {
       if (!chatCountdownText || !chatCountdownRing) return;
-      if (chatIntervalTimer <= 0) {
+      if (chatIntervalTimer < 0) {
+        chatCountdownText.textContent = '--:--';
+        if (chatCountdownSub) chatCountdownSub.textContent = 'Active';
+        return;
+      }
+      if (chatIntervalTimer === 0) {
         chatCountdownText.textContent = 'Sending';
         if (chatCountdownSub) chatCountdownSub.textContent = 'Now';
         chatCountdownRing.setAttribute('stroke-dasharray', '100, 100');
