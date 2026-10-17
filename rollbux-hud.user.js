@@ -625,12 +625,36 @@
     }
 
     function clickJoinRain() {
-        const btn = Array.from(document.querySelectorAll('button, a[role="button"], div[role="button"]')).find(b => {
-            const t = (b.textContent || '').toLowerCase().trim();
-            return t === 'join' || t.includes('join rain') || t.includes('enter rain');
-        });
+        // Find button using exact attributes and selectors matching RollBux's Join Rain button
+        const btn = document.querySelector('button[title="Join this rain"], button[aria-label="Join this rain"]') ||
+                    Array.from(document.querySelectorAll('button, a[role="button"], div[role="button"]')).find(b => {
+                        const t = (b.innerText || b.textContent || '').toLowerCase().trim();
+                        const title = (b.getAttribute('title') || '').toLowerCase();
+                        const aria = (b.getAttribute('aria-label') || '').toLowerCase();
+                        return t === 'join' || t.includes('join rain') || t.includes('enter rain') || title.includes('join this rain') || aria.includes('join this rain');
+                    });
+
         if (btn) {
-            btn.click();
+            // Check if disabled or already joined
+            if (btn.disabled || btn.getAttribute('aria-disabled') === 'true' || btn.classList.contains('disabled')) {
+                console.log('[Rain HUD] Join Rain button is currently disabled or already joined.');
+                return false;
+            }
+
+            // Dispatch full sequence of click events (pointerdown, mousedown, pointerup, mouseup, click)
+            try {
+                btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach(eventType => {
+                    btn.dispatchEvent(new MouseEvent(eventType, {
+                        bubbles: true,
+                        cancelable: true,
+                        view: window
+                    }));
+                });
+            } catch (err) {
+                btn.click();
+            }
+
             totalRainsJoined++;
             localStorage.setItem('rollbux_rains_joined', totalRainsJoined.toString());
             updateHUDJoined();
@@ -646,6 +670,7 @@
                 });
             } catch (e) {}
 
+            console.log('[Rain HUD] Successfully clicked Join Rain button!');
             return true;
         }
         return false;
