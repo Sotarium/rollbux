@@ -1270,9 +1270,10 @@
           accs = data.accounts || [];
         }
 
+        let sData = null;
         let liveAccsMap = {};
         if (statusRes.ok) {
-          const sData = await statusRes.json();
+          sData = await statusRes.json();
           const liveList = sData?.status?.accounts || [];
           liveList.forEach(a => {
             liveAccsMap[(a.name || '').toLowerCase()] = a;
@@ -1300,10 +1301,12 @@
         }
 
         // Live Chat Countdown Circle Logic
-        const secondsRemaining = sData?.status?.seconds_remaining || 0;
+        const secondsRemaining = sData?.status?.seconds_remaining || activeTimerLeft || 1200;
         const liveList = sData?.status?.accounts || [];
         updateChatCountdownCircle(secondsRemaining, accs, liveList);
-      } catch (e) {}
+      } catch (e) {
+        console.error('checkFarmerStatus error:', e);
+      }
     }
 
     const chatCountdownRing = document.getElementById('chatCountdownRing');
