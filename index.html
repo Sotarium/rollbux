@@ -1383,6 +1383,8 @@
       tickChatCountdown();
     }
 
+    let isTriggeringTick = false;
+
     function tickChatCountdown() {
       if (!chatCountdownText || !chatCountdownRing) return;
       if (chatIntervalTimer < 0) {
@@ -1394,6 +1396,17 @@
         chatCountdownText.textContent = 'Sending';
         if (chatCountdownSub) chatCountdownSub.textContent = 'Now';
         chatCountdownRing.setAttribute('stroke-dasharray', '100, 100');
+
+        // Automatically trigger tick to send message immediately when countdown finishes
+        if (!isTriggeringTick) {
+          isTriggeringTick = true;
+          fetch('/api/roach/tick', { method: 'POST' })
+            .then(() => checkFarmerStatus())
+            .catch(() => {})
+            .finally(() => {
+              setTimeout(() => { isTriggeringTick = false; }, 10000);
+            });
+        }
         return;
       }
 
@@ -1412,6 +1425,8 @@
     setInterval(() => {
       if (chatIntervalTimer > 0) {
         chatIntervalTimer--;
+        tickChatCountdown();
+      } else if (chatIntervalTimer === 0) {
         tickChatCountdown();
       }
     }, 1000);
