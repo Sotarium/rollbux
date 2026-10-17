@@ -1060,7 +1060,9 @@
       }
 
       const values = history.map(h => h.balance_bux || 0);
-      const maxVal = Math.max(...values, 10);
+      const rawMaxVal = Math.max(...values, 10);
+      // Add ~18% headroom so peak point doesn't get squeezed against the top edge
+      const maxVal = Math.ceil(rawMaxVal * 1.18);
       yAxisTop.textContent = formatValue(maxVal);
 
       const width = 744;
@@ -1068,7 +1070,8 @@
       currentChartPoints = history.map((h, idx) => {
         const val = h.balance_bux || 0;
         const x = (idx / (history.length - 1)) * width;
-        const y = height - (val / maxVal) * (height - 30) - 12;
+        // Scale within comfortable height range with top padding
+        const y = height - (val / maxVal) * (height - 45) - 15;
         return {
           x,
           y,
@@ -1398,6 +1401,8 @@
     const addAnotherTokenBtn = document.getElementById('addAnotherTokenBtn');
     const modalTitle = document.getElementById('modalTitle');
 
+    let lastKnownRoachCycle = null;
+
     async function checkFarmerStatus() {
       try {
         const [accRes, statusRes] = await Promise.all([
@@ -1413,8 +1418,26 @@
 
         let sData = null;
         let liveAccsMap = {};
+        let isStaleCycle = false;
+
         if (statusRes.ok) {
           sData = await statusRes.json();
+          const currentCycleId = sData?.status?.cycle_id;
+
+          // If site activeTimerLeft is fresh (~50-60 min) or status has a new cycle, detect cycle rotation
+          if (currentCycleId) {
+            if (lastKnownRoachCycle && lastKnownRoachCycle !== currentCycleId) {
+              console.log('[RainRoach] New rain cycle detected! Resetting countdown and chat counters.');
+              chatIntervalTimer = -1;
+            }
+            lastKnownRoachCycle = currentCycleId;
+          }
+
+          // If the status in Redis is from an old rain cycle that already ended (e.g. updated_at > 90s ago and timer <= 0, or active timer > 3000s while status timer was 0)
+          if (activeTimerLeft > 3000 && (sData?.status?.seconds_remaining || 0) < 60) {
+            isStaleCycle = true;
+          }
+
           const liveList = sData?.status?.accounts || [];
           liveList.forEach(a => {
             liveAccsMap[(a.name || '').toLowerCase()] = a;
@@ -1428,7 +1451,8 @@
             accountsListContainer.innerHTML = accs.map(a => {
               const nameLower = (a.name || '').toLowerCase();
               const live = liveAccsMap[nameLower];
-              const count = live && live.chat_count !== undefined ? live.chat_count : 0;
+              // If stale old cycle, show 0 until tick completes
+              const count = (!isStaleCycle && live && live.chat_count !== undefined) ? live.chat_count : 0;
               const isCurrent = nameLower === targetUsername.toLowerCase();
               const nameColor = isCurrent ? 'text-[#acff46]' : 'text-white';
               return `
@@ -1456,9 +1480,14 @@
             secondsRemaining = liveCalculated;
           }
         }
-        const liveList = sData?.status?.accounts || [];
+        const liveList = isStaleCycle ? [] : (sData?.status?.accounts || []);
         if (secondsRemaining > 0) {
           updateChatCountdownCircle(secondsRemaining, accs, liveList);
+        }
+
+        // If cycle rotated or stale, trigger a background tick immediately so Redis reflects fresh state
+        if (isStaleCycle) {
+          fetch('/api/roach/tick', { method: 'POST' }).catch(() => {});
         }
       } catch (e) {
         console.error('checkFarmerStatus error:', e);
@@ -1945,34 +1974,23 @@
     }
 
     // Auto-trigger condition evaluator
+    let lastUpgraderPlayTime = 0;
     function checkAutoUpgraderConditions(userData) {
       if (!upgraderMasterToggle || !upgraderMasterToggle.checked) return;
       if (!userData || !userData.user) return;
       if (isUpgraderExecuting) return;
 
       const balance = userData.user.balance_bux || 0;
-      const txCount = Array.isArray(userData.user.transactions) ? userData.user.transactions.length : 0;
-      const triggerMode = triggerWhenBalance?.checked ? 'balance' : 'rain';
+      const now = Date.now();
 
-      if (triggerMode === 'balance') {
-        if (balance >= 50) {
-          console.log('[AutoUpgrader] Balance >= 50 BUX threshold detected. Firing upgrade...');
-          executeUpgraderPlay(true);
-        }
-      } else if (triggerMode === 'rain') {
-        // Only trigger on NEW rain transactions
-        if (lastUpgraderTxCount >= 0 && txCount > lastUpgraderTxCount) {
-          if (balance >= 50) {
-            console.log('[AutoUpgrader] New rain completed and balance >= 50 BUX. Firing upgrade...');
-            executeUpgraderPlay(true);
-          } else {
-            if (upgraderFeedback) {
-              upgraderFeedback.textContent = `New rain detected, but balance (${balance.toFixed(2)} BUX) is under 50 BUX min.`;
-              upgraderFeedback.className = 'text-xs text-yellow-400 truncate flex-1';
-            }
-          }
-        }
-        lastUpgraderTxCount = txCount;
+      // Ensure at least 30s cooldown between automated bets to prevent spamming
+      if (now - lastUpgraderPlayTime < 30000) return;
+
+      // When enabled and balance >= 50 BUX, trigger automated upgrade play
+      if (balance >= 50) {
+        lastUpgraderPlayTime = now;
+        console.log(`[AutoUpgrader] Active! Balance is ${balance.toFixed(2)} BUX (>= 50 BUX). Executing automatic upgrade...`);
+        executeUpgraderPlay(true);
       }
     }
 

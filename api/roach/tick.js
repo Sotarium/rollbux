@@ -160,6 +160,7 @@ export default async function handler(req, res) {
         handleAction({
           action: 'rain_tick',
           username: accName,
+          cycle_id: cycleId,
           time_left: secondsRemaining,
           pot_amount: potBux
         });

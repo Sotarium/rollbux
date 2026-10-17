@@ -297,18 +297,37 @@ export function handleAction(payload) {
 
   if (action === 'rain_tick') {
     if (!user.active_rain) user.active_rain = {};
+    if (!user.cycle_pots) user.cycle_pots = {};
+
+    const incomingCycleId = payload.cycle_id;
+    const prevCycleId = user.active_rain.cycle_id;
+
+    // Detect when rain rotates to a brand-new cycle
+    if (incomingCycleId && prevCycleId && incomingCycleId !== prevCycleId) {
+      // Freeze the final pot of the previous cycle forever
+      if (user.active_rain.pot_amount > 0) {
+        user.cycle_pots[prevCycleId] = user.active_rain.pot_amount;
+        user.last_completed_pot = user.active_rain.pot_amount;
+      }
+      user.active_rain.pot_amount = 0;
+    }
+
+    if (incomingCycleId) {
+      user.active_rain.cycle_id = incomingCycleId;
+    }
+
     if (typeof time_left === 'number') {
       user.active_rain.time_left = time_left;
     }
-    // Freeze pot when timer is <= 3 seconds like site timer
-    if (typeof time_left === 'number' && time_left <= 3) {
-      if (!user.active_rain.pot_amount && user.last_completed_pot) {
-        user.active_rain.pot_amount = user.last_completed_pot;
-      }
-    } else if (typeof pot_amount === 'number' && pot_amount > 0) {
+
+    if (typeof pot_amount === 'number' && pot_amount > 0) {
       user.active_rain.pot_amount = pot_amount;
+      if (incomingCycleId) {
+        user.cycle_pots[incomingCycleId] = pot_amount;
+      }
       user.last_completed_pot = pot_amount;
     }
+
     user.active_rain.updated_at = Date.now();
     user.active_rain.status = 'in_progress';
     if (typeof balance === 'number' && balance >= 0) {
@@ -344,13 +363,15 @@ export function handleAction(payload) {
     if (Array.isArray(transactions)) {
       if (!user.transactions) user.transactions = [];
       if (!user.deleted_signatures) user.deleted_signatures = [];
-
-      // Use last known pot at time of rain completion
-      const knownPot = payload.completed_pot_amount || user.last_completed_pot || null;
+      if (!user.cycle_pots) user.cycle_pots = {};
 
       for (const tx of transactions) {
         const amt = parseFloat(tx.amount_bux) || 0;
         if (amt <= 0) continue;
+
+        // Use pot specifically recorded for this cycle if available, otherwise last completed pot
+        const cyclePot = tx.cycle_id ? user.cycle_pots[tx.cycle_id] : null;
+        const knownPot = cyclePot || payload.completed_pot_amount || user.last_completed_pot || null;
 
         // Timestamp from RollBux or current server time
         const txTimestamp = typeof tx.timestamp === 'number' ? tx.timestamp : Date.now();
