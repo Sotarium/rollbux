@@ -78,6 +78,101 @@ export default async function handler(req, res) {
     return;
   }
 
+  // Multi-Account Management Routes
+  if (pathname === '/api/roach/accounts') {
+    if (!isAllowedIp(req)) {
+      res.statusCode = 403;
+      res.end('Forbidden');
+      return;
+    }
+
+    const url = process.env.UPSTASH_REDIS_REST_URL || "https://flowing-chigger-149490.upstash.io";
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    if (!token) {
+      res.status(500).json({ error: "Upstash token missing" });
+      return;
+    }
+
+    if (req.method === 'GET') {
+      try {
+        const resp = await fetch(`${url}/get/roach%3Aaccounts`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await resp.json();
+        const accounts = data.result ? JSON.parse(data.result) : [];
+        // Mask tokens in UI response for security
+        const safeAccounts = accounts.map(a => ({
+          id: a.id,
+          name: a.name,
+          token_preview: a.token ? `${a.token.slice(0, 8)}...${a.token.slice(-6)}` : '',
+          created_at: a.created_at
+        }));
+        res.status(200).json({ accounts: safeAccounts });
+      } catch (err) {
+        res.status(500).json({ error: err.message });
+      }
+      return;
+    }
+
+    if (req.method === 'POST') {
+      try {
+        const payload = req.body || await parseBody(req);
+        if (!payload.name || !payload.token) {
+          res.status(400).json({ error: "Name and token are required" });
+          return;
+        }
+
+        const resp = await fetch(`${url}/get/roach%3Aaccounts`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await resp.json();
+        let accounts = data.result ? JSON.parse(data.result) : [];
+
+        const newAccount = {
+          id: `acc_${Date.now()}`,
+          name: payload.name.trim(),
+          token: payload.token.trim(),
+          created_at: new Date().toISOString()
+        };
+        accounts.push(newAccount);
+
+        await fetch(`${url}/set/roach%3Aaccounts`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: JSON.stringify(accounts)
+        });
+
+        res.status(200).json({ success: true, account: { id: newAccount.id, name: newAccount.name } });
+      } catch (err) {
+        res.status(500).json({ error: err.message });
+      }
+      return;
+    }
+
+    if (req.method === 'DELETE') {
+      try {
+        const payload = req.body || await parseBody(req);
+        const resp = await fetch(`${url}/get/roach%3Aaccounts`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await resp.json();
+        let accounts = data.result ? JSON.parse(data.result) : [];
+        accounts = accounts.filter(a => a.id !== payload.id);
+
+        await fetch(`${url}/set/roach%3Aaccounts`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: JSON.stringify(accounts)
+        });
+
+        res.status(200).json({ success: true });
+      } catch (err) {
+        res.status(500).json({ error: err.message });
+      }
+      return;
+    }
+  }
+
   if (pathname === '/roach') {
     if (!isAllowedIp(req)) {
       res.statusCode = 403;

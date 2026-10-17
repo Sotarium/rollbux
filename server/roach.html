@@ -3,12 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RainRoach Control Center</title>
+  <title>RainRoach Multi-Account Center</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { background-color: #0b0e14; color: #d1d5db; font-family: ui-sans-serif, system-ui, sans-serif; }
     .glass-card { background: rgba(18, 24, 38, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
-    .neon-glow { box-shadow: 0 0 20px rgba(172, 255, 70, 0.15); }
   </style>
 </head>
 <body class="min-h-screen p-4 md:p-8 flex flex-col items-center">
@@ -18,8 +17,8 @@
       <div class="flex items-center space-x-3">
         <span class="text-3xl">🪳</span>
         <div>
-          <h1 class="text-2xl font-black text-white tracking-wide">RainRoach <span class="text-[#acff46] text-sm uppercase px-2 py-0.5 rounded bg-[#acff46]/10 border border-[#acff46]/30">Cloud Engine</span></h1>
-          <p class="text-xs text-gray-400">Headless RollBux Rain Auto-Joiner • Always-On Serverless</p>
+          <h1 class="text-2xl font-black text-white tracking-wide">RainRoach <span class="text-[#acff46] text-sm uppercase px-2 py-0.5 rounded bg-[#acff46]/10 border border-[#acff46]/30">Multi-Account Engine</span></h1>
+          <p class="text-xs text-gray-400">Headless RollBux Rain Auto-Joiner • Always-On Cloud Serverless</p>
         </div>
       </div>
       <div class="flex items-center space-x-2">
@@ -28,8 +27,8 @@
       </div>
     </div>
 
-    <!-- Main Metric Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <!-- Rain Global Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="glass-card rounded-xl p-4 flex flex-col justify-between">
         <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Time Remaining</span>
         <div id="timeRemaining" class="text-3xl font-extrabold text-white mt-2">--:--</div>
@@ -39,34 +38,79 @@
       <div class="glass-card rounded-xl p-4 flex flex-col justify-between">
         <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Live Rain Pot</span>
         <div id="livePot" class="text-3xl font-extrabold text-[#acff46] mt-2">-- BUX</div>
-        <span id="joinerCount" class="text-[11px] text-gray-500 mt-1">0 Joiners</span>
+        <span class="text-[11px] text-gray-500 mt-1">Pool Amount</span>
       </div>
 
       <div class="glass-card rounded-xl p-4 flex flex-col justify-between">
-        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Join Status</span>
-        <div id="joinStatus" class="text-2xl font-extrabold text-yellow-400 mt-2">WAITING</div>
-        <span class="text-[11px] text-gray-500 mt-1">Triggers at &le; 60s</span>
-      </div>
-
-      <div class="glass-card rounded-xl p-4 flex flex-col justify-between">
-        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Chat Eligibility</span>
-        <div id="chatCount" class="text-3xl font-extrabold text-blue-400 mt-2">0 / 3</div>
-        <span class="text-[11px] text-gray-500 mt-1">Goal: 3 msgs/hr</span>
+        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Active Accounts</span>
+        <div id="activeAccountsCount" class="text-3xl font-extrabold text-blue-400 mt-2">0</div>
+        <span class="text-[11px] text-gray-500 mt-1">Managed in Cloud</span>
       </div>
     </div>
 
-    <!-- Quick Action / Trigger -->
+    <!-- Accounts Management Section -->
+    <div class="glass-card rounded-xl p-5 space-y-4">
+      <div class="flex items-center justify-between border-b border-white/5 pb-3">
+        <div>
+          <h2 class="text-sm font-bold text-white uppercase tracking-wider">Managed Player Accounts</h2>
+          <p class="text-xs text-gray-400 mt-0.5">Add player session tokens here. The cloud worker will cycle through all accounts and join rain for each.</p>
+        </div>
+        <button id="toggleAddFormBtn" class="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-xs font-semibold text-white rounded-lg transition">
+          + Add Account
+        </button>
+      </div>
+
+      <!-- Add Account Form (Hidden by default) -->
+      <form id="addAccountForm" class="hidden bg-black/40 p-4 rounded-xl space-y-3 border border-white/10">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-[11px] font-semibold text-gray-400 uppercase mb-1">Account Nickname</label>
+            <input type="text" id="accNameInput" placeholder="e.g. Main, Alt 1" required class="w-full bg-[#121826] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#acff46]">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-[11px] font-semibold text-gray-400 uppercase mb-1">authjs.session-token Cookie / JWT</label>
+            <input type="password" id="accTokenInput" placeholder="eyJhbGciOiJIUzI1Ni..." required class="w-full bg-[#121826] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#acff46]">
+          </div>
+        </div>
+        <div class="flex justify-end space-x-2 pt-1">
+          <button type="button" id="cancelAddBtn" class="px-3 py-1.5 text-xs text-gray-400 hover:text-white">Cancel</button>
+          <button type="submit" id="saveAccountBtn" class="px-4 py-1.5 bg-[#acff46] text-black font-bold text-xs rounded-lg hover:bg-[#96e036] transition">Save Account</button>
+        </div>
+      </form>
+
+      <!-- Accounts Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="text-gray-500 uppercase border-b border-white/5 text-[10px]">
+            <tr>
+              <th class="pb-2">Account</th>
+              <th class="pb-2">Token Preview</th>
+              <th class="pb-2">Eligibility Chat</th>
+              <th class="pb-2">Rain Status</th>
+              <th class="pb-2 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody id="accountsTableBody" class="divide-y divide-white/5">
+            <tr>
+              <td colspan="5" class="py-4 text-center text-gray-500">Loading accounts...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Quick Manual Cloud Trigger -->
     <div class="glass-card rounded-xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
       <div>
         <h3 class="text-sm font-bold text-white">Manual Cloud Trigger</h3>
-        <p class="text-xs text-gray-400 mt-0.5">cron-job.org calls this automatically every 30s. Click below to trigger a test tick right now.</p>
+        <p class="text-xs text-gray-400 mt-0.5">cron-job.org calls this automatically every 30-60s. Click below to test tick all accounts right now.</p>
       </div>
       <button id="triggerBtn" class="px-5 py-2.5 bg-[#acff46] text-black font-bold text-sm rounded-lg hover:bg-[#96e036] transition shadow-lg shadow-[#acff46]/10 whitespace-nowrap">
         Trigger Tick Now
       </button>
     </div>
 
-    <!-- Live Log Console -->
+    <!-- Live Execution Logs -->
     <div class="glass-card rounded-xl p-5">
       <div class="flex items-center justify-between mb-3 border-b border-white/5 pb-2">
         <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400">Cloud Execution Logs</h3>
@@ -79,6 +123,68 @@
   </div>
 
   <script>
+    let registeredAccounts = [];
+    let liveStatusAccounts = {};
+
+    async function fetchAccounts() {
+      try {
+        const res = await fetch('/api/roach/accounts');
+        if (!res.ok) return;
+        const data = await res.json();
+        registeredAccounts = data.accounts || [];
+        renderAccountsTable();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderAccountsTable() {
+      const tbody = document.getElementById('accountsTableBody');
+      document.getElementById('activeAccountsCount').textContent = registeredAccounts.length;
+
+      if (registeredAccounts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-gray-500">No accounts added yet. Click "+ Add Account" above.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = registeredAccounts.map(acc => {
+        const live = liveStatusAccounts[acc.id] || {};
+        const isJoined = live.joined;
+        const chats = live.chat_count !== undefined ? `${live.chat_count}/3` : '--';
+
+        let joinBadge = '<span class="text-yellow-400">WAITING</span>';
+        if (isJoined) {
+          joinBadge = '<span class="text-[#acff46] font-bold">JOINED 🎉</span>';
+        }
+
+        return `
+          <tr class="hover:bg-white/[0.02]">
+            <td class="py-3 font-semibold text-white">${acc.name}</td>
+            <td class="py-3 font-mono text-gray-400">${acc.token_preview || '••••••••'}</td>
+            <td class="py-3 text-blue-400">${chats}</td>
+            <td class="py-3">${joinBadge}</td>
+            <td class="py-3 text-right">
+              <button onclick="deleteAccount('${acc.id}')" class="text-red-400 hover:text-red-300 font-semibold text-xs">Remove</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function deleteAccount(id) {
+      if (!confirm('Are you sure you want to remove this account?')) return;
+      try {
+        await fetch('/api/roach/accounts', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        await fetchAccounts();
+      } catch (e) {
+        alert('Failed to remove account: ' + e.message);
+      }
+    }
+
     async function updateStatus() {
       try {
         const res = await fetch('/api/roach/status');
@@ -87,7 +193,7 @@
         if (!data || !data.status) return;
         const s = data.status;
 
-        // Timer formatting
+        // Timer
         const sec = s.seconds_remaining || 0;
         const m = Math.floor(sec / 60);
         const remSec = sec % 60;
@@ -98,21 +204,12 @@
         const bux = ((s.live_pool || 0) / 10000000).toFixed(2);
         document.getElementById('livePot').textContent = `${bux} BUX`;
 
-        // Join status
-        const joinEl = document.getElementById('joinStatus');
-        if (s.is_joined) {
-          joinEl.textContent = 'JOINED';
-          joinEl.className = 'text-2xl font-extrabold text-[#acff46] mt-2';
-        } else if (sec <= 60) {
-          joinEl.textContent = 'JOINING...';
-          joinEl.className = 'text-2xl font-extrabold text-yellow-400 mt-2 animate-pulse';
-        } else {
-          joinEl.textContent = 'WAITING';
-          joinEl.className = 'text-2xl font-extrabold text-yellow-400 mt-2';
+        // Map live account statuses
+        if (s.accounts && Array.isArray(s.accounts)) {
+          liveStatusAccounts = {};
+          s.accounts.forEach(a => { liveStatusAccounts[a.id] = a; });
+          renderAccountsTable();
         }
-
-        // Chat
-        document.getElementById('chatCount').textContent = `${s.chat_count || 0} / 3`;
 
         // Logs
         if (s.last_logs && s.last_logs.length) {
@@ -129,6 +226,48 @@
       }
     }
 
+    // Add Account Form logic
+    const form = document.getElementById('addAccountForm');
+    document.getElementById('toggleAddFormBtn').addEventListener('click', () => {
+      form.classList.toggle('hidden');
+    });
+    document.getElementById('cancelAddBtn').addEventListener('click', () => {
+      form.classList.add('hidden');
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('accNameInput').value.trim();
+      const token = document.getElementById('accTokenInput').value.trim();
+      if (!name || !token) return;
+
+      const saveBtn = document.getElementById('saveAccountBtn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+
+      try {
+        const res = await fetch('/api/roach/accounts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, token })
+        });
+        if (res.ok) {
+          form.reset();
+          form.classList.add('hidden');
+          await fetchAccounts();
+        } else {
+          const errData = await res.json();
+          alert('Error: ' + (errData.error || 'Failed to save account'));
+        }
+      } catch (err) {
+        alert('Save error: ' + err.message);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Account';
+      }
+    });
+
+    // Manual Trigger
     document.getElementById('triggerBtn').addEventListener('click', async () => {
       const btn = document.getElementById('triggerBtn');
       btn.disabled = true;
@@ -144,6 +283,7 @@
       }
     });
 
+    fetchAccounts();
     setInterval(updateStatus, 3000);
     updateStatus();
   </script>

@@ -1,15 +1,13 @@
 // api/roach/tick.js
-// Serverless Cloud Worker for RainRoach
-// Runs in the cloud on Vercel, triggered by cron-job.org every 30-60 seconds.
+// Multi-Account Serverless Cloud Worker for RainRoach
+// Triggered by cron-job.org every 30-60s. Supports multiple accounts stored in Upstash Redis.
 
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || "https://flowing-chigger-149490.upstash.io";
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
-const ROLLBUX_TOKEN = process.env.ROLLBUX_SESSION_TOKEN;
-const CAPTCHA_KEY = process.env.CAPMONSTER_KEY || process.env.NOPECHA_KEY || "";
+const ENV_SESSION_TOKEN = process.env.ROLLBUX_SESSION_TOKEN;
 
 const ROLLBUX_API_BASE = "https://rollbux.com/_api";
 
-// Helper: Upstash Redis REST calls
 async function redis(command, ...args) {
   if (!UPSTASH_TOKEN) return null;
   const path = [command, ...args.map(a => encodeURIComponent(typeof a === 'object' ? JSON.stringify(a) : String(a)))].join('/');
@@ -25,8 +23,7 @@ async function redis(command, ...args) {
   }
 }
 
-// Helper: RollBux API call with Chrome headers
-async function rollbuxFetch(endpoint, options = {}) {
+async function rollbuxFetch(endpoint, sessionToken, options = {}) {
   const url = endpoint.startsWith('http') ? endpoint : `${ROLLBUX_API_BASE}${endpoint}`;
   const headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -43,9 +40,9 @@ async function rollbuxFetch(endpoint, options = {}) {
     ...(options.headers || {})
   };
 
-  if (ROLLBUX_TOKEN) {
-    headers["Authorization"] = `Bearer ${ROLLBUX_TOKEN}`;
-    headers["Cookie"] = `authjs.session-token=${ROLLBUX_TOKEN}`;
+  if (sessionToken) {
+    headers["Authorization"] = `Bearer ${sessionToken}`;
+    headers["Cookie"] = `authjs.session-token=${sessionToken}`;
   }
 
   const response = await fetch(url, {
@@ -71,10 +68,10 @@ export default async function handler(req, res) {
   };
 
   try {
-    log("RainRoach tick triggered.");
+    log("RainRoach multi-account tick triggered.");
 
-    // 1. Fetch current rain state
-    const rainRes = await rollbuxFetch('/rain/current');
+    // 1. Fetch current rain state (public)
+    const rainRes = await rollbuxFetch('/rain/current', null);
     if (!rainRes.ok || !rainRes.data || !rainRes.data.data) {
       log(`Failed to fetch rain state: HTTP ${rainRes.status}`);
       return res.status(200).json({ success: false, logs, error: "Rain state fetch failed" });
@@ -83,77 +80,102 @@ export default async function handler(req, res) {
     const rainData = rainRes.data.data;
     const cycle = rainData.cycle;
     const cycleId = cycle.id;
-    const status = cycle.status; // "COLLECTING"
+    const status = cycle.status;
     const cycleEnd = new Date(cycle.cycle_end).getTime();
     const now = Date.now();
     const secondsRemaining = Math.max(0, Math.round((cycleEnd - now) / 1000));
     const livePool = rainData.live_pool || 0;
 
-    log(`Cycle: ${cycleId.slice(0, 8)}... | Status: ${status} | Ends In: ${secondsRemaining}s | Pot: ${livePool}`);
+    log(`Cycle: ${cycleId.slice(0, 8)} | Status: ${status} | Ends In: ${secondsRemaining}s | Pot: ${livePool}`);
 
-    // Read stored state from Redis
-    const lastJoinedCycle = await redis('get', 'roach:last_joined_cycle');
-    const isJoined = lastJoinedCycle === cycleId;
+    // 2. Fetch all registered accounts from Upstash
+    let accountsRaw = await redis('get', 'roach:accounts');
+    let accounts = accountsRaw ? JSON.parse(accountsRaw) : [];
 
-    // 2. Chat Keeper: Ensure 3 messages per hour for rain eligibility
-    const chatKey = `roach:chat_count:${cycleId}`;
-    let chatCount = parseInt((await redis('get', chatKey)) || '0', 10);
-
-    // If rain is collecting and we have < 3 chats and more than 2 minutes left
-    if (ROLLBUX_TOKEN && chatCount < 3 && secondsRemaining > 120 && secondsRemaining < 3300) {
-      const emotes = [".", "gg", "gl", "rain", "<3", ":)", "!", "pog"];
-      const randomMsg = emotes[Math.floor(Math.random() * emotes.length)];
-      
-      const chatRes = await rollbuxFetch('/users/chat', {
-        method: 'POST',
-        headers: { "Content-Type": "application/json" },
-        body: { content: randomMsg }
-      });
-
-      if (chatRes.ok) {
-        chatCount += 1;
-        await redis('set', chatKey, chatCount);
-        log(`Chat posted: "${randomMsg}" (Count: ${chatCount}/3)`);
-      } else {
-        log(`Chat post failed: HTTP ${chatRes.status}`);
-      }
+    // Fallback: if no accounts in Redis but ENV token exists, treat as single account
+    if (accounts.length === 0 && ENV_SESSION_TOKEN) {
+      accounts = [{ id: 'env_main', name: 'Primary (ENV)', token: ENV_SESSION_TOKEN }];
     }
 
-    // 3. Join Engine: When secondsRemaining <= 60s and not joined yet
-    let joinResult = null;
-    if (secondsRemaining <= 60 && status === 'COLLECTING' && !isJoined) {
-      log("Rain is in join window (<= 60s)! Attempting join...");
+    log(`Registered accounts active: ${accounts.length}`);
 
-      if (!ROLLBUX_TOKEN) {
-        log("Cannot join: ROLLBUX_SESSION_TOKEN is missing from environment variables.");
-      } else {
-        // Attempt join
-        const joinRes = await rollbuxFetch('/users/me/rain/join', {
+    const results = [];
+
+    // 3. Process each account individually
+    for (const acc of accounts) {
+      const accId = acc.id;
+      const accName = acc.name;
+      const token = acc.token;
+
+      if (!token) {
+        results.push({ account: accName, status: "NO_TOKEN" });
+        continue;
+      }
+
+      // Check if this account already joined this cycle
+      const joinedKey = `roach:joined:${cycleId}:${accId}`;
+      let isAccountJoined = (await redis('get', joinedKey)) === '1';
+
+      // Chat Keeper: Ensure 3 messages per hour for rain eligibility
+      const chatKey = `roach:chat_count:${cycleId}:${accId}`;
+      let chatCount = parseInt((await redis('get', chatKey)) || '0', 10);
+
+      if (chatCount < 3 && secondsRemaining > 120 && secondsRemaining < 3300) {
+        const emotes = [".", "gg", "gl", "rain", "<3", ":)", "!"];
+        const randomMsg = emotes[Math.floor(Math.random() * emotes.length)];
+
+        const chatRes = await rollbuxFetch('/users/chat', token, {
+          method: 'POST',
+          headers: { "Content-Type": "application/json" },
+          body: { content: randomMsg }
+        });
+
+        if (chatRes.ok) {
+          chatCount += 1;
+          await redis('set', chatKey, chatCount);
+          log(`[${accName}] Chat sent: "${randomMsg}" (${chatCount}/3)`);
+        }
+      }
+
+      // Join Engine: Join when <= 60s and not joined
+      let joinStatus = isAccountJoined ? "ALREADY_JOINED" : "WAITING";
+      if (secondsRemaining <= 60 && status === 'COLLECTING' && !isAccountJoined) {
+        log(`[${accName}] Attempting Rain Join...`);
+
+        const joinRes = await rollbuxFetch('/users/me/rain/join', token, {
           method: 'POST',
           headers: { "Content-Type": "application/json" },
           body: { token: null }
         });
 
         if (joinRes.ok) {
-          log("Successfully joined rain!");
-          await redis('set', 'roach:last_joined_cycle', cycleId);
-          joinResult = "SUCCESS";
+          log(`[${accName}] JOIN SUCCESSFUL! 🎉`);
+          await redis('set', joinedKey, '1');
+          joinStatus = "SUCCESS";
+          isAccountJoined = true;
         } else {
-          log(`Join returned HTTP ${joinRes.status}: ${JSON.stringify(joinRes.data)}`);
-          joinResult = `FAILED_${joinRes.status}`;
+          log(`[${accName}] Join failed (HTTP ${joinRes.status}): ${JSON.stringify(joinRes.data)}`);
+          joinStatus = `FAILED_${joinRes.status}`;
         }
       }
+
+      results.push({
+        id: accId,
+        name: accName,
+        joined: isAccountJoined,
+        chat_count: chatCount,
+        join_status: joinStatus
+      });
     }
 
-    // 4. Save latest status in Upstash for dashboard
+    // 4. Update overall status in Redis
     const dashboardState = {
       updated_at: new Date().toISOString(),
       cycle_id: cycleId,
       status,
       seconds_remaining: secondsRemaining,
       live_pool: livePool,
-      is_joined: isJoined || joinResult === "SUCCESS",
-      chat_count: chatCount,
+      accounts: results,
       last_logs: logs
     };
     await redis('set', 'roach:status', JSON.stringify(dashboardState));
@@ -162,9 +184,7 @@ export default async function handler(req, res) {
       success: true,
       cycle_id: cycleId,
       seconds_remaining: secondsRemaining,
-      live_pool: livePool,
-      is_joined: isJoined || joinResult === "SUCCESS",
-      join_attempted: joinResult,
+      accounts: results,
       logs
     });
   } catch (err) {
