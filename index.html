@@ -224,222 +224,183 @@
                   </div>
                 </div>
 
-                <!-- Statistics Section -->
-                <div data-node-id="671:33117" class="flex w-full shrink-0 flex-col items-start gap-[16px]" bis_skin_checked="1">
-                  <div class="flex w-full shrink-0 items-center justify-between" bis_skin_checked="1">
-                    <p data-node-id="671:33118" class="whitespace-nowrap text-[20px] font-bold italic leading-[30px] text-white">Statistics</p>
-                    <div class="flex items-center gap-3">
-                      <!-- Green Clear Button for Stats Graph -->
-                      <button id="clearStatsBtn" type="button" class="relative flex h-[32px] shrink-0 items-center justify-center overflow-clip rounded-[7px] px-[14px] py-[6px] bg-[#acff46] text-[#121418] font-bold text-[13px] hover:brightness-110 active:scale-95 transition shadow-sm">
-                        <span>Clear</span>
-                      </button>
-                      <!-- Timeframe Pills -->
-                      <div class="relative flex shrink-0 items-center gap-[2px] rounded-[8px] p-[2px] bg-[#0e131f] border border-white/[0.04]" bis_skin_checked="1">
-                        <button type="button" class="tab-btn active relative flex h-[32px] shrink-0 items-center justify-center overflow-clip rounded-[7px] px-[12px] py-[8px] transition" data-tab="24h">
-                          <span aria-hidden="true" class="tab-bg pointer-events-none absolute inset-0 rounded-[7px] bg-[#131a29]"></span>
-                          <span class="tab-text relative whitespace-nowrap text-[14px] font-semibold leading-[20px] text-white">24H</span>
+                <!-- Statistics + Auto Upgrader Grid -->
+                <div class="grid grid-cols-1 xl:grid-cols-[1fr_330px] gap-6 w-full items-start">
+                  
+                  <!-- Left: Statistics Section -->
+                  <div data-node-id="671:33117" class="flex w-full min-w-0 flex-col items-start gap-[16px]" bis_skin_checked="1">
+                    <div class="flex w-full shrink-0 items-center justify-between" bis_skin_checked="1">
+                      <p data-node-id="671:33118" class="whitespace-nowrap text-[20px] font-bold italic leading-[30px] text-white">Statistics</p>
+                      <div class="flex items-center gap-3">
+                        <!-- Green Clear Button for Stats Graph -->
+                        <button id="clearStatsBtn" type="button" class="relative flex h-[32px] shrink-0 items-center justify-center overflow-clip rounded-[7px] px-[14px] py-[6px] bg-[#acff46] text-[#121418] font-bold text-[13px] hover:brightness-110 active:scale-95 transition shadow-sm">
+                          <span>Clear</span>
                         </button>
-                        <button type="button" class="tab-btn relative flex h-[32px] shrink-0 items-center justify-center overflow-clip rounded-[7px] px-[12px] py-[8px] transition" data-tab="week">
-                          <span aria-hidden="true" class="tab-bg pointer-events-none absolute inset-0 rounded-[7px] hidden bg-[#131a29]"></span>
-                          <span class="tab-text relative whitespace-nowrap text-[14px] font-semibold leading-[20px] text-[#9aa3a8] hover:text-white">Week</span>
-                        </button>
-                        <button type="button" class="tab-btn relative flex h-[32px] shrink-0 items-center justify-center overflow-clip rounded-[7px] px-[12px] py-[8px] transition" data-tab="month">
-                          <span aria-hidden="true" class="tab-bg pointer-events-none absolute inset-0 rounded-[7px] hidden bg-[#131a29]"></span>
-                          <span class="tab-text relative whitespace-nowrap text-[14px] font-semibold leading-[20px] text-[#9aa3a8] hover:text-white">Month</span>
-                        </button>
+                        <!-- Timeframe Pills -->
+                        <div class="relative flex shrink-0 items-center gap-[2px] rounded-[8px] p-[2px] bg-[#0e131f] border border-white/[0.04]" bis_skin_checked="1">
+                          <button type="button" class="tab-btn active relative flex h-[32px] shrink-0 items-center justify-center overflow-clip rounded-[7px] px-[12px] py-[8px] transition" data-tab="24h">
+                            <span aria-hidden="true" class="tab-bg pointer-events-none absolute inset-0 rounded-[7px] bg-[#131a29]"></span>
+                            <span class="tab-text relative whitespace-nowrap text-[14px] font-semibold leading-[20px] text-white">24H</span>
+                          </button>
+                          <button type="button" class="tab-btn relative flex h-[32px] shrink-0 items-center justify-center overflow-clip rounded-[7px] px-[12px] py-[8px] transition" data-tab="week">
+                            <span aria-hidden="true" class="tab-bg pointer-events-none absolute inset-0 rounded-[7px] hidden bg-[#131a29]"></span>
+                            <span class="tab-text relative whitespace-nowrap text-[14px] font-semibold leading-[20px] text-[#9aa3a8] hover:text-white">Week</span>
+                          </button>
+                          <button type="button" class="tab-btn relative flex h-[32px] shrink-0 items-center justify-center overflow-clip rounded-[7px] px-[12px] py-[8px] transition" data-tab="month">
+                            <span aria-hidden="true" class="tab-bg pointer-events-none absolute inset-0 rounded-[7px] hidden bg-[#131a29]"></span>
+                            <span class="tab-text relative whitespace-nowrap text-[14px] font-semibold leading-[20px] text-[#9aa3a8] hover:text-white">Month</span>
+                          </button>
+                        </div>
                       </div>
+                    </div>
+
+                    <!-- Chart Container Card -->
+                    <div data-node-id="671:33119" class="relative flex w-full shrink-0 flex-col items-start justify-center overflow-clip rounded-[12px] p-[24px] border border-white/[0.03]" bis_skin_checked="1">
+                      <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
+                      
+                      <div data-node-id="671:33120" class="custom-scroll relative h-[348px] w-full shrink-0 overflow-x-auto overflow-y-clip" bis_skin_checked="1">
+                        <div class="relative h-full w-full min-w-[500px]" bis_skin_checked="1">
+                          <!-- Y-Axis Labels -->
+                          <div id="chartYLabels" data-node-id="671:33121" class="absolute left-0 top-0 flex flex-col items-start justify-between h-[330px] whitespace-nowrap text-[12px] font-bold text-[#6d7680]" bis_skin_checked="1">
+                            <p id="yAxisTop" class="leading-[18px]">100</p>
+                            <p class="leading-[18px]">&nbsp;</p>
+                            <p class="leading-[18px]">&nbsp;</p>
+                            <p class="leading-[18px]">&nbsp;</p>
+                            <p class="leading-[18px]">&nbsp;</p>
+                            <p class="leading-[18px]">&nbsp;</p>
+                            <p class="leading-[18px] text-white font-bold">0</p>
+                          </div>
+
+                          <!-- Dashed horizontal grid lines -->
+                          <span class="absolute left-[56px] h-0 right-0" style="top: 9px;"><span class="absolute bottom-0 left-0 right-0 top-[-1px]"><img alt="" class="block w-full max-w-none opacity-60" src="/figma/af-grid-line.svg"></span></span>
+                          <span class="absolute left-[56px] h-0 right-0" style="top: 64px;"><span class="absolute bottom-0 left-0 right-0 top-[-1px]"><img alt="" class="block w-full max-w-none opacity-60" src="/figma/af-grid-line.svg"></span></span>
+                          <span class="absolute left-[56px] h-0 right-0" style="top: 119px;"><span class="absolute bottom-0 left-0 right-0 top-[-1px]"><img alt="" class="block w-full max-w-none opacity-60" src="/figma/af-grid-line.svg"></span></span>
+                          <span class="absolute left-[56px] h-0 right-0" style="top: 174px;"><span class="absolute bottom-0 left-0 right-0 top-[-1px]"><img alt="" class="block w-full max-w-none opacity-60" src="/figma/af-grid-line.svg"></span></span>
+                          <span class="absolute left-[56px] h-0 right-0" style="top: 229px;"><span class="absolute bottom-0 left-0 right-0 top-[-1px]"><img alt="" class="block w-full max-w-none opacity-60" src="/figma/af-grid-line.svg"></span></span>
+                          <span class="absolute left-[56px] h-0 right-0" style="top: 284px;"><span class="absolute bottom-0 left-0 right-0 top-[-1px]"><img alt="" class="block w-full max-w-none opacity-60" src="/figma/af-grid-line.svg"></span></span>
+                          <span class="absolute left-[56px] h-0 right-0" style="top: 339px;"><span class="absolute bottom-0 left-0 right-0 top-[-1px]"><img alt="" class="block w-full max-w-none opacity-60" src="/figma/af-grid-line.svg"></span></span>
+
+                          <!-- SVG Chart Area & Path -->
+                          <div id="chartInteractiveWrap" class="absolute cursor-crosshair" style="left: 56px; top: 9px; width: calc(100% - 56px); height: 330px;">
+                            <svg id="chartSvg" class="absolute inset-0 size-full" viewBox="0 0 744 330" preserveAspectRatio="none">
+                              <defs>
+                                <linearGradient id="sp-af-area" x1="0" y1="0" x2="0" y2="1">
+                                  <stop stop-color="#7974FF"></stop>
+                                  <stop offset="1" stop-color="#7974FF" stop-opacity="0"></stop>
+                                </linearGradient>
+                              </defs>
+                              <path id="chartAreaPath" d="M0 330 L744 330 L744 330 L0 330 Z" fill="url(#sp-af-area)" opacity="0.3"></path>
+                              <path id="chartLinePath" d="M0 330 L744 330" fill="none" stroke="#7974FF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
+                              <!-- Hover vertical guide line -->
+                              <line id="chartHoverLine" x1="0" y1="0" x2="0" y2="330" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" stroke-dasharray="4 4" class="opacity-0 transition-opacity pointer-events-none"></line>
+                              <!-- Hover active point pulse/glow -->
+                              <circle id="chartHoverGlow" cx="-20" cy="-20" r="8" fill="#7974FF" opacity="0.25" class="opacity-0 transition-opacity pointer-events-none"></circle>
+                              <circle id="chartHoverDot" cx="-20" cy="-20" r="4.5" fill="#ffffff" stroke="#7974FF" stroke-width="2.5" class="opacity-0 transition-opacity pointer-events-none"></circle>
+                            </svg>
+
+                            <!-- Floating Tooltip Box -->
+                            <div id="chartTooltip" class="pointer-events-none absolute z-20 flex flex-col items-start gap-1 rounded-lg bg-[#161b26] border border-white/10 px-3 py-2 shadow-2xl transition-all duration-75 opacity-0 transform -translate-x-1/2 -translate-y-full mb-2">
+                              <span id="chartTooltipTime" class="text-[11px] font-semibold text-[#9aa3a8]">--</span>
+                              <div class="flex items-center gap-1.5">
+                                <img id="chartTooltipCoinIcon" src="https://rollbux.com/icons/token.png" alt="Coin" class="size-3.5 object-contain">
+                                <span id="chartTooltipValue" class="text-[13px] font-extrabold text-white">0.00</span>
+                              </div>
+                              <span id="chartTooltipEarning" class="text-[10px] font-semibold text-[#50f07b]">+0.00</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <span aria-hidden="true" class="pointer-events-none absolute inset-0" style="border-radius: 12px; box-shadow: rgba(114, 144, 231, 0.04) 0px 4px 0px 0px inset;"></span>
                     </div>
                   </div>
 
-                  <!-- Chart Container Card -->
-                  <div data-node-id="671:33119" class="relative flex w-full shrink-0 flex-col items-start justify-center overflow-clip rounded-[12px] p-[24px] border border-white/[0.03]" bis_skin_checked="1">
-                    <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
-                    
-                    <div data-node-id="671:33120" class="custom-scroll relative h-[348px] w-full shrink-0 overflow-x-auto overflow-y-clip" bis_skin_checked="1">
-                      <div class="relative h-full w-full min-w-[600px]" bis_skin_checked="1">
-                        <!-- Y-Axis Labels -->
-                        <div id="chartYLabels" data-node-id="671:33121" class="absolute left-0 top-0 flex flex-col items-start justify-between h-[330px] whitespace-nowrap text-[12px] font-bold text-[#6d7680]" bis_skin_checked="1">
-                          <p id="yAxisTop" class="leading-[18px]">100</p>
-                          <p class="leading-[18px]">&nbsp;</p>
-                          <p class="leading-[18px]">&nbsp;</p>
-                          <p class="leading-[18px]">&nbsp;</p>
-                          <p class="leading-[18px]">&nbsp;</p>
-                          <p class="leading-[18px]">&nbsp;</p>
-                          <p class="leading-[18px] text-white font-bold">0</p>
-                        </div>
+                  <!-- Right: Clean Auto Upgrader GUI -->
+                  <div id="autoUpgraderSection" class="flex w-full flex-col items-start gap-[16px]">
+                    <div class="flex w-full shrink-0 items-center justify-between">
+                      <p class="whitespace-nowrap text-[20px] leading-[30px] text-white font-bold italic">Auto Upgrader</p>
+                      <!-- Master On/Off Switch -->
+                      <label class="relative inline-flex items-center cursor-pointer select-none">
+                        <input type="checkbox" id="upgraderMasterToggle" class="sr-only peer">
+                        <div class="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#acff46]"></div>
+                      </label>
+                    </div>
 
-                        <!-- Dashed horizontal grid lines -->
-                        <span class="absolute left-[56px] h-0 right-0" style="top: 9px;"><span class="absolute bottom-0 left-0 right-0 top-[-1px]"><img alt="" class="block w-full max-w-none opacity-60" src="/figma/af-grid-line.svg"></span></span>
-                        <span class="absolute left-[56px] h-0 right-0" style="top: 64px;"><span class="absolute bottom-0 left-0 right-0 top-[-1px]"><img alt="" class="block w-full max-w-none opacity-60" src="/figma/af-grid-line.svg"></span></span>
-                        <span class="absolute left-[56px] h-0 right-0" style="top: 119px;"><span class="absolute bottom-0 left-0 right-0 top-[-1px]"><img alt="" class="block w-full max-w-none opacity-60" src="/figma/af-grid-line.svg"></span></span>
-                        <span class="absolute left-[56px] h-0 right-0" style="top: 174px;"><span class="absolute bottom-0 left-0 right-0 top-[-1px]"><img alt="" class="block w-full max-w-none opacity-60" src="/figma/af-grid-line.svg"></span></span>
-                        <span class="absolute left-[56px] h-0 right-0" style="top: 229px;"><span class="absolute bottom-0 left-0 right-0 top-[-1px]"><img alt="" class="block w-full max-w-none opacity-60" src="/figma/af-grid-line.svg"></span></span>
-                        <span class="absolute left-[56px] h-0 right-0" style="top: 284px;"><span class="absolute bottom-0 left-0 right-0 top-[-1px]"><img alt="" class="block w-full max-w-none opacity-60" src="/figma/af-grid-line.svg"></span></span>
-                        <span class="absolute left-[56px] h-0 right-0" style="top: 339px;"><span class="absolute bottom-0 left-0 right-0 top-[-1px]"><img alt="" class="block w-full max-w-none opacity-60" src="/figma/af-grid-line.svg"></span></span>
+                    <!-- Clean Card Box -->
+                    <div class="relative flex w-full flex-col items-center justify-center gap-4 overflow-clip rounded-[12px] bg-[#0e131f] p-[20px] border border-white/[0.03]">
+                      <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
 
-                        <!-- SVG Chart Area & Path -->
-                        <div id="chartInteractiveWrap" class="absolute cursor-crosshair" style="left: 56px; top: 9px; width: calc(100% - 56px); height: 330px;">
-                          <svg id="chartSvg" class="absolute inset-0 size-full" viewBox="0 0 744 330" preserveAspectRatio="none">
+                      <!-- Authentic Unbox.gg / RollBux Style Wheel (No top indicator, no second middle layer) -->
+                      <div class="relative flex flex-col items-center justify-center w-full select-none py-2">
+                        <div id="upgraderWheelContainer" class="relative size-[210px] flex items-center justify-center cursor-grab active:cursor-grabbing">
+                          <svg id="upgraderWheelSvg" class="size-full overflow-visible" viewBox="0 0 200 200">
                             <defs>
-                              <linearGradient id="sp-af-area" x1="0" y1="0" x2="0" y2="1">
-                                <stop stop-color="#7974FF"></stop>
-                                <stop offset="1" stop-color="#7974FF" stop-opacity="0"></stop>
+                              <filter id="upgraderGlow" x="-20%" y="-20%" width="140%" height="140%">
+                                <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#8b5cf6" flood-opacity="0.9"/>
+                              </filter>
+                              <linearGradient id="wheelBevel" x1="0" y1="0" x2="0" y2="100%">
+                                <stop offset="0%" stop-color="#181d2a" />
+                                <stop offset="100%" stop-color="#0b0e15" />
                               </linearGradient>
                             </defs>
-                            <path id="chartAreaPath" d="M0 330 L744 330 L744 330 L0 330 Z" fill="url(#sp-af-area)" opacity="0.3"></path>
-                            <path id="chartLinePath" d="M0 330 L744 330" fill="none" stroke="#7974FF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
-                            <!-- Hover vertical guide line -->
-                            <line id="chartHoverLine" x1="0" y1="0" x2="0" y2="330" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" stroke-dasharray="4 4" class="opacity-0 transition-opacity pointer-events-none"></line>
-                            <!-- Hover active point pulse/glow -->
-                            <circle id="chartHoverGlow" cx="-20" cy="-20" r="8" fill="#7974FF" opacity="0.25" class="opacity-0 transition-opacity pointer-events-none"></circle>
-                            <circle id="chartHoverDot" cx="-20" cy="-20" r="4.5" fill="#ffffff" stroke="#7974FF" stroke-width="2.5" class="opacity-0 transition-opacity pointer-events-none"></circle>
+
+                            <!-- Outer Beveled Dark Track -->
+                            <circle cx="100" cy="100" r="78" fill="#0c0f17" stroke="url(#wheelBevel)" stroke-width="15" />
+                            <circle cx="100" cy="100" r="70" fill="none" stroke="#121622" stroke-width="1.5" />
+                            <circle cx="100" cy="100" r="86" fill="none" stroke="#242b3d" stroke-width="1.5" />
+
+                            <!-- Active Glowing Purple Arc -->
+                            <circle id="upgraderArc" cx="100" cy="100" r="78" fill="none" stroke="#8b5cf6" stroke-width="15"
+                              filter="url(#upgraderGlow)"
+                              stroke-dasharray="220.5 490.09" stroke-dashoffset="0"
+                              transform="rotate(-90 100 100)" />
+
+                            <!-- End-Point 1 White Dot Knob (Start) -->
+                            <circle id="upgraderKnobStart" cx="100" cy="22" r="6.5" fill="#ffffff" stroke="#8b5cf6" stroke-width="2" class="filter drop-shadow" />
+                            
+                            <!-- End-Point 2 White Dot Knob (End) -->
+                            <circle id="upgraderKnobEnd" cx="100" cy="22" r="6.5" fill="#ffffff" stroke="#8b5cf6" stroke-width="2" class="filter drop-shadow" />
                           </svg>
 
-                          <!-- Floating Tooltip Box -->
-                          <div id="chartTooltip" class="pointer-events-none absolute z-20 flex flex-col items-start gap-1 rounded-lg bg-[#161b26] border border-white/10 px-3 py-2 shadow-2xl transition-all duration-75 opacity-0 transform -translate-x-1/2 -translate-y-full mb-2">
-                            <span id="chartTooltipTime" class="text-[11px] font-semibold text-[#9aa3a8]">--</span>
-                            <div class="flex items-center gap-1.5">
-                              <img id="chartTooltipCoinIcon" src="https://rollbux.com/icons/token.png" alt="Coin" class="size-3.5 object-contain">
-                              <span id="chartTooltipValue" class="text-[13px] font-extrabold text-white">0.00</span>
-                            </div>
-                            <span id="chartTooltipEarning" class="text-[10px] font-semibold text-[#50f07b]">+0.00</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <span aria-hidden="true" class="pointer-events-none absolute inset-0" style="border-radius: 12px; box-shadow: rgba(114, 144, 231, 0.04) 0px 4px 0px 0px inset;"></span>
-                  </div>
-                </div>
-
-                <!-- Auto Upgrader Section -->
-                <div id="autoUpgraderSection" class="flex w-full shrink-0 flex-col items-start gap-[16px]">
-                  <div class="flex w-full shrink-0 items-center justify-between">
-                    <div class="flex items-center gap-2.5">
-                      <p class="whitespace-nowrap text-[20px] leading-[30px] text-white font-bold italic">Auto Upgrader</p>
-                      <span id="upgraderStatusBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-500/10 border border-red-500/20 text-red-400">Disabled</span>
-                    </div>
-                    <!-- Master Power Toggle -->
-                    <label class="relative inline-flex items-center cursor-pointer select-none">
-                      <input type="checkbox" id="upgraderMasterToggle" class="sr-only peer">
-                      <div class="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#acff46]"></div>
-                      <span class="ml-2.5 text-xs font-semibold text-white">Auto Mode</span>
-                    </label>
-                  </div>
-
-                  <!-- Card Body -->
-                  <div class="relative flex w-full flex-col lg:flex-row items-center justify-between gap-6 overflow-clip rounded-[12px] bg-[#0e131f] p-[24px] border border-white/[0.03]">
-                    <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
-
-                    <!-- Left Column: Controls & Settings -->
-                    <div class="relative z-10 flex flex-1 flex-col items-start gap-4 w-full">
-                      <!-- Trigger Condition -->
-                      <div class="flex flex-col gap-1.5 w-full">
-                        <label class="text-[12px] font-semibold text-[#9aa3a8]">Trigger Condition:</label>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <label class="flex items-center gap-2 p-2.5 rounded-lg bg-[#131a29] border border-white/5 cursor-pointer hover:border-white/10 transition">
-                            <input type="radio" name="upgraderTrigger" value="rain" id="triggerAfterRain" checked class="text-[#acff46] focus:ring-0">
-                            <span class="text-xs text-white font-medium">After Every Rain</span>
-                          </label>
-                          <label class="flex items-center gap-2 p-2.5 rounded-lg bg-[#131a29] border border-white/5 cursor-pointer hover:border-white/10 transition">
-                            <input type="radio" name="upgraderTrigger" value="balance" id="triggerWhenBalance" class="text-[#acff46] focus:ring-0">
-                            <span class="text-xs text-white font-medium">When Balance &ge; 50 BUX</span>
-                          </label>
-                        </div>
-                      </div>
-
-                      <!-- Target Multiplier & All In Row -->
-                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-                        <!-- Multiplier Input -->
-                        <div class="flex flex-col gap-1.5">
-                          <label for="upgraderMultiplierInput" class="text-[12px] font-semibold text-[#9aa3a8]">Target Multiplier:</label>
-                          <div class="relative flex items-center">
-                            <input type="number" id="upgraderMultiplierInput" min="1.1" max="100" step="0.05" value="2.00" class="w-full bg-[#131a29] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono font-bold focus:border-[#acff46] outline-none">
-                            <span class="absolute right-3 text-xs text-gray-400 font-bold">x</span>
-                          </div>
-                          <!-- Quick Presets -->
-                          <div class="flex gap-1.5 mt-1">
-                            <button type="button" class="preset-btn px-2 py-0.5 rounded text-[10px] font-bold bg-white/5 hover:bg-white/10 text-gray-300 transition" data-mult="1.5">1.5x</button>
-                            <button type="button" class="preset-btn px-2 py-0.5 rounded text-[10px] font-bold bg-[#acff46]/10 text-[#acff46] border border-[#acff46]/30 transition" data-mult="2.0">2x</button>
-                            <button type="button" class="preset-btn px-2 py-0.5 rounded text-[10px] font-bold bg-white/5 hover:bg-white/10 text-gray-300 transition" data-mult="3.0">3x</button>
-                            <button type="button" class="preset-btn px-2 py-0.5 rounded text-[10px] font-bold bg-white/5 hover:bg-white/10 text-gray-300 transition" data-mult="5.0">5x</button>
-                            <button type="button" class="preset-btn px-2 py-0.5 rounded text-[10px] font-bold bg-white/5 hover:bg-white/10 text-gray-300 transition" data-mult="10.0">10x</button>
-                          </div>
-                        </div>
-
-                        <!-- Stake Strategy -->
-                        <div class="flex flex-col gap-1.5 justify-between">
-                          <label class="text-[12px] font-semibold text-[#9aa3a8]">Stake Strategy:</label>
-                          <div class="flex items-center gap-2 p-2.5 rounded-lg bg-[#131a29] border border-white/5">
-                            <input type="checkbox" id="upgraderAllInCheck" checked class="rounded text-[#acff46] focus:ring-0">
-                            <div class="flex flex-col">
-                              <span class="text-xs text-white font-bold">Go All In (Full Balance)</span>
-                              <span class="text-[10px] text-gray-400">Min 50 BUX required by RollBux</span>
-                            </div>
+                          <!-- Center Info: Big Bold Percentage -->
+                          <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+                            <span id="upgraderChanceDisplay" class="text-[34px] font-black text-white tracking-tight leading-none">45.00%</span>
                           </div>
                         </div>
                       </div>
 
-                      <!-- Random Position Option -->
-                      <div class="flex items-center gap-2 pt-1 w-full border-t border-white/[0.04]">
-                        <input type="checkbox" id="upgraderRandomPosCheck" class="rounded text-[#acff46] focus:ring-0">
-                        <label for="upgraderRandomPosCheck" class="text-xs text-white font-medium cursor-pointer flex items-center gap-1.5 select-none">
-                          <span>🎲 Random Position on Every Bet</span>
-                          <span class="text-[10px] text-gray-400">(Site-generated placement)</span>
+                      <!-- Multiplier Target Under Wheel -->
+                      <div class="relative z-10 flex flex-col gap-1.5 w-full">
+                        <div class="flex items-center justify-between text-[11px] font-bold text-[#9aa3a8]">
+                          <span>MULTIPLIER TARGET</span>
+                          <span id="upgraderMultiplierLabel" class="text-white font-mono">2.00x</span>
+                        </div>
+                        <div class="relative flex items-center">
+                          <input type="number" id="upgraderMultiplierInput" min="1.1" max="100" step="0.05" value="2.00" class="w-full bg-[#131a29] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono font-bold focus:border-[#8b5cf6] outline-none">
+                          <span class="absolute right-3 text-xs text-gray-400 font-bold">x</span>
+                        </div>
+                        <div class="grid grid-cols-4 gap-1.5 mt-1">
+                          <button type="button" class="preset-btn py-1 rounded text-[11px] font-bold bg-white/5 hover:bg-white/10 text-gray-300 transition" data-mult="1.5">1.5x</button>
+                          <button type="button" class="preset-btn py-1 rounded text-[11px] font-bold bg-[#8b5cf6]/20 text-[#a78bfa] border border-[#8b5cf6]/40 transition" data-mult="2.0">2x</button>
+                          <button type="button" class="preset-btn py-1 rounded text-[11px] font-bold bg-white/5 hover:bg-white/10 text-gray-300 transition" data-mult="3.0">3x</button>
+                          <button type="button" class="preset-btn py-1 rounded text-[11px] font-bold bg-white/5 hover:bg-white/10 text-gray-300 transition" data-mult="5.0">5x</button>
+                        </div>
+                      </div>
+
+                      <!-- Auto Random with Turn On/Off Switch -->
+                      <div class="relative z-10 flex items-center justify-between p-2.5 rounded-lg bg-[#131a29] border border-white/5 w-full">
+                        <div class="flex items-center gap-2">
+                          <span class="text-sm">🎲</span>
+                          <span class="text-xs font-semibold text-white">Auto Random</span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer select-none">
+                          <input type="checkbox" id="upgraderRandomPosCheck" class="sr-only peer">
+                          <div class="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#8b5cf6]"></div>
                         </label>
                       </div>
 
-                      <!-- Action Button & Feed -->
-                      <div class="flex items-center gap-3 w-full pt-1">
-                        <button id="upgraderManualPlayBtn" type="button" class="px-4 py-2 bg-[#acff46] hover:bg-[#96e036] text-[#121418] rounded-lg text-xs font-bold transition shadow-sm active:scale-95 flex items-center gap-1.5">
-                          <span>Execute Upgrade Now</span>
-                        </button>
-                        <span id="upgraderFeedback" class="text-xs text-gray-400 truncate flex-1">Idle. Waiting for conditions...</span>
-                      </div>
                     </div>
-
-                    <!-- Right Column: Interactive Upgrader Wheel Preview -->
-                    <div class="relative z-10 flex flex-col items-center justify-center p-4 bg-[#131a29]/60 rounded-xl border border-white/5 w-full lg:w-auto shrink-0 select-none">
-                      <span class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-2">Wheel Range Preview</span>
-                      
-                      <!-- Circular Interactive SVG -->
-                      <div id="upgraderWheelContainer" class="relative size-[180px] flex items-center justify-center cursor-grab active:cursor-grabbing">
-                        <svg id="upgraderWheelSvg" class="size-full" viewBox="0 0 200 200">
-                          <defs>
-                            <linearGradient id="upgraderArcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                              <stop offset="0%" stop-color="#7974FF" />
-                              <stop offset="100%" stop-color="#acff46" />
-                            </linearGradient>
-                          </defs>
-
-                          <!-- Background Track Circle -->
-                          <circle cx="100" cy="100" r="75" fill="none" stroke="#1c2538" stroke-width="14" />
-                          
-                          <!-- Active Arc Slice -->
-                          <circle id="upgraderArc" cx="100" cy="100" r="75" fill="none" stroke="url(#upgraderArcGrad)" stroke-width="14"
-                            stroke-linecap="round" stroke-dasharray="212 471.24" stroke-dashoffset="0"
-                            transform="rotate(-90 100 100)" class="transition-all duration-75" />
-
-                          <!-- Draggable Handle Knob -->
-                          <g id="upgraderKnob" transform="rotate(0 100 100)">
-                            <circle cx="100" cy="25" r="9" fill="#acff46" stroke="#0e131f" stroke-width="2.5" class="shadow-lg filter drop-shadow" />
-                            <polygon points="100,19 96,27 104,27" fill="#0e131f" />
-                          </g>
-                        </svg>
-
-                        <!-- Center Info Display -->
-                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-2">
-                          <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Upgrade Chance</span>
-                          <span id="upgraderChanceDisplay" class="text-[20px] font-mono font-black text-white leading-tight">45.0%</span>
-                          <span id="upgraderRangeDisplay" class="text-[10px] font-mono font-semibold text-[#acff46] mt-0.5">0 - 450,000</span>
-                        </div>
-                      </div>
-
-                      <span class="text-[10px] text-gray-500 mt-2 text-center max-w-[170px] leading-tight">
-                        Drag circle to adjust winning window, or enable Random.
-                      </span>
-                    </div>
-
                   </div>
+
                 </div>
 
                 <!-- Spacer -->
@@ -1734,14 +1695,15 @@
     const upgraderFeedback = document.getElementById('upgraderFeedback');
     const upgraderWheelContainer = document.getElementById('upgraderWheelContainer');
     const upgraderArc = document.getElementById('upgraderArc');
-    const upgraderKnob = document.getElementById('upgraderKnob');
+    const upgraderKnobStart = document.getElementById('upgraderKnobStart');
+    const upgraderKnobEnd = document.getElementById('upgraderKnobEnd');
     const upgraderChanceDisplay = document.getElementById('upgraderChanceDisplay');
-    const upgraderRangeDisplay = document.getElementById('upgraderRangeDisplay');
+    const upgraderMultiplierLabel = document.getElementById('upgraderMultiplierLabel');
     const triggerAfterRain = document.getElementById('triggerAfterRain');
     const triggerWhenBalance = document.getElementById('triggerWhenBalance');
 
-    const UPGRADER_RADIUS = 75;
-    const UPGRADER_CIRCUMFERENCE = 2 * Math.PI * UPGRADER_RADIUS; // 471.24
+    const UPGRADER_RADIUS = 78;
+    const UPGRADER_CIRCUMFERENCE = 2 * Math.PI * UPGRADER_RADIUS; // 490.09
     let upgraderAngle = parseFloat(localStorage.getItem('rollbux_upgrader_angle') || '0'); // degrees 0-360
     let isDraggingKnob = false;
     let isUpgraderExecuting = false;
@@ -1769,7 +1731,7 @@
       const active = upgraderMasterToggle?.checked;
       if (upgraderStatusBadge) {
         if (active) {
-          upgraderStatusBadge.textContent = 'Active (Auto)';
+          upgraderStatusBadge.textContent = 'Active';
           upgraderStatusBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#acff46]/10 border border-[#acff46]/30 text-[#acff46]';
         } else {
           upgraderStatusBadge.textContent = 'Disabled';
@@ -1791,36 +1753,41 @@
       const chance = calculateUpgraderChance(mult);
       const isRandom = upgraderRandomPosCheck?.checked;
 
+      if (upgraderMultiplierLabel) {
+        upgraderMultiplierLabel.textContent = `${mult.toFixed(2)}x`;
+      }
+
       // Arc length in SVG stroke dash
       const arcLen = (chance / 100) * UPGRADER_CIRCUMFERENCE;
       if (upgraderArc) {
-        upgraderArc.setAttribute('stroke-dasharray', `${arcLen.toFixed(1)} ${UPGRADER_CIRCUMFERENCE.toFixed(1)}`);
-        // SVG circle starts at -90deg (12 o'clock). We rotate from that base:
-        upgraderArc.setAttribute('transform', `rotate(${(upgraderAngle - 90).toFixed(1)} 100 100)`);
+        upgraderArc.setAttribute('stroke-dasharray', `${arcLen.toFixed(2)} ${UPGRADER_CIRCUMFERENCE.toFixed(2)}`);
+        // Starts at angle (upgraderAngle - 90deg)
+        upgraderArc.setAttribute('transform', `rotate(${(upgraderAngle - 90).toFixed(2)} 100 100)`);
       }
 
-      // Position knob pointer at the start angle
-      if (upgraderKnob) {
-        upgraderKnob.setAttribute('transform', `rotate(${upgraderAngle.toFixed(1)} 100 100)`);
-        upgraderKnob.style.opacity = isRandom ? '0.35' : '1';
+      // Compute exact positions of start and end white knobs
+      const startRad = (upgraderAngle - 90) * (Math.PI / 180);
+      const startX = 100 + UPGRADER_RADIUS * Math.cos(startRad);
+      const startY = 100 + UPGRADER_RADIUS * Math.sin(startRad);
+
+      const endDeg = upgraderAngle + (chance / 100) * 360;
+      const endRad = (endDeg - 90) * (Math.PI / 180);
+      const endX = 100 + UPGRADER_RADIUS * Math.cos(endRad);
+      const endY = 100 + UPGRADER_RADIUS * Math.sin(endRad);
+
+      if (upgraderKnobStart) {
+        upgraderKnobStart.setAttribute('cx', startX.toFixed(2));
+        upgraderKnobStart.setAttribute('cy', startY.toFixed(2));
+        upgraderKnobStart.style.opacity = isRandom ? '0.3' : '1';
+      }
+      if (upgraderKnobEnd) {
+        upgraderKnobEnd.setAttribute('cx', endX.toFixed(2));
+        upgraderKnobEnd.setAttribute('cy', endY.toFixed(2));
+        upgraderKnobEnd.style.opacity = isRandom ? '0.3' : '1';
       }
 
       if (upgraderChanceDisplay) {
-        upgraderChanceDisplay.textContent = `${chance.toFixed(1)}%`;
-      }
-
-      if (upgraderRangeDisplay) {
-        if (isRandom) {
-          upgraderRangeDisplay.textContent = '🎲 Random Roll';
-        } else {
-          const startVal = upgraderAngle / 360;
-          const Vt = 1000000;
-          const startInt = Math.round(startVal * Vt);
-          const chanceInt = Math.round((chance / 100) * Vt);
-          const rawEnd = Math.max(1, startInt) + chanceInt - 1;
-          const endInt = rawEnd > Vt ? rawEnd % Vt : rawEnd;
-          upgraderRangeDisplay.textContent = `${startInt.toLocaleString('en-US')} - ${endInt.toLocaleString('en-US')}`;
-        }
+        upgraderChanceDisplay.textContent = `${chance.toFixed(2)}%`;
       }
     }
 
