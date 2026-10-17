@@ -1315,7 +1315,17 @@
         }
 
         // Live Chat Countdown Circle Logic
-        const secondsRemaining = sData?.status?.seconds_remaining || activeTimerLeft || 1200;
+        // Always compute true live seconds remaining using Date.now() against cycle_end
+        let secondsRemaining = activeTimerLeft;
+        if (sData?.status?.updated_at && sData?.status?.seconds_remaining !== undefined) {
+          const elapsedSinceUpdate = Math.max(0, Math.floor((Date.now() - new Date(sData.status.updated_at).getTime()) / 1000));
+          const liveCalculated = Math.max(0, sData.status.seconds_remaining - elapsedSinceUpdate);
+          if (activeTimerLeft > 0) {
+            secondsRemaining = activeTimerLeft;
+          } else {
+            secondsRemaining = liveCalculated;
+          }
+        }
         const liveList = sData?.status?.accounts || [];
         updateChatCountdownCircle(secondsRemaining, accs, liveList);
       } catch (e) {
