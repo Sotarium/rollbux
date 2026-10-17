@@ -82,7 +82,7 @@ async function tick() {
     const status = cycle.status;
     const cycleEnd = new Date(cycle.cycle_end).getTime();
     const secondsRemaining = Math.max(0, Math.round((cycleEnd - Date.now()) / 1000));
-    const potBux = (live_pool / 10000000).toFixed(2);
+    const potBux = (live_pool / 1000000).toFixed(2);
 
     const lastJoined = await redis('get', 'roach:last_joined_cycle');
     const isJoined = lastJoined === cycleId;

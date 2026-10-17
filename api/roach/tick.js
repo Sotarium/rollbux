@@ -2,6 +2,8 @@
 // Multi-Account Serverless Cloud Worker for RainRoach
 // Triggered by cron-job.org every 30-60s. Supports multiple accounts stored in Upstash Redis.
 
+import { handleAction } from '../../server/db.js';
+
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || "https://flowing-chigger-149490.upstash.io";
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 const ENV_SESSION_TOKEN = process.env.ROLLBUX_SESSION_TOKEN;
@@ -115,6 +117,17 @@ export default async function handler(req, res) {
       // Check if this account already joined this cycle
       const joinedKey = `roach:joined:${cycleId}:${accId}`;
       let isAccountJoined = (await redis('get', joinedKey)) === '1';
+
+      // Sync active rain tick to local player dashboard
+      const potBux = parseFloat(((livePool || 0) / 1000000).toFixed(2));
+      try {
+        handleAction({
+          action: 'rain_tick',
+          username: accName,
+          time_left: secondsRemaining,
+          pot_amount: potBux
+        });
+      } catch (e) {}
 
       // Chat Keeper: Ensure 3 messages per hour for rain eligibility
       const chatKey = `roach:chat_count:${cycleId}:${accId}`;
