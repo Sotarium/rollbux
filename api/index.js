@@ -122,11 +122,14 @@ export default async function handler(req, res) {
           return;
         }
 
-        const resp = await fetch(`${url}/get/roach%3Aaccounts`, {
+        const getResp = await fetch(`${url}/get/roach%3Aaccounts`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const data = await resp.json();
-        let accounts = data.result ? JSON.parse(data.result) : [];
+        const getData = await getResp.json();
+        let accounts = getData.result ? JSON.parse(getData.result) : [];
+
+        // Remove existing entry with same name to avoid duplicates
+        accounts = accounts.filter(a => (a.name||'').toLowerCase() !== payload.name.trim().toLowerCase());
 
         const newAccount = {
           id: `acc_${Date.now()}`,
@@ -136,11 +139,14 @@ export default async function handler(req, res) {
         };
         accounts.push(newAccount);
 
-        await fetch(`${url}/set/roach%3Aaccounts`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-          body: JSON.stringify(accounts)
+        const encodedVal = encodeURIComponent(JSON.stringify(accounts));
+        const setResp = await fetch(`${url}/set/roach%3Aaccounts/${encodedVal}`, {
+          headers: { Authorization: `Bearer ${token}` }
         });
+        const setData = await setResp.json();
+        if (setData.result !== 'OK') {
+          throw new Error(`Upstash SET failed: ${JSON.stringify(setData)}`);
+        }
 
         res.status(200).json({ success: true, account: { id: newAccount.id, name: newAccount.name } });
       } catch (err) {
@@ -152,17 +158,16 @@ export default async function handler(req, res) {
     if (req.method === 'DELETE') {
       try {
         const payload = req.body || await parseBody(req);
-        const resp = await fetch(`${url}/get/roach%3Aaccounts`, {
+        const getResp2 = await fetch(`${url}/get/roach%3Aaccounts`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const data = await resp.json();
-        let accounts = data.result ? JSON.parse(data.result) : [];
+        const getData2 = await getResp2.json();
+        let accounts = getData2.result ? JSON.parse(getData2.result) : [];
         accounts = accounts.filter(a => a.id !== payload.id);
 
-        await fetch(`${url}/set/roach%3Aaccounts`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-          body: JSON.stringify(accounts)
+        const encodedVal2 = encodeURIComponent(JSON.stringify(accounts));
+        await fetch(`${url}/set/roach%3Aaccounts/${encodedVal2}`, {
+          headers: { Authorization: `Bearer ${token}` }
         });
 
         res.status(200).json({ success: true });
@@ -170,6 +175,9 @@ export default async function handler(req, res) {
         res.status(500).json({ error: err.message });
       }
       return;
+    }
+  }
+
   // Test Chat Send for specific account
   if (pathname === '/api/roach/chat-test' && req.method === 'POST') {
     const url = process.env.UPSTASH_REDIS_REST_URL || "https://flowing-chigger-149490.upstash.io";
