@@ -298,14 +298,100 @@ export default async function handler(req, res) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
+
+    // Cloud Roach Auto-Sync: Fetch live RollBux data directly using saved account token
+    try {
+      const upstashUrl = process.env.UPSTASH_REDIS_REST_URL || "https://flowing-chigger-149490.upstash.io";
+      const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+      let sessionToken = process.env.ROLLBUX_SESSION_TOKEN;
+
+      if (upstashToken) {
+        const accResp = await fetch(`${upstashUrl}/get/roach%3Aaccounts`, {
+          headers: { Authorization: `Bearer ${upstashToken}` }
+        });
+        const accData = await accResp.json();
+        const accounts = accData.result ? JSON.parse(accData.result) : [];
+        const match = accounts.find(a => (a.name || '').toLowerCase().trim() === username.toLowerCase().trim());
+        if (match && match.token) {
+          sessionToken = match.token;
+        }
+      }
+
+      if (sessionToken) {
+        const rollHeaders = {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept": "application/json, text/plain, */*",
+          "Authorization": `Bearer ${sessionToken}`,
+          "Cookie": `authjs.session-token=${sessionToken}`
+        };
+
+        // 1. Live Balance
+        const balResp = await fetch("https://rollbux.com/_api/users/me/balance", { headers: rollHeaders });
+        if (balResp.ok) {
+          const balData = await balResp.json();
+          if (balData?.data?.token_balance !== undefined) {
+            const liveBalBux = parseFloat((balData.data.token_balance / 1000000).toFixed(2));
+            handleAction({
+              action: 'balance_update',
+              username,
+              balance: liveBalBux
+            });
+          }
+        }
+
+        // 2. Live Avatar & Details
+        const meResp = await fetch("https://rollbux.com/_api/users/me", { headers: rollHeaders });
+        if (meResp.ok) {
+          const meData = await meResp.json();
+          if (meData?.data?.user?.avatar_url) {
+            handleAction({
+              action: 'rain_tick',
+              username,
+              avatar: meData.data.user.avatar_url
+            });
+          }
+        }
+
+        // 3. Live Rain Transactions
+        const txResp = await fetch("https://rollbux.com/_api/users/me/transactions", { headers: rollHeaders });
+        if (txResp.ok) {
+          const txData = await txResp.json();
+          const items = txData?.data?.items || [];
+          const rainTxs = items
+            .filter(t => t.type === 'RAIN_REWARD')
+            .map(t => ({
+              amount_bux: parseFloat(((t.amount || 0) / 1000000).toFixed(2)),
+              time: new Date(t.date || Date.now()).toLocaleString('fr-FR', {
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit'
+              }).replace(':', 'h'),
+              cycle_id: t.id
+            }));
+
+          if (rainTxs.length > 0) {
+            handleAction({
+              action: 'sync_transactions',
+              username,
+              transactions: rainTxs
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Live cloud sync error:", e.message);
+    }
+
+    const updatedUser = getUser(username) || user;
     const solPrice = getSolPrice();
     res.status(200).json({
-      user,
+      user: updatedUser,
       solPrice,
-      solBalance: buxToSol(user.balance_bux),
-      usdBalance: buxToUsd(user.balance_bux),
-      solEarnings: buxToSol(user.total_earnings_bux),
-      usdEarnings: buxToUsd(user.total_earnings_bux)
+      solBalance: buxToSol(updatedUser.balance_bux),
+      usdBalance: buxToUsd(updatedUser.balance_bux),
+      solEarnings: buxToSol(updatedUser.total_earnings_bux),
+      usdEarnings: buxToUsd(updatedUser.total_earnings_bux)
     });
     return;
   }
