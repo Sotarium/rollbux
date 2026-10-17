@@ -115,35 +115,25 @@
                   </div>
                 </div>
 
-                <!-- Cloud Auto-Farmer Box on Player Dashboard -->
+                <!-- Accounts Infos Card -->
                 <div class="relative flex w-full flex-col items-start gap-[12px] overflow-clip rounded-[12px] bg-[#0e131f] p-[20px] shadow-sm border border-white/[0.03]">
                   <div class="flex w-full items-center justify-between">
-                    <span class="text-[14px] font-bold text-white">Cloud Rain Farmer</span>
-                    <span id="farmerBadge" class="text-[10px] font-semibold text-gray-400 px-2 py-0.5 rounded bg-white/5 border border-white/10 uppercase">Checking</span>
+                    <span class="text-[14px] font-bold text-white">Accounts Infos</span>
                   </div>
-                  <p class="text-[12px] text-[#9aa3a8] leading-[18px]">24/7 Cloud Engine auto-chats and joins rains for this account even when your PC is turned off.</p>
                   
-                  <div class="flex w-full flex-col gap-2 pt-2 border-t border-white/[0.04]">
-                    <div class="flex w-full items-center justify-between">
-                      <span class="text-[10px] text-gray-500 uppercase tracking-wider">Session Token</span>
-                      <span id="farmerTokenStatus" class="text-[11px] font-mono text-gray-400">Not set</span>
-                    </div>
+                  <!-- Registered Accounts Live List -->
+                  <div id="accountsListContainer" class="flex w-full flex-col gap-2 pt-1 border-t border-white/[0.04]">
+                    <div class="text-[11px] text-gray-500">Loading accounts...</div>
+                  </div>
 
-                    <!-- Cycle Messages Count -->
-                    <div class="flex w-full items-center justify-between">
-                      <span class="text-[10px] text-gray-500 uppercase tracking-wider">Messages (Cycle)</span>
-                      <span id="farmerChatCount" class="text-[11px] font-semibold text-[#acff46]">0 / 3</span>
-                    </div>
-
-                    <!-- Split Buttons Row -->
-                    <div class="grid grid-cols-2 gap-2 pt-1">
-                      <button id="configureFarmerBtn" type="button" class="w-full py-2 bg-[#acff46] hover:bg-[#96e036] text-[#121418] rounded-lg text-xs font-bold transition shadow-sm active:scale-95 text-center">
-                        Update Token
-                      </button>
-                      <button id="addAnotherTokenBtn" type="button" class="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg text-xs font-semibold transition active:scale-95 text-center">
-                        Add Another Token
-                      </button>
-                    </div>
+                  <!-- Split Buttons Row -->
+                  <div class="grid grid-cols-2 gap-2 pt-2 w-full border-t border-white/[0.04]">
+                    <button id="configureFarmerBtn" type="button" class="w-full py-2 bg-[#acff46] hover:bg-[#96e036] text-[#121418] rounded-lg text-xs font-bold transition shadow-sm active:scale-95 text-center">
+                      Update Token
+                    </button>
+                    <button id="addAnotherTokenBtn" type="button" class="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg text-xs font-semibold transition active:scale-95 text-center">
+                      Add Another Token
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1241,9 +1231,7 @@
     const farmerForm = document.getElementById('farmerForm');
     const farmerNameInput = document.getElementById('farmerNameInput');
     const farmerTokenInput = document.getElementById('farmerTokenInput');
-    const farmerBadge = document.getElementById('farmerBadge');
-    const farmerTokenStatus = document.getElementById('farmerTokenStatus');
-    const farmerChatCount = document.getElementById('farmerChatCount');
+    const accountsListContainer = document.getElementById('accountsListContainer');
     const addAnotherTokenBtn = document.getElementById('addAnotherTokenBtn');
     const modalTitle = document.getElementById('modalTitle');
 
@@ -1254,31 +1242,38 @@
           fetch('/api/roach/status')
         ]);
 
+        let accs = [];
         if (accRes.ok) {
           const data = await accRes.json();
-          const accs = data.accounts || [];
-          const myAcc = accs.find(a => (a.name || '').toLowerCase() === targetUsername.toLowerCase());
-
-          if (myAcc) {
-            farmerBadge.textContent = 'Active (24/7)';
-            farmerBadge.className = 'text-[10px] font-semibold text-[#acff46] px-2 py-0.5 rounded bg-[#acff46]/10 border border-[#acff46]/20 uppercase';
-            farmerTokenStatus.textContent = myAcc.token_preview || 'Configured';
-            if (configureFarmerBtn) configureFarmerBtn.textContent = 'Update Token';
-          } else {
-            farmerBadge.textContent = 'Not Configured';
-            farmerBadge.className = 'text-[10px] font-semibold text-gray-400 px-2 py-0.5 rounded bg-white/5 border border-white/10 uppercase';
-            farmerTokenStatus.textContent = 'No token set';
-            if (configureFarmerBtn) configureFarmerBtn.textContent = 'Set Token';
-          }
+          accs = data.accounts || [];
         }
 
+        let liveAccsMap = {};
         if (statusRes.ok) {
           const sData = await statusRes.json();
-          const liveAccs = sData?.status?.accounts || [];
-          const matchedLive = liveAccs.find(a => (a.name || '').toLowerCase() === targetUsername.toLowerCase());
-          if (matchedLive && farmerChatCount) {
-            const count = matchedLive.chat_count !== undefined ? matchedLive.chat_count : 0;
-            farmerChatCount.textContent = `${count} / 3`;
+          const liveList = sData?.status?.accounts || [];
+          liveList.forEach(a => {
+            liveAccsMap[(a.name || '').toLowerCase()] = a;
+          });
+        }
+
+        if (accountsListContainer) {
+          if (accs.length === 0) {
+            accountsListContainer.innerHTML = '<div class="text-[11px] text-gray-500">No accounts registered yet.</div>';
+          } else {
+            accountsListContainer.innerHTML = accs.map(a => {
+              const nameLower = (a.name || '').toLowerCase();
+              const live = liveAccsMap[nameLower];
+              const count = live && live.chat_count !== undefined ? live.chat_count : 0;
+              const isCurrent = nameLower === targetUsername.toLowerCase();
+              const nameClass = isCurrent ? 'text-[#acff46] font-bold' : 'text-white font-medium';
+              return `
+                <div class="flex items-center justify-between py-1">
+                  <span class="text-[12px] ${nameClass}">${a.name} : ${count} / 3</span>
+                  <span class="text-[10px] font-mono text-gray-500">${a.token_preview || 'Configured'}</span>
+                </div>
+              `;
+            }).join('');
           }
         }
       } catch (e) {}
