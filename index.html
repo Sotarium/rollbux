@@ -38,12 +38,22 @@
       background: #1c2538;
       border-radius: 9999px;
     }
+    /* Hide input number spinner arrows */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
   </style>
 </head>
 <body class="selection:bg-[#acff46] selection:text-[#0e131f]">
   <!-- Main Container -->
   <div class="flex w-full justify-center pb-[40px] pt-[35px]" bis_skin_checked="1">
-    <div data-node-id="671:32993" class="flex w-full max-w-[1280px] flex-col items-start gap-[28px] px-4 md:px-6" bis_skin_checked="1">
+    <div data-node-id="671:32993" class="flex w-full max-w-[1536px] flex-col items-start gap-[28px] px-4 md:px-8" bis_skin_checked="1">
       <div data-node-id="671:32994" class="flex w-full flex-col items-start gap-[28px]" bis_skin_checked="1">
         
         <!-- Header -->
@@ -225,7 +235,7 @@
                 </div>
 
                 <!-- Statistics + Auto Upgrader Grid -->
-                <div class="grid grid-cols-1 xl:grid-cols-[1fr_330px] gap-6 w-full items-start">
+                <div class="grid grid-cols-1 xl:grid-cols-[1fr_290px] gap-6 w-full items-start">
                   
                   <!-- Left: Statistics Section -->
                   <div data-node-id="671:33117" class="flex w-full min-w-0 flex-col items-start gap-[16px]" bis_skin_checked="1">
@@ -373,12 +383,6 @@
                         <div class="relative flex items-center">
                           <input type="number" id="upgraderMultiplierInput" min="1.1" max="100" step="0.05" value="2.00" class="w-full bg-[#131a29] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono font-bold focus:border-[#8b5cf6] outline-none">
                           <span class="absolute right-3 text-xs text-gray-400 font-bold">x</span>
-                        </div>
-                        <div class="grid grid-cols-4 gap-1.5 mt-1">
-                          <button type="button" class="preset-btn py-1 rounded text-[11px] font-bold bg-white/5 hover:bg-white/10 text-gray-300 transition" data-mult="1.5">1.5x</button>
-                          <button type="button" class="preset-btn py-1 rounded text-[11px] font-bold bg-[#8b5cf6]/20 text-[#a78bfa] border border-[#8b5cf6]/40 transition" data-mult="2.0">2x</button>
-                          <button type="button" class="preset-btn py-1 rounded text-[11px] font-bold bg-white/5 hover:bg-white/10 text-gray-300 transition" data-mult="3.0">3x</button>
-                          <button type="button" class="preset-btn py-1 rounded text-[11px] font-bold bg-white/5 hover:bg-white/10 text-gray-300 transition" data-mult="5.0">5x</button>
                         </div>
                       </div>
 
