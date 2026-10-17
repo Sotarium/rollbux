@@ -131,9 +131,14 @@
                       <span class="text-[10px] text-gray-500 uppercase tracking-wider">Session Token</span>
                       <span id="farmerTokenStatus" class="text-[11px] font-mono text-gray-400">Not set</span>
                     </div>
-                    <button id="configureFarmerBtn" type="button" class="w-full py-2 bg-[#acff46] hover:bg-[#96e036] text-[#121418] rounded-lg text-xs font-bold transition shadow-sm">
+                    <button id="configureFarmerBtn" type="button" class="w-full py-2 bg-[#acff46] hover:bg-[#96e036] text-[#121418] rounded-lg text-xs font-bold transition shadow-sm active:scale-95">
                       Set Session Token
                     </button>
+                    <button id="sendChatTestBtn" type="button" class="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg text-xs font-semibold transition active:scale-95 flex items-center justify-center gap-1.5">
+                      <span>💬</span>
+                      <span>Send Chat Test</span>
+                    </button>
+                    <div id="chatTestResult" class="text-[11px] text-center font-medium hidden"></div>
                   </div>
                 </div>
               </div>
@@ -343,6 +348,35 @@
         </div>
 
       </div>
+    </div>
+  </div>
+
+  <!-- Farmer Token Modal -->
+  <div id="farmerModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+    <div class="glass-card w-full max-w-md rounded-2xl p-6 bg-[#0e131f] border border-white/10 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">⚡</span>
+          <h3 class="text-base font-bold text-white">Configure Cloud Farmer</h3>
+        </div>
+        <button id="closeFarmerModalBtn" class="text-gray-400 hover:text-white text-lg font-bold">&times;</button>
+      </div>
+
+      <p class="text-xs text-gray-400 leading-relaxed">
+        Paste your RollBux <code class="text-white bg-white/10 px-1 py-0.5 rounded">authjs.session-token</code> cookie below. The 24/7 cloud worker will use it to maintain rain eligibility and auto-join rain cycles for <span id="modalUsernameSpan" class="text-[#acff46] font-bold"></span> even when your PC is offline.
+      </p>
+
+      <form id="farmerForm" class="space-y-4">
+        <div>
+          <label class="block text-[11px] font-semibold text-gray-400 uppercase mb-1">Session Token (JWT)</label>
+          <input type="password" id="farmerTokenInput" placeholder="eyJhbGciOiJIUzI1Ni..." required class="w-full bg-[#131a29] border border-white/10 rounded-lg px-3 py-2.5 text-xs text-white focus:outline-none focus:border-[#acff46] font-mono">
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-white/10">
+          <button type="button" id="cancelFarmerModalBtn" class="px-4 py-2 text-xs font-semibold text-gray-400 hover:text-white transition">Cancel</button>
+          <button type="submit" id="saveFarmerTokenBtn" class="px-5 py-2 bg-[#acff46] text-[#121418] font-bold text-xs rounded-lg hover:bg-[#96e036] transition shadow-md shadow-[#acff46]/10">Save & Start Farming</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -1178,14 +1212,22 @@
         }
       });
     });
-    // Cloud Farmer Configuration
+    // Cloud Farmer Configuration & Modal
     const farmerModal = document.getElementById('farmerModal');
     const configureFarmerBtn = document.getElementById('configureFarmerBtn');
     const closeFarmerModalBtn = document.getElementById('closeFarmerModalBtn');
+    const cancelFarmerModalBtn = document.getElementById('cancelFarmerModalBtn');
     const farmerForm = document.getElementById('farmerForm');
     const farmerTokenInput = document.getElementById('farmerTokenInput');
     const farmerBadge = document.getElementById('farmerBadge');
     const farmerTokenStatus = document.getElementById('farmerTokenStatus');
+    const modalUsernameSpan = document.getElementById('modalUsernameSpan');
+    const sendChatTestBtn = document.getElementById('sendChatTestBtn');
+    const chatTestResult = document.getElementById('chatTestResult');
+
+    if (modalUsernameSpan) {
+      modalUsernameSpan.textContent = targetUsername;
+    }
 
     async function checkFarmerStatus() {
       try {
@@ -1193,7 +1235,7 @@
         if (!res.ok) return;
         const data = await res.json();
         const accs = data.accounts || [];
-        const myAcc = accs.find(a => a.name.toLowerCase() === targetUsername.toLowerCase());
+        const myAcc = accs.find(a => (a.name || '').toLowerCase() === targetUsername.toLowerCase());
 
         if (myAcc) {
           farmerBadge.textContent = 'Active (24/7)';
@@ -1209,23 +1251,41 @@
       } catch (e) {}
     }
 
-    if (configureFarmerBtn && farmerModal) {
-      configureFarmerBtn.addEventListener('click', () => {
-        farmerModal.classList.remove('hidden');
-        farmerTokenInput.focus();
+    if (configureFarmerBtn) {
+      configureFarmerBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const m = document.getElementById('farmerModal');
+        if (m) {
+          m.classList.remove('hidden');
+          const inp = document.getElementById('farmerTokenInput');
+          if (inp) inp.focus();
+        }
       });
-      closeFarmerModalBtn?.addEventListener('click', () => {
-        farmerModal.classList.add('hidden');
-      });
+    }
 
-      farmerForm?.addEventListener('submit', async (e) => {
+    if (closeFarmerModalBtn) {
+      closeFarmerModalBtn.addEventListener('click', () => {
+        document.getElementById('farmerModal')?.classList.add('hidden');
+      });
+    }
+
+    if (cancelFarmerModalBtn) {
+      cancelFarmerModalBtn.addEventListener('click', () => {
+        document.getElementById('farmerModal')?.classList.add('hidden');
+      });
+    }
+
+    if (farmerForm) {
+      farmerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const token = farmerTokenInput.value.trim();
         if (!token) return;
 
         const saveBtn = document.getElementById('saveFarmerTokenBtn');
-        saveBtn.disabled = true;
-        saveBtn.textContent = 'Saving...';
+        if (saveBtn) {
+          saveBtn.disabled = true;
+          saveBtn.textContent = 'Saving...';
+        }
 
         try {
           const res = await fetch('/api/roach/accounts', {
@@ -1236,9 +1296,8 @@
 
           if (res.ok) {
             farmerTokenInput.value = '';
-            farmerModal.classList.add('hidden');
+            document.getElementById('farmerModal')?.classList.add('hidden');
             await checkFarmerStatus();
-            // Trigger tick immediately
             fetch('/api/roach/tick', { method: 'POST' });
           } else {
             alert('Error saving token');
@@ -1246,43 +1305,61 @@
         } catch (err) {
           alert('Network error: ' + err.message);
         } finally {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Save & Start Farming';
+          if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save & Start Farming';
+          }
         }
       });
-
-      checkFarmerStatus();
-      setInterval(checkFarmerStatus, 15000);
     }
+
+    // Send Chat Test Button Handler
+    if (sendChatTestBtn) {
+      sendChatTestBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        sendChatTestBtn.disabled = true;
+        sendChatTestBtn.innerHTML = '<span>⏳</span><span>Sending...</span>';
+        if (chatTestResult) {
+          chatTestResult.classList.remove('hidden');
+          chatTestResult.textContent = 'Sending chat...';
+          chatTestResult.className = 'text-[11px] text-center font-medium text-yellow-400';
+        }
+
+        try {
+          const res = await fetch('/api/roach/chat-test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: targetUsername, message: '.' })
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            if (chatTestResult) {
+              chatTestResult.textContent = 'Chat Sent (200 OK)! ✅';
+              chatTestResult.className = 'text-[11px] text-center font-medium text-[#acff46]';
+            }
+          } else {
+            if (chatTestResult) {
+              chatTestResult.textContent = (data.error && data.error.message) || data.error || 'Chat Failed (Check Token) ❌';
+              chatTestResult.className = 'text-[11px] text-center font-medium text-red-400';
+            }
+          }
+        } catch (err) {
+          if (chatTestResult) {
+            chatTestResult.textContent = 'Error: ' + err.message;
+            chatTestResult.className = 'text-[11px] text-center font-medium text-red-400';
+          }
+        } finally {
+          sendChatTestBtn.disabled = false;
+          sendChatTestBtn.innerHTML = '<span>💬</span><span>Send Chat Test</span>';
+          setTimeout(() => {
+            chatTestResult?.classList.add('hidden');
+          }, 5000);
+        }
+      });
+    }
+
+    checkFarmerStatus();
+    setInterval(checkFarmerStatus, 15000);
   </script>
-
-  <!-- Farmer Token Modal -->
-  <div id="farmerModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-    <div class="glass-card w-full max-w-md rounded-2xl p-6 bg-[#0e131f] border border-white/10 space-y-4 shadow-2xl">
-      <div class="flex items-center justify-between border-b border-white/10 pb-3">
-        <div class="flex items-center gap-2">
-          <span class="text-xl">⚡</span>
-          <h3 class="text-base font-bold text-white">Configure Cloud Farmer</h3>
-        </div>
-        <button id="closeFarmerModalBtn" class="text-gray-400 hover:text-white text-lg font-bold">&times;</button>
-      </div>
-
-      <p class="text-xs text-gray-400 leading-relaxed">
-        Paste your RollBux <code class="text-white bg-white/10 px-1 py-0.5 rounded">authjs.session-token</code> cookie below. The 24/7 cloud worker will use it to maintain rain eligibility and auto-join rain cycles for <span class="text-[#acff46] font-bold">${targetUsername}</span> even when your PC is offline.
-      </p>
-
-      <form id="farmerForm" class="space-y-4">
-        <div>
-          <label class="block text-[11px] font-semibold text-gray-400 uppercase mb-1">Session Token (JWT)</label>
-          <input type="password" id="farmerTokenInput" placeholder="eyJhbGciOiJIUzI1Ni..." required class="w-full bg-[#131a29] border border-white/10 rounded-lg px-3 py-2.5 text-xs text-white focus:outline-none focus:border-[#acff46] font-mono">
-        </div>
-
-        <div class="flex justify-end gap-2 pt-2 border-t border-white/10">
-          <button type="button" onclick="document.getElementById('farmerModal').classList.add('hidden')" class="px-4 py-2 text-xs font-semibold text-gray-400 hover:text-white transition">Cancel</button>
-          <button type="submit" id="saveFarmerTokenBtn" class="px-5 py-2 bg-[#acff46] text-[#121418] font-bold text-xs rounded-lg hover:bg-[#96e036] transition shadow-md shadow-[#acff46]/10">Save & Start Farming</button>
-        </div>
-      </form>
-    </div>
-  </div>
 </body>
 </html>

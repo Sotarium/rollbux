@@ -170,7 +170,55 @@ export default async function handler(req, res) {
         res.status(500).json({ error: err.message });
       }
       return;
+  // Test Chat Send for specific account
+  if (pathname === '/api/roach/chat-test' && req.method === 'POST') {
+    const url = process.env.UPSTASH_REDIS_REST_URL || "https://flowing-chigger-149490.upstash.io";
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    const payload = req.body || await parseBody(req);
+    const targetName = (payload.name || '').toLowerCase().trim();
+
+    try {
+      const resp = await fetch(`${url}/get/roach%3Aaccounts`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await resp.json();
+      let accounts = data.result ? JSON.parse(data.result) : [];
+      let acc = accounts.find(a => (a.name || '').toLowerCase().trim() === targetName);
+      
+      // Fallback: check ROLLBUX_SESSION_TOKEN env var if matching
+      let sessionToken = acc ? acc.token : process.env.ROLLBUX_SESSION_TOKEN;
+      if (!sessionToken) {
+        res.status(400).json({ error: "No session token found for this account" });
+        return;
+      }
+
+      const chatResp = await fetch("https://rollbux.com/_api/users/chat", {
+        method: 'POST',
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept": "application/json, text/plain, */*",
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${sessionToken}`,
+          "Cookie": `authjs.session-token=${sessionToken}`,
+          "Origin": "https://rollbux.com",
+          "Referer": "https://rollbux.com/"
+        },
+        body: JSON.stringify({ content: payload.message || "." })
+      });
+
+      const chatText = await chatResp.text();
+      let chatJson = null;
+      try { chatJson = JSON.parse(chatText); } catch {}
+
+      if (chatResp.ok) {
+        res.status(200).json({ success: true, status: chatResp.status, message: "Chat sent successfully!" });
+      } else {
+        res.status(chatResp.status).json({ success: false, status: chatResp.status, error: chatJson || chatText });
+      }
+    } catch (e) {
+      res.status(500).json({ success: false, error: e.message });
     }
+    return;
   }
 
   if (pathname === '/roach') {
