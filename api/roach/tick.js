@@ -103,15 +103,29 @@ export default async function handler(req, res) {
 
     const results = [];
     const usedMessagesInTick = new Set();
-    const chatPool = [
-      ".", "gg", "gl", "rain", "<3", ":)", "!", "nice", "ty", "yo", "gm",
-      "gl all", "gl guys", "ggs", "lets go", "bux", "rain drop", "w", "huge",
-      "pog", "hype", "cool", ":D", "clean", "pot", "big rain"
+    const usedCategoriesInTick = new Set();
+
+    // Diverse chat message pools categorized so two accounts never send related phrases (e.g. "big" and "rain")
+    // Each account gets assigned to a completely distinct style pool or selects non-correlated messages
+    const messageCategories = [
+      ["gg", "gl", "gl all", "gl everyone", "ggs", "gl gl"],
+      ["yo", "hey", "sup", "gm", "whats up", "hello"],
+      [":)", ":D", "<3", "xD", "^^", "ty", "thanks"],
+      ["nice", "clean", "lets go", "hype", "w", "huge pot"],
+      [".", "!", "..", "...", "nice one"]
     ];
 
-    function pickUniqueMsg() {
-      const available = chatPool.filter(m => !usedMessagesInTick.has(m));
-      const pool = available.length > 0 ? available : chatPool;
+    function pickUniqueMsgForAccount(accIdx) {
+      // Pick a category not yet used in this tick
+      const availableCategories = messageCategories.map((c, idx) => idx).filter(idx => !usedCategoriesInTick.has(idx));
+      const catIdx = availableCategories.length > 0 
+        ? availableCategories[Math.floor(Math.random() * availableCategories.length)]
+        : accIdx % messageCategories.length;
+      
+      usedCategoriesInTick.add(catIdx);
+      const catMessages = messageCategories[catIdx];
+      const available = catMessages.filter(m => !usedMessagesInTick.has(m));
+      const pool = available.length > 0 ? available : catMessages;
       const picked = pool[Math.floor(Math.random() * pool.length)];
       usedMessagesInTick.add(picked);
       return picked;
@@ -129,9 +143,11 @@ export default async function handler(req, res) {
         continue;
       }
 
-      // Stagger accounts by 1.2s so messages don't post at the exact same millisecond
+      // Random delay between 5 to 10 seconds between accounts so their messages and actions are spaced out naturally
       if (i > 0) {
-        await new Promise(r => setTimeout(r, 1200));
+        const delayMs = Math.floor(5000 + Math.random() * 5000); // 5000ms - 10000ms (5 to 10 seconds)
+        log(`Waiting ${(delayMs / 1000).toFixed(1)}s before processing next account (${accName})...`);
+        await new Promise(r => setTimeout(r, delayMs));
       }
 
       // Check if this account already joined this cycle
@@ -159,7 +175,7 @@ export default async function handler(req, res) {
       const targetCount = secondsRemaining <= 220 ? 3 : (secondsRemaining <= 1200 ? 2 : (secondsRemaining <= 2400 ? 1 : 0));
 
       if (chatCount < targetCount && secondsRemaining > 90) {
-        const uniqueMsg = pickUniqueMsg();
+        const uniqueMsg = pickUniqueMsgForAccount(i);
 
         const chatRes = await rollbuxFetch('/users/chat', token, {
           method: 'POST',
@@ -179,7 +195,7 @@ export default async function handler(req, res) {
         const missing = 3 - chatCount;
         log(`[${accName}] Late on messages (${chatCount}/3), bursting ${missing} message(s) before joining...`);
         for (let j = 0; j < missing; j++) {
-          const m = pickUniqueMsg();
+          const m = pickUniqueMsgForAccount(i + j + 1);
           const res = await rollbuxFetch('/users/chat', token, {
             method: 'POST',
             headers: { "Content-Type": "application/json" },
@@ -189,8 +205,9 @@ export default async function handler(req, res) {
             chatCount += 1;
             await redis('set', chatKey, chatCount);
             log(`[${accName}] Catchup message ${chatCount}/3 sent ("${m}")`);
-            // Brief pause between burst messages
-            await new Promise(r => setTimeout(r, 800));
+            // Pause 5 to 7 seconds between burst messages
+            const burstDelay = Math.floor(5000 + Math.random() * 2000);
+            await new Promise(r => setTimeout(r, burstDelay));
           }
         }
       }

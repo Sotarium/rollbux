@@ -1430,10 +1430,13 @@
               const live = liveAccsMap[nameLower];
               const count = live && live.chat_count !== undefined ? live.chat_count : 0;
               const isCurrent = nameLower === targetUsername.toLowerCase();
-              const nameClass = isCurrent ? 'text-[#acff46] font-bold' : 'text-white font-medium';
+              const nameColor = isCurrent ? 'text-[#acff46]' : 'text-white';
               return `
                 <div class="flex items-center justify-between py-1">
-                  <span class="text-[12px] ${nameClass}">${a.name} : ${count} / 3</span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[12px] font-bold ${nameColor}">${a.name} :</span>
+                    <span class="text-[13px] font-black tracking-tight leading-none ${count >= 3 ? 'text-[#acff46]' : 'text-white'}">${count} / 3</span>
+                  </div>
                   <span class="text-[10px] font-mono text-gray-500">${a.token_preview || 'Configured'}</span>
                 </div>
               `;
