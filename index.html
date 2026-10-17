@@ -1295,11 +1295,13 @@
                   <span class="text-[10px] font-mono text-gray-500">${a.token_preview || 'Configured'}</span>
                 </div>
               `;
+            }).join('');
+          }
         }
 
         // Live Chat Countdown Circle Logic
-        // Messages are distributed across the cycle (every ~18-20 mins = 1100s)
         const secondsRemaining = sData?.status?.seconds_remaining || 0;
+        const liveList = sData?.status?.accounts || [];
         updateChatCountdownCircle(secondsRemaining, accs, liveList);
       } catch (e) {}
     }

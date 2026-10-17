@@ -204,12 +204,14 @@ export function handleAction(payload) {
   if (avatar) user.avatar = avatar;
 
   if (action === 'clear_stats') {
+    const existingActive = user.active_rain;
     user.transactions = [];
     user.total_earnings_bux = 0;
     user.rains_joined = 0;
     user.history = [];
     user.first_tx_time = null;
     user.cleared_at = Date.now();
+    if (existingActive) user.active_rain = existingActive;
     // Do NOT clear deleted_signatures — the blacklist must survive Clear so
     // manually-deleted transactions never come back after a re-sync
     if (!user.deleted_signatures) user.deleted_signatures = [];
@@ -341,12 +343,12 @@ export function handleAction(payload) {
         const amt = parseFloat(tx.amount_bux) || 0;
         if (amt <= 0) continue;
 
-        // Timestamp = right now on the server
-        const txTimestamp = Date.now();
+        // Timestamp from RollBux or current server time
+        const txTimestamp = typeof tx.timestamp === 'number' ? tx.timestamp : Date.now();
         const displayTime = tx.time || formatFrenchDate(new Date(txTimestamp));
 
         // If user cleared their stats, do not re-import transactions older than cleared_at
-        if (user.cleared_at && payload.sync_all_history && txTimestamp <= user.cleared_at) {
+        if (user.cleared_at && txTimestamp <= user.cleared_at) {
           continue;
         }
 

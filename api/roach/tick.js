@@ -129,7 +129,7 @@ export default async function handler(req, res) {
         });
       } catch (e) {}
 
-      // Chat Keeper: Ensure 3 messages per hour for rain eligibility
+      // Regular Chat Keeper: Distribute messages during the cycle
       const chatKey = `roach:chat_count:${cycleId}:${accId}`;
       let chatCount = parseInt((await redis('get', chatKey)) || '0', 10);
 
@@ -147,6 +147,28 @@ export default async function handler(req, res) {
           chatCount += 1;
           await redis('set', chatKey, chatCount);
           log(`[${accName}] Chat sent: "${randomMsg}" (${chatCount}/3)`);
+        }
+      }
+
+      // Emergency Chat Catchup: If short on time (<= 90s) and missing messages, send them right before join
+      if (chatCount < 3 && secondsRemaining <= 90 && status === 'COLLECTING') {
+        const missing = 3 - chatCount;
+        log(`[${accName}] Late on messages (${chatCount}/3), bursting ${missing} message(s) before joining...`);
+        const emotes = [".", "gg", "gl", "rain", "!"];
+        for (let i = 0; i < missing; i++) {
+          const m = emotes[Math.floor(Math.random() * emotes.length)];
+          const res = await rollbuxFetch('/users/chat', token, {
+            method: 'POST',
+            headers: { "Content-Type": "application/json" },
+            body: { message: m }
+          });
+          if (res.ok) {
+            chatCount += 1;
+            await redis('set', chatKey, chatCount);
+            log(`[${accName}] Catchup message ${chatCount}/3 sent ("${m}")`);
+            // Brief pause between burst messages
+            await new Promise(r => setTimeout(r, 600));
+          }
         }
       }
 

@@ -387,13 +387,15 @@ export default async function handler(req, res) {
                 hour: '2-digit',
                 minute: '2-digit'
               }).replace(':', 'h'),
-              cycle_id: t.id
+              cycle_id: t.id,
+              timestamp: typeof t.date === 'number' ? t.date : new Date(t.date || Date.now()).getTime()
             }));
 
           if (rainTxs.length > 0) {
             handleAction({
               action: 'sync_transactions',
               username,
+              sync_all_history: true,
               transactions: rainTxs
             });
           }
