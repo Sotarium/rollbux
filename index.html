@@ -311,6 +311,137 @@
                   </div>
                 </div>
 
+                <!-- Auto Upgrader Section -->
+                <div id="autoUpgraderSection" class="flex w-full shrink-0 flex-col items-start gap-[16px]">
+                  <div class="flex w-full shrink-0 items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                      <p class="whitespace-nowrap text-[20px] leading-[30px] text-white font-bold italic">Auto Upgrader</p>
+                      <span id="upgraderStatusBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-500/10 border border-red-500/20 text-red-400">Disabled</span>
+                    </div>
+                    <!-- Master Power Toggle -->
+                    <label class="relative inline-flex items-center cursor-pointer select-none">
+                      <input type="checkbox" id="upgraderMasterToggle" class="sr-only peer">
+                      <div class="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#acff46]"></div>
+                      <span class="ml-2.5 text-xs font-semibold text-white">Auto Mode</span>
+                    </label>
+                  </div>
+
+                  <!-- Card Body -->
+                  <div class="relative flex w-full flex-col lg:flex-row items-center justify-between gap-6 overflow-clip rounded-[12px] bg-[#0e131f] p-[24px] border border-white/[0.03]">
+                    <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
+
+                    <!-- Left Column: Controls & Settings -->
+                    <div class="relative z-10 flex flex-1 flex-col items-start gap-4 w-full">
+                      <!-- Trigger Condition -->
+                      <div class="flex flex-col gap-1.5 w-full">
+                        <label class="text-[12px] font-semibold text-[#9aa3a8]">Trigger Condition:</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <label class="flex items-center gap-2 p-2.5 rounded-lg bg-[#131a29] border border-white/5 cursor-pointer hover:border-white/10 transition">
+                            <input type="radio" name="upgraderTrigger" value="rain" id="triggerAfterRain" checked class="text-[#acff46] focus:ring-0">
+                            <span class="text-xs text-white font-medium">After Every Rain</span>
+                          </label>
+                          <label class="flex items-center gap-2 p-2.5 rounded-lg bg-[#131a29] border border-white/5 cursor-pointer hover:border-white/10 transition">
+                            <input type="radio" name="upgraderTrigger" value="balance" id="triggerWhenBalance" class="text-[#acff46] focus:ring-0">
+                            <span class="text-xs text-white font-medium">When Balance &ge; 50 BUX</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      <!-- Target Multiplier & All In Row -->
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                        <!-- Multiplier Input -->
+                        <div class="flex flex-col gap-1.5">
+                          <label for="upgraderMultiplierInput" class="text-[12px] font-semibold text-[#9aa3a8]">Target Multiplier:</label>
+                          <div class="relative flex items-center">
+                            <input type="number" id="upgraderMultiplierInput" min="1.1" max="100" step="0.05" value="2.00" class="w-full bg-[#131a29] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono font-bold focus:border-[#acff46] outline-none">
+                            <span class="absolute right-3 text-xs text-gray-400 font-bold">x</span>
+                          </div>
+                          <!-- Quick Presets -->
+                          <div class="flex gap-1.5 mt-1">
+                            <button type="button" class="preset-btn px-2 py-0.5 rounded text-[10px] font-bold bg-white/5 hover:bg-white/10 text-gray-300 transition" data-mult="1.5">1.5x</button>
+                            <button type="button" class="preset-btn px-2 py-0.5 rounded text-[10px] font-bold bg-[#acff46]/10 text-[#acff46] border border-[#acff46]/30 transition" data-mult="2.0">2x</button>
+                            <button type="button" class="preset-btn px-2 py-0.5 rounded text-[10px] font-bold bg-white/5 hover:bg-white/10 text-gray-300 transition" data-mult="3.0">3x</button>
+                            <button type="button" class="preset-btn px-2 py-0.5 rounded text-[10px] font-bold bg-white/5 hover:bg-white/10 text-gray-300 transition" data-mult="5.0">5x</button>
+                            <button type="button" class="preset-btn px-2 py-0.5 rounded text-[10px] font-bold bg-white/5 hover:bg-white/10 text-gray-300 transition" data-mult="10.0">10x</button>
+                          </div>
+                        </div>
+
+                        <!-- Stake Strategy -->
+                        <div class="flex flex-col gap-1.5 justify-between">
+                          <label class="text-[12px] font-semibold text-[#9aa3a8]">Stake Strategy:</label>
+                          <div class="flex items-center gap-2 p-2.5 rounded-lg bg-[#131a29] border border-white/5">
+                            <input type="checkbox" id="upgraderAllInCheck" checked class="rounded text-[#acff46] focus:ring-0">
+                            <div class="flex flex-col">
+                              <span class="text-xs text-white font-bold">Go All In (Full Balance)</span>
+                              <span class="text-[10px] text-gray-400">Min 50 BUX required by RollBux</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Random Position Option -->
+                      <div class="flex items-center gap-2 pt-1 w-full border-t border-white/[0.04]">
+                        <input type="checkbox" id="upgraderRandomPosCheck" class="rounded text-[#acff46] focus:ring-0">
+                        <label for="upgraderRandomPosCheck" class="text-xs text-white font-medium cursor-pointer flex items-center gap-1.5 select-none">
+                          <span>🎲 Random Position on Every Bet</span>
+                          <span class="text-[10px] text-gray-400">(Site-generated placement)</span>
+                        </label>
+                      </div>
+
+                      <!-- Action Button & Feed -->
+                      <div class="flex items-center gap-3 w-full pt-1">
+                        <button id="upgraderManualPlayBtn" type="button" class="px-4 py-2 bg-[#acff46] hover:bg-[#96e036] text-[#121418] rounded-lg text-xs font-bold transition shadow-sm active:scale-95 flex items-center gap-1.5">
+                          <span>Execute Upgrade Now</span>
+                        </button>
+                        <span id="upgraderFeedback" class="text-xs text-gray-400 truncate flex-1">Idle. Waiting for conditions...</span>
+                      </div>
+                    </div>
+
+                    <!-- Right Column: Interactive Upgrader Wheel Preview -->
+                    <div class="relative z-10 flex flex-col items-center justify-center p-4 bg-[#131a29]/60 rounded-xl border border-white/5 w-full lg:w-auto shrink-0 select-none">
+                      <span class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-2">Wheel Range Preview</span>
+                      
+                      <!-- Circular Interactive SVG -->
+                      <div id="upgraderWheelContainer" class="relative size-[180px] flex items-center justify-center cursor-grab active:cursor-grabbing">
+                        <svg id="upgraderWheelSvg" class="size-full" viewBox="0 0 200 200">
+                          <defs>
+                            <linearGradient id="upgraderArcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stop-color="#7974FF" />
+                              <stop offset="100%" stop-color="#acff46" />
+                            </linearGradient>
+                          </defs>
+
+                          <!-- Background Track Circle -->
+                          <circle cx="100" cy="100" r="75" fill="none" stroke="#1c2538" stroke-width="14" />
+                          
+                          <!-- Active Arc Slice -->
+                          <circle id="upgraderArc" cx="100" cy="100" r="75" fill="none" stroke="url(#upgraderArcGrad)" stroke-width="14"
+                            stroke-linecap="round" stroke-dasharray="212 471.24" stroke-dashoffset="0"
+                            transform="rotate(-90 100 100)" class="transition-all duration-75" />
+
+                          <!-- Draggable Handle Knob -->
+                          <g id="upgraderKnob" transform="rotate(0 100 100)">
+                            <circle cx="100" cy="25" r="9" fill="#acff46" stroke="#0e131f" stroke-width="2.5" class="shadow-lg filter drop-shadow" />
+                            <polygon points="100,19 96,27 104,27" fill="#0e131f" />
+                          </g>
+                        </svg>
+
+                        <!-- Center Info Display -->
+                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-2">
+                          <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Upgrade Chance</span>
+                          <span id="upgraderChanceDisplay" class="text-[20px] font-mono font-black text-white leading-tight">45.0%</span>
+                          <span id="upgraderRangeDisplay" class="text-[10px] font-mono font-semibold text-[#acff46] mt-0.5">0 - 450,000</span>
+                        </div>
+                      </div>
+
+                      <span class="text-[10px] text-gray-500 mt-2 text-center max-w-[170px] leading-tight">
+                        Drag circle to adjust winning window, or enable Random.
+                      </span>
+                    </div>
+
+                  </div>
+                </div>
+
                 <!-- Spacer -->
                 <div class="flex w-full shrink-0 flex-col items-start gap-[16px]" bis_skin_checked="1"></div>
 
@@ -1182,6 +1313,11 @@
 
           liveUserData = data;
           renderDashboard(data);
+
+          // Check Auto Upgrader Automated Triggers
+          if (typeof checkAutoUpgraderConditions === 'function') {
+            checkAutoUpgraderConditions(data);
+          }
         }
       } catch (err) {
         console.error('Error fetching user data:', err);
@@ -1585,6 +1721,293 @@
 
     checkFarmerStatus();
     setInterval(checkFarmerStatus, 15000);
+
+    // ==========================================
+    // AUTO UPGRADER CONTROLLER & DRAGGABLE WHEEL
+    // ==========================================
+    const upgraderMasterToggle = document.getElementById('upgraderMasterToggle');
+    const upgraderStatusBadge = document.getElementById('upgraderStatusBadge');
+    const upgraderMultiplierInput = document.getElementById('upgraderMultiplierInput');
+    const upgraderAllInCheck = document.getElementById('upgraderAllInCheck');
+    const upgraderRandomPosCheck = document.getElementById('upgraderRandomPosCheck');
+    const upgraderManualPlayBtn = document.getElementById('upgraderManualPlayBtn');
+    const upgraderFeedback = document.getElementById('upgraderFeedback');
+    const upgraderWheelContainer = document.getElementById('upgraderWheelContainer');
+    const upgraderArc = document.getElementById('upgraderArc');
+    const upgraderKnob = document.getElementById('upgraderKnob');
+    const upgraderChanceDisplay = document.getElementById('upgraderChanceDisplay');
+    const upgraderRangeDisplay = document.getElementById('upgraderRangeDisplay');
+    const triggerAfterRain = document.getElementById('triggerAfterRain');
+    const triggerWhenBalance = document.getElementById('triggerWhenBalance');
+
+    const UPGRADER_RADIUS = 75;
+    const UPGRADER_CIRCUMFERENCE = 2 * Math.PI * UPGRADER_RADIUS; // 471.24
+    let upgraderAngle = parseFloat(localStorage.getItem('rollbux_upgrader_angle') || '0'); // degrees 0-360
+    let isDraggingKnob = false;
+    let isUpgraderExecuting = false;
+    let lastUpgraderTxCount = -1;
+
+    // Load saved settings
+    if (localStorage.getItem('rollbux_upgrader_active') === 'true' && upgraderMasterToggle) {
+      upgraderMasterToggle.checked = true;
+    }
+    if (localStorage.getItem('rollbux_upgrader_random') === 'true' && upgraderRandomPosCheck) {
+      upgraderRandomPosCheck.checked = true;
+    }
+    const savedMult = localStorage.getItem('rollbux_upgrader_multiplier');
+    if (savedMult && upgraderMultiplierInput) {
+      upgraderMultiplierInput.value = savedMult;
+    }
+    const savedTrigger = localStorage.getItem('rollbux_upgrader_trigger');
+    if (savedTrigger === 'balance' && triggerWhenBalance) {
+      triggerWhenBalance.checked = true;
+    } else if (triggerAfterRain) {
+      triggerAfterRain.checked = true;
+    }
+
+    function syncUpgraderStatusBadge() {
+      const active = upgraderMasterToggle?.checked;
+      if (upgraderStatusBadge) {
+        if (active) {
+          upgraderStatusBadge.textContent = 'Active (Auto)';
+          upgraderStatusBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#acff46]/10 border border-[#acff46]/30 text-[#acff46]';
+        } else {
+          upgraderStatusBadge.textContent = 'Disabled';
+          upgraderStatusBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-500/10 border border-red-500/20 text-red-400';
+        }
+      }
+    }
+
+    function calculateUpgraderChance(multiplier) {
+      const mult = Math.max(1.1, parseFloat(multiplier) || 2.0);
+      // RTP is 90% (9000 basis points) on RollBux
+      // chance = 90 / multiplier
+      const chance = Math.min(81.81, Math.max(0.01, 90 / mult));
+      return chance;
+    }
+
+    function updateUpgraderWheelUI() {
+      const mult = parseFloat(upgraderMultiplierInput?.value || '2.0');
+      const chance = calculateUpgraderChance(mult);
+      const isRandom = upgraderRandomPosCheck?.checked;
+
+      // Arc length in SVG stroke dash
+      const arcLen = (chance / 100) * UPGRADER_CIRCUMFERENCE;
+      if (upgraderArc) {
+        upgraderArc.setAttribute('stroke-dasharray', `${arcLen.toFixed(1)} ${UPGRADER_CIRCUMFERENCE.toFixed(1)}`);
+        // SVG circle starts at -90deg (12 o'clock). We rotate from that base:
+        upgraderArc.setAttribute('transform', `rotate(${(upgraderAngle - 90).toFixed(1)} 100 100)`);
+      }
+
+      // Position knob pointer at the start angle
+      if (upgraderKnob) {
+        upgraderKnob.setAttribute('transform', `rotate(${upgraderAngle.toFixed(1)} 100 100)`);
+        upgraderKnob.style.opacity = isRandom ? '0.35' : '1';
+      }
+
+      if (upgraderChanceDisplay) {
+        upgraderChanceDisplay.textContent = `${chance.toFixed(1)}%`;
+      }
+
+      if (upgraderRangeDisplay) {
+        if (isRandom) {
+          upgraderRangeDisplay.textContent = '🎲 Random Roll';
+        } else {
+          const startVal = upgraderAngle / 360;
+          const Vt = 1000000;
+          const startInt = Math.round(startVal * Vt);
+          const chanceInt = Math.round((chance / 100) * Vt);
+          const rawEnd = Math.max(1, startInt) + chanceInt - 1;
+          const endInt = rawEnd > Vt ? rawEnd % Vt : rawEnd;
+          upgraderRangeDisplay.textContent = `${startInt.toLocaleString('en-US')} - ${endInt.toLocaleString('en-US')}`;
+        }
+      }
+    }
+
+    // Drag / Spin interaction for Wheel
+    function handleWheelPointerEvent(e) {
+      if (upgraderRandomPosCheck?.checked) return;
+      if (!upgraderWheelContainer) return;
+      const rect = upgraderWheelContainer.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      
+      const rad = Math.atan2(clientY - cy, clientX - cx);
+      let deg = (rad * (180 / Math.PI)) + 90; // normalize so top = 0deg
+      if (deg < 0) deg += 360;
+      upgraderAngle = deg % 360;
+      localStorage.setItem('rollbux_upgrader_angle', upgraderAngle.toFixed(2));
+      updateUpgraderWheelUI();
+    }
+
+    if (upgraderWheelContainer) {
+      upgraderWheelContainer.addEventListener('mousedown', (e) => {
+        isDraggingKnob = true;
+        handleWheelPointerEvent(e);
+      });
+      upgraderWheelContainer.addEventListener('touchstart', (e) => {
+        isDraggingKnob = true;
+        handleWheelPointerEvent(e);
+      }, { passive: true });
+
+      window.addEventListener('mousemove', (e) => {
+        if (isDraggingKnob) handleWheelPointerEvent(e);
+      });
+      window.addEventListener('touchmove', (e) => {
+        if (isDraggingKnob) handleWheelPointerEvent(e);
+      }, { passive: true });
+
+      window.addEventListener('mouseup', () => { isDraggingKnob = false; });
+      window.addEventListener('touchend', () => { isDraggingKnob = false; });
+    }
+
+    // Multiplier Input & Presets
+    if (upgraderMultiplierInput) {
+      upgraderMultiplierInput.addEventListener('input', () => {
+        localStorage.setItem('rollbux_upgrader_multiplier', upgraderMultiplierInput.value);
+        updateUpgraderWheelUI();
+      });
+    }
+
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const m = btn.getAttribute('data-mult');
+        if (m && upgraderMultiplierInput) {
+          upgraderMultiplierInput.value = parseFloat(m).toFixed(2);
+          localStorage.setItem('rollbux_upgrader_multiplier', upgraderMultiplierInput.value);
+          updateUpgraderWheelUI();
+        }
+      });
+    });
+
+    if (upgraderMasterToggle) {
+      upgraderMasterToggle.addEventListener('change', () => {
+        localStorage.setItem('rollbux_upgrader_active', upgraderMasterToggle.checked ? 'true' : 'false');
+        syncUpgraderStatusBadge();
+      });
+    }
+
+    if (upgraderRandomPosCheck) {
+      upgraderRandomPosCheck.addEventListener('change', () => {
+        localStorage.setItem('rollbux_upgrader_random', upgraderRandomPosCheck.checked ? 'true' : 'false');
+        updateUpgraderWheelUI();
+      });
+    }
+
+    if (triggerAfterRain) {
+      triggerAfterRain.addEventListener('change', () => {
+        localStorage.setItem('rollbux_upgrader_trigger', 'rain');
+      });
+    }
+    if (triggerWhenBalance) {
+      triggerWhenBalance.addEventListener('change', () => {
+        localStorage.setItem('rollbux_upgrader_trigger', 'balance');
+      });
+    }
+
+    // Play Execution logic
+    async function executeUpgraderPlay(isAuto = false) {
+      if (isUpgraderExecuting) return;
+      isUpgraderExecuting = true;
+
+      const mult = parseFloat(upgraderMultiplierInput?.value || '2.0');
+      const isRandom = Boolean(upgraderRandomPosCheck?.checked);
+      const startOffset = upgraderAngle / 360;
+
+      if (upgraderFeedback) {
+        upgraderFeedback.textContent = isAuto ? '⚡ Auto-Upgrading: Contacting RollBux...' : 'Sending Upgrade bet...';
+        upgraderFeedback.className = 'text-xs text-[#acff46] font-semibold truncate flex-1';
+      }
+      if (upgraderManualPlayBtn) {
+        upgraderManualPlayBtn.disabled = true;
+        upgraderManualPlayBtn.classList.add('opacity-50');
+      }
+
+      try {
+        const res = await fetch('/api/upgrader/play', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: targetUsername,
+            multiplier: mult,
+            range: [startOffset],
+            randomPosition: isRandom
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          const item = data.targetItem || {};
+          const won = data.won;
+          const rollFormatted = Number(data.roll).toLocaleString('en-US');
+          if (won) {
+            upgraderFeedback.innerHTML = `<span class="text-[#50f07b] font-bold">🎉 WON!</span> Won <strong class="text-white">${item.name || 'Item'}</strong> (${item.priceBux || '?'} BUX) | Roll: ${rollFormatted}`;
+            upgraderFeedback.className = 'text-xs text-[#50f07b] truncate flex-1';
+          } else {
+            upgraderFeedback.innerHTML = `<span class="text-[#ff6b6b] font-bold">❌ LOST</span> Staked ${data.stakeBux} BUX on ${mult}x | Roll: ${rollFormatted}`;
+            upgraderFeedback.className = 'text-xs text-[#ff6b6b] truncate flex-1';
+          }
+          // Refresh user data immediately to sync balance and inventory
+          fetchUserData();
+        } else {
+          upgraderFeedback.textContent = 'Upgrade failed: ' + (data.error || 'Unknown error');
+          upgraderFeedback.className = 'text-xs text-[#ff6b6b] truncate flex-1';
+        }
+      } catch (e) {
+        upgraderFeedback.textContent = 'Network error: ' + e.message;
+        upgraderFeedback.className = 'text-xs text-red-400 truncate flex-1';
+      } finally {
+        isUpgraderExecuting = false;
+        if (upgraderManualPlayBtn) {
+          upgraderManualPlayBtn.disabled = false;
+          upgraderManualPlayBtn.classList.remove('opacity-50');
+        }
+      }
+    }
+
+    if (upgraderManualPlayBtn) {
+      upgraderManualPlayBtn.addEventListener('click', () => {
+        executeUpgraderPlay(false);
+      });
+    }
+
+    // Auto-trigger condition evaluator
+    function checkAutoUpgraderConditions(userData) {
+      if (!upgraderMasterToggle || !upgraderMasterToggle.checked) return;
+      if (!userData || !userData.user) return;
+      if (isUpgraderExecuting) return;
+
+      const balance = userData.user.balance_bux || 0;
+      const txCount = Array.isArray(userData.user.transactions) ? userData.user.transactions.length : 0;
+      const triggerMode = triggerWhenBalance?.checked ? 'balance' : 'rain';
+
+      if (triggerMode === 'balance') {
+        if (balance >= 50) {
+          console.log('[AutoUpgrader] Balance >= 50 BUX threshold detected. Firing upgrade...');
+          executeUpgraderPlay(true);
+        }
+      } else if (triggerMode === 'rain') {
+        // Only trigger on NEW rain transactions
+        if (lastUpgraderTxCount >= 0 && txCount > lastUpgraderTxCount) {
+          if (balance >= 50) {
+            console.log('[AutoUpgrader] New rain completed and balance >= 50 BUX. Firing upgrade...');
+            executeUpgraderPlay(true);
+          } else {
+            if (upgraderFeedback) {
+              upgraderFeedback.textContent = `New rain detected, but balance (${balance.toFixed(2)} BUX) is under 50 BUX min.`;
+              upgraderFeedback.className = 'text-xs text-yellow-400 truncate flex-1';
+            }
+          }
+        }
+        lastUpgraderTxCount = txCount;
+      }
+    }
+
+    syncUpgraderStatusBadge();
+    updateUpgraderWheelUI();
   </script>
 </body>
 </html>

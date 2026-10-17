@@ -230,7 +230,176 @@ export default async function handler(req, res) {
     } catch (e) {
       res.status(500).json({ success: false, error: e.message });
     }
-    return;
+  }
+
+  // Auto-Upgrader Execution Endpoint
+  if (pathname === '/api/upgrader/play' && req.method === 'POST') {
+    if (!isAllowedIp(req)) {
+      res.statusCode = 403;
+      res.end('Forbidden');
+      return;
+    }
+
+    try {
+      const payload = req.body || await parseBody(req);
+      const targetName = (payload.username || '').toLowerCase().trim();
+      const targetMultiplier = Math.max(1.1, Math.min(100, parseFloat(payload.multiplier) || 2.0));
+      const isRandomPosition = Boolean(payload.randomPosition);
+
+      const url = process.env.UPSTASH_REDIS_REST_URL || "https://flowing-chigger-149490.upstash.io";
+      const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+      if (!token) {
+        res.status(500).json({ success: false, error: "Upstash token missing" });
+        return;
+      }
+
+      // 1. Fetch account session token
+      const accResp = await fetch(`${url}/get/roach%3Aaccounts`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const accData = await accResp.json();
+      let accounts = accData.result ? JSON.parse(accData.result) : [];
+      let acc = accounts.find(a => (a.name || '').toLowerCase().trim() === targetName);
+      let sessionToken = acc ? acc.token : process.env.ROLLBUX_SESSION_TOKEN;
+      if (!sessionToken) {
+        res.status(400).json({ success: false, error: "No account session token configured for " + targetName });
+        return;
+      }
+
+      const rollHeaders = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${sessionToken}`,
+        "Cookie": `authjs.session-token=${sessionToken}`,
+        "Origin": "https://rollbux.com",
+        "Referer": "https://rollbux.com/games/upgrader"
+      };
+
+      // 2. Fetch live user balance
+      const meResp = await fetch("https://rollbux.com/_api/users/me", { headers: rollHeaders });
+      if (!meResp.ok) {
+        res.status(meResp.status).json({ success: false, error: "Failed to fetch user profile from RollBux" });
+        return;
+      }
+      const meData = await meResp.json();
+      const tokenBalanceMicro = meData?.data?.user?.token_balance || 0;
+      const balanceBux = tokenBalanceMicro / 1000000;
+
+      if (balanceBux < 50) {
+        res.status(400).json({
+          success: false,
+          error: `Balance is ${balanceBux.toFixed(2)} BUX. Minimum required to play Upgrader is 50 BUX.`
+        });
+        return;
+      }
+
+      // Stake all in (or floor to whole BUX / micro-tokens)
+      const stakeMicroTokens = Math.floor(tokenBalanceMicro);
+
+      // 3. Fetch upgrader config to get rtpBP
+      const configResp = await fetch("https://rollbux.com/_api/upgrader/config", { headers: rollHeaders });
+      const configData = await configResp.json();
+      const rtpBP = configData?.data?.rtpBP || 9000; // default 90% RTP (9000 BP)
+
+      // 4. Fetch available target items
+      const targetGoalMicroTokens = Math.floor(stakeMicroTokens * targetMultiplier);
+      const targetsResp = await fetch("https://rollbux.com/_api/upgrader/targets?price=all&sortField=price&sortOrder=asc&limit=100", { headers: rollHeaders });
+      const targetsData = await targetsResp.json();
+      const items = targetsData?.data?.items || [];
+      if (items.length === 0) {
+        res.status(500).json({ success: false, error: "Could not fetch upgrader items catalog" });
+        return;
+      }
+
+      // Find item closest to targetGoalMicroTokens (must be > stakeMicroTokens)
+      const eligibleItems = items.filter(it => it.priceMicroTokens > stakeMicroTokens);
+      if (eligibleItems.length === 0) {
+        res.status(400).json({ success: false, error: "No eligible upgrade items found above current stake" });
+        return;
+      }
+
+      let bestItem = eligibleItems[0];
+      let smallestDiff = Infinity;
+      for (const it of eligibleItems) {
+        const diff = Math.abs(it.priceMicroTokens - targetGoalMicroTokens);
+        if (diff < smallestDiff) {
+          smallestDiff = diff;
+          bestItem = it;
+        }
+      }
+
+      // 5. Calculate true provably fair chance
+      // formula: chance = (stakeMicroTokens * (rtpBP / 10000)) / bestItem.priceMicroTokens
+      const exactChance = Math.min(0.818181, Math.max(0.0001, (stakeMicroTokens * (rtpBP / 10000)) / bestItem.priceMicroTokens));
+
+      // 6. Compute range [start, end]
+      const Vt = 1000000;
+      let startOffset = 0;
+      if (isRandomPosition) {
+        startOffset = Math.random();
+      } else if (Array.isArray(payload.range) && typeof payload.range[0] === 'number') {
+        startOffset = Math.max(0, Math.min(0.999999, payload.range[0]));
+      }
+
+      const startClamped = Number(startOffset.toFixed(6));
+      const startInt = Math.round(startClamped * Vt);
+      const chanceInt = Math.round(exactChance * Vt);
+      const rawEnd = Math.max(1, startInt) + chanceInt - 1;
+      const endNormalized = (rawEnd > Vt ? rawEnd % Vt : rawEnd) / Vt;
+      const calculatedRange = [startClamped >= 1 ? 0.999999 : startClamped, endNormalized];
+
+      // 7. Execute upgrade play on RollBux
+      const idempotencyKey = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `upg_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+      const playResp = await fetch("https://rollbux.com/_api/upgrader/play", {
+        method: 'POST',
+        headers: {
+          ...rollHeaders,
+          "Idempotency-Key": idempotencyKey
+        },
+        body: JSON.stringify({
+          stakeValueMicroTokens: stakeMicroTokens,
+          targetItemIds: [bestItem.itemId],
+          range: calculatedRange,
+          fast_mode: true
+        })
+      });
+
+      const playText = await playResp.text();
+      let playJson = null;
+      try { playJson = JSON.parse(playText); } catch {}
+
+      if (!playResp.ok) {
+        res.status(playResp.status).json({
+          success: false,
+          error: playJson?.message || playJson?.error || playText || "Upgrade play rejected"
+        });
+        return;
+      }
+
+      const outcome = playJson?.data || {};
+      res.status(200).json({
+        success: true,
+        won: Boolean(outcome.won),
+        roll: outcome.roll,
+        rollPrecision: outcome.rollPrecision || 1000000,
+        range: calculatedRange,
+        chancePercent: (exactChance * 100).toFixed(2),
+        stakeBux: (stakeMicroTokens / 1000000).toFixed(2),
+        targetItem: {
+          id: bestItem.itemId,
+          name: bestItem.name,
+          imageUrl: bestItem.imageUrl,
+          priceBux: (bestItem.priceMicroTokens / 1000000).toFixed(2)
+        },
+        outcome
+      });
+      return;
+    } catch (e) {
+      console.error("[AutoUpgrader Error]", e);
+      res.status(500).json({ success: false, error: e.message });
+      return;
+    }
   }
 
   if (pathname === '/roach') {
