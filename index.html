@@ -43,14 +43,14 @@
 <body class="selection:bg-[#acff46] selection:text-[#0e131f]">
   <!-- Main Container -->
   <div class="flex w-full justify-center pb-[40px] pt-[35px]" bis_skin_checked="1">
-    <div data-node-id="671:32993" class="flex w-full max-w-[1201px] flex-col items-start gap-[32px] px-[16px] xl:gap-[52px] xl:px-0" bis_skin_checked="1">
+    <div data-node-id="671:32993" class="flex w-full max-w-[1280px] flex-col items-start gap-[28px] px-4 md:px-6" bis_skin_checked="1">
       <div data-node-id="671:32994" class="flex w-full flex-col items-start gap-[28px]" bis_skin_checked="1">
         
         <!-- Header -->
         <div data-node-id="671:32995" class="flex w-full flex-col items-center justify-center" bis_skin_checked="1">
           <div data-node-id="671:32996" class="flex w-full items-center justify-between" bis_skin_checked="1">
-            <div data-node-id="671:32997" class="flex w-full shrink-0 flex-col items-start gap-[20px] xl:w-[420px]" bis_skin_checked="1">
-              <div data-node-id="671:32998" class="flex w-full shrink-0 flex-wrap items-center gap-[12px] xl:flex-nowrap xl:gap-[20px]" bis_skin_checked="1">
+            <div data-node-id="671:32997" class="flex w-full shrink-0 flex-col items-start gap-[20px]" bis_skin_checked="1">
+              <div data-node-id="671:32998" class="flex w-full shrink-0 flex-wrap items-center gap-[12px]" bis_skin_checked="1">
                 <div data-node-id="671:32999" class="flex shrink-0 items-center gap-[12px]" bis_skin_checked="1">
                   <!-- Red Log Out Button on Top Left -->
                   <a href="/users" id="logoutBtn" class="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 hover:text-red-300 rounded-lg text-xs font-semibold transition active:scale-95 shadow-sm">
@@ -65,12 +65,12 @@
         </div>
 
         <!-- Layout Body -->
-        <div data-node-id="671:33011" class="flex w-full shrink-0 flex-col items-start xl:w-[1201px]" bis_skin_checked="1">
-          <div data-node-id="671:33012" class="flex w-full shrink-0 flex-col items-start xl:w-[1200px]" bis_skin_checked="1">
-            <div data-node-id="671:33013" class="flex w-full flex-col items-start gap-[24px] xl:flex-row xl:gap-[32px]" bis_skin_checked="1">
+        <div data-node-id="671:33011" class="flex w-full flex-col items-start" bis_skin_checked="1">
+          <div data-node-id="671:33012" class="flex w-full flex-col items-start" bis_skin_checked="1">
+            <div data-node-id="671:33013" class="flex w-full flex-col items-start gap-[24px] lg:flex-row lg:gap-[28px]" bis_skin_checked="1">
               
               <!-- Left Sidebar: Referral Code -->
-              <div data-node-id="671:33014" class="flex w-full shrink-0 flex-col items-start gap-[16px] xl:w-[320px]" bis_skin_checked="1">
+              <div data-node-id="671:33014" class="flex w-full shrink-0 flex-col items-start gap-[16px] lg:w-[300px] xl:w-[320px]" bis_skin_checked="1">
                 <div data-node-id="671:33050" class="relative flex w-full flex-col items-start gap-[16px] overflow-clip rounded-[12px] bg-[#0e131f] p-[24px] shadow-sm border border-white/[0.03]" bis_skin_checked="1">
                   <p data-node-id="671:33051" class="whitespace-nowrap text-[16px] font-bold leading-[24px] text-white">Your Referral code</p>
                   
@@ -159,7 +159,7 @@
               </div>
 
               <!-- Right Main Content -->
-              <div data-node-id="671:33061" class="flex w-full min-w-0 shrink-0 flex-col items-start gap-[24px] xl:w-[848px]" bis_skin_checked="1">
+              <div data-node-id="671:33061" class="flex flex-1 min-w-0 w-full flex-col items-start gap-[24px]" bis_skin_checked="1">
                 
                 <!-- Overview Section -->
                 <div data-node-id="671:33062" class="flex w-full shrink-0 flex-col items-start justify-center gap-[16px]" bis_skin_checked="1">
@@ -172,11 +172,11 @@
                     </button>
                   </div>
 
-                  <!-- 4 Stats Cards Grid -->
-                  <div data-node-id="671:33067" class="flex w-full shrink-0 flex-wrap content-start items-start gap-[16px]" bis_skin_checked="1">
+                  <!-- 4 Stats Cards Grid (Responsive 4-column) -->
+                  <div data-node-id="671:33067" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[16px] w-full" bis_skin_checked="1">
                     
                     <!-- 1. Rains Joined -->
-                    <div data-node-id="671:33068" class="relative flex min-w-full flex-[1_0_0] xl:min-w-[300px] flex-col items-start gap-[6px] overflow-clip rounded-[12px] px-[20px] py-[16px] border border-white/[0.03]" bis_skin_checked="1">
+                    <div data-node-id="671:33068" class="relative flex w-full flex-col items-start gap-[6px] overflow-clip rounded-[12px] px-[20px] py-[16px] border border-white/[0.03]" bis_skin_checked="1">
                       <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
                       <p class="relative w-full text-[14px] font-medium leading-[20px] text-[#9aa3a8]">Rains Joined</p>
                       <p id="statRainsJoined" class="relative whitespace-nowrap text-[20px] font-bold leading-[30px] text-white">0 Rains</p>
@@ -184,7 +184,7 @@
                     </div>
 
                     <!-- 2. How Much Time -->
-                    <div data-node-id="671:33071" class="relative flex min-w-full flex-[1_0_0] xl:min-w-[300px] flex-col items-start gap-[6px] overflow-clip rounded-[12px] px-[20px] py-[16px] border border-white/[0.03]" bis_skin_checked="1">
+                    <div data-node-id="671:33071" class="relative flex w-full flex-col items-start gap-[6px] overflow-clip rounded-[12px] px-[20px] py-[16px] border border-white/[0.03]" bis_skin_checked="1">
                       <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
                       <p class="relative w-full text-[14px] font-medium leading-[20px] text-[#9aa3a8]">How Much Time</p>
                       <div class="relative flex shrink-0 items-center gap-[8px]" bis_skin_checked="1">
@@ -194,7 +194,7 @@
                     </div>
 
                     <!-- 3. Total Earnings -->
-                    <div data-node-id="671:33086" class="relative flex min-w-full flex-[1_0_0] xl:min-w-[300px] flex-col items-start gap-[6px] overflow-clip rounded-[12px] px-[20px] py-[16px] border border-white/[0.03]" bis_skin_checked="1">
+                    <div data-node-id="671:33086" class="relative flex w-full flex-col items-start gap-[6px] overflow-clip rounded-[12px] px-[20px] py-[16px] border border-white/[0.03]" bis_skin_checked="1">
                       <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
                       <p class="relative w-full text-[14px] font-medium leading-[20px] text-[#9aa3a8]">Total Earnings</p>
                       <div class="relative flex shrink-0 items-center gap-[8px]" bis_skin_checked="1">
@@ -207,7 +207,7 @@
                     </div>
 
                     <!-- 4. Current Balance -->
-                    <div data-node-id="671:33100" class="relative flex min-w-full flex-[1_0_0] xl:min-w-[300px] items-center justify-between gap-[12px] overflow-clip rounded-[12px] border border-solid border-[rgba(172,255,70,0.12)] px-[20px] py-[16px]" bis_skin_checked="1">
+                    <div data-node-id="671:33100" class="relative flex w-full items-center justify-between gap-[12px] overflow-clip rounded-[12px] border border-solid border-[rgba(172,255,70,0.12)] px-[20px] py-[16px]" bis_skin_checked="1">
                       <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px]" style="background-image: linear-gradient(90deg, rgba(172, 255, 70, 0.16) 0%, rgba(172, 255, 70, 0) 100%), linear-gradient(90deg, rgb(14, 19, 31) 0%, rgb(14, 19, 31) 100%);"></span>
                       <div data-node-id="671:33101" class="relative flex min-w-0 shrink flex-col items-start gap-[6px]" bis_skin_checked="1">
                         <p data-node-id="671:33102" class="whitespace-nowrap text-[14px] font-medium leading-[20px] text-[#acff46]">Current Balance</p>
@@ -255,8 +255,8 @@
                   <div data-node-id="671:33119" class="relative flex w-full shrink-0 flex-col items-start justify-center overflow-clip rounded-[12px] p-[24px] border border-white/[0.03]" bis_skin_checked="1">
                     <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
                     
-                    <div data-node-id="671:33120" class="custom-scroll relative h-[348px] w-full shrink-0 overflow-x-auto overflow-y-clip xl:overflow-clip" bis_skin_checked="1">
-                      <div class="relative h-full w-[800px] xl:w-full" bis_skin_checked="1">
+                    <div data-node-id="671:33120" class="custom-scroll relative h-[348px] w-full shrink-0 overflow-x-auto overflow-y-clip" bis_skin_checked="1">
+                      <div class="relative h-full w-full min-w-[600px]" bis_skin_checked="1">
                         <!-- Y-Axis Labels -->
                         <div id="chartYLabels" data-node-id="671:33121" class="absolute left-0 top-0 flex flex-col items-start justify-between h-[330px] whitespace-nowrap text-[12px] font-bold text-[#6d7680]" bis_skin_checked="1">
                           <p id="yAxisTop" class="leading-[18px]">100</p>
@@ -327,9 +327,9 @@
                     </div>
                   </div>
                   
-                  <div data-node-id="671:33164" class="flex w-full shrink-0 flex-col items-center gap-[12px] xl:w-[848px]" bis_skin_checked="1">
-                    <div class="custom-scroll w-full max-w-full overflow-x-auto overflow-y-hidden xl:overflow-visible" bis_skin_checked="1">
-                      <div data-node-id="671:33165" class="relative w-[848px] shrink-0 rounded-[12px] xl:w-full border border-white/[0.03] overflow-hidden" style="min-height: 164px;" bis_skin_checked="1">
+                  <div data-node-id="671:33164" class="flex w-full shrink-0 flex-col items-center gap-[12px]" bis_skin_checked="1">
+                    <div class="custom-scroll w-full max-w-full overflow-x-auto overflow-y-hidden" bis_skin_checked="1">
+                      <div data-node-id="671:33165" class="relative w-full min-w-[650px] shrink-0 rounded-[12px] border border-white/[0.03] overflow-hidden" style="min-height: 164px;" bis_skin_checked="1">
                         <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
                         
                         <!-- Table Column Headers: Amount | Time Left | Rain Total | Time | Action -->
@@ -601,10 +601,28 @@
       return `${day} ${month} ${hours}h${mins}`;
     }
 
-    // Return stored transaction time string untouched
-    function sanitizeTime(str) {
-      if (!str || typeof str !== 'string') return '';
-      return str;
+    // Format transaction time strictly in the user's browser local timezone
+    function formatTransactionTime(tx) {
+      if (!tx) return '';
+      let ms = tx.timestamp;
+      if (!ms && tx.date) {
+        ms = typeof tx.date === 'number' ? tx.date : new Date(tx.date).getTime();
+      }
+      if (!ms && tx.time) {
+        const parsed = new Date(tx.time).getTime();
+        if (!isNaN(parsed)) ms = parsed;
+      }
+      if (!ms) return tx.time || '';
+
+      const d = new Date(ms);
+      if (isNaN(d.getTime())) return tx.time || '';
+
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const day = d.getDate();
+      const month = months[d.getMonth()];
+      const hours = String(d.getHours()).padStart(2, '0');
+      const mins = String(d.getMinutes()).padStart(2, '0');
+      return `${day} ${month}, ${hours}h${mins}`;
     }
 
     let activeTimerLeft = 0;
@@ -726,7 +744,7 @@
         rowsHtml += pageTxs.map((tx, localIdx) => {
           const globalIdx = pageStart + localIdx;
           const formattedAmt = formatValue(tx.amount_bux);
-          const timeDisplay = sanitizeTime(tx.time);
+          const timeDisplay = formatTransactionTime(tx);
           const txTimestamp = tx.timestamp || 0;
           const potDisplay = tx.rain_total ? (typeof tx.rain_total === 'number' ? formatValue(tx.rain_total) : tx.rain_total) : '--';
 
