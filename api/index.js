@@ -139,12 +139,14 @@ export default async function handler(req, res) {
         };
         accounts.push(newAccount);
 
-        const encodedVal = encodeURIComponent(JSON.stringify(accounts));
-        const setResp = await fetch(`${url}/set/roach%3Aaccounts/${encodedVal}`, {
-          headers: { Authorization: `Bearer ${token}` }
+        // Use Upstash pipeline POST format — supports long values (JWT tokens)
+        const setResp = await fetch(`${url}/pipeline`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify([["SET", "roach:accounts", JSON.stringify(accounts)]])
         });
         const setData = await setResp.json();
-        if (setData.result !== 'OK') {
+        if (!Array.isArray(setData) || setData[0]?.result !== 'OK') {
           throw new Error(`Upstash SET failed: ${JSON.stringify(setData)}`);
         }
 
@@ -165,9 +167,11 @@ export default async function handler(req, res) {
         let accounts = getData2.result ? JSON.parse(getData2.result) : [];
         accounts = accounts.filter(a => a.id !== payload.id);
 
-        const encodedVal2 = encodeURIComponent(JSON.stringify(accounts));
-        await fetch(`${url}/set/roach%3Aaccounts/${encodedVal2}`, {
-          headers: { Authorization: `Bearer ${token}` }
+        // Use Upstash pipeline POST format — supports long values
+        await fetch(`${url}/pipeline`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify([["SET", "roach:accounts", JSON.stringify(accounts)]])
         });
 
         res.status(200).json({ success: true });
