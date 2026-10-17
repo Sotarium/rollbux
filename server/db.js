@@ -133,7 +133,7 @@ export function getUser(username) {
     history: []
   };
   users[key] = newUser;
-  saveUsers(users);
+  try { saveUsers(users); } catch(e) { console.error('saveUsers failed:', e.message); }
   return newUser;
 }
 
