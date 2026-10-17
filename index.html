@@ -126,6 +126,26 @@
                     <div class="text-[11px] text-gray-500">Loading accounts...</div>
                   </div>
 
+                  <!-- Next Message Countdown Circle -->
+                  <div class="flex w-full flex-col items-center justify-center py-2 border-t border-white/[0.04] gap-1">
+                    <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Next Message In</span>
+                    <div class="relative flex items-center justify-center size-[96px] mt-1">
+                      <svg class="size-full -rotate-90" viewBox="0 0 36 36">
+                        <!-- Background Circle -->
+                        <path class="text-white/5" stroke-width="3" stroke="currentColor" fill="none"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        <!-- Animated Progress Ring -->
+                        <path id="chatCountdownRing" class="text-[#acff46] transition-[stroke-dasharray] duration-1000 ease-linear"
+                          stroke-width="3" stroke-dasharray="100, 100" stroke-linecap="round" stroke="currentColor" fill="none"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                      </svg>
+                      <div class="absolute flex flex-col items-center justify-center text-center">
+                        <span id="chatCountdownText" class="text-[15px] font-mono font-bold text-white">--:--</span>
+                        <span id="chatCountdownSub" class="text-[9px] text-[#acff46] uppercase font-semibold">Active</span>
+                      </div>
+                    </div>
+                  </div>
+
                   <!-- Split Buttons Row -->
                   <div class="grid grid-cols-2 gap-2 pt-2 w-full border-t border-white/[0.04]">
                     <button id="configureFarmerBtn" type="button" class="w-full py-2 bg-[#acff46] hover:bg-[#96e036] text-[#121418] rounded-lg text-xs font-bold transition shadow-sm active:scale-95 text-center">
@@ -1275,11 +1295,80 @@
                   <span class="text-[10px] font-mono text-gray-500">${a.token_preview || 'Configured'}</span>
                 </div>
               `;
-            }).join('');
-          }
         }
+
+        // Live Chat Countdown Circle Logic
+        // Messages are distributed across the cycle (every ~18-20 mins = 1100s)
+        const secondsRemaining = sData?.status?.seconds_remaining || 0;
+        updateChatCountdownCircle(secondsRemaining, accs, liveList);
       } catch (e) {}
     }
+
+    const chatCountdownRing = document.getElementById('chatCountdownRing');
+    const chatCountdownText = document.getElementById('chatCountdownText');
+    const chatCountdownSub = document.getElementById('chatCountdownSub');
+
+    let chatIntervalTimer = 0;
+    const CHAT_INTERVAL_SEC = 1100; // ~18.3 minutes between automated messages
+
+    function updateChatCountdownCircle(secondsRemaining, accs, liveList) {
+      if (!chatCountdownText || !chatCountdownRing) return;
+      if (accs.length === 0) {
+        chatCountdownText.textContent = '--:--';
+        if (chatCountdownSub) chatCountdownSub.textContent = 'No Accs';
+        chatCountdownRing.setAttribute('stroke-dasharray', '0, 100');
+        return;
+      }
+
+      // Check if all accounts have reached their 3/3 quota for this cycle
+      const allDone = accs.every(a => {
+        const live = (liveList || []).find(l => (l.name || '').toLowerCase() === (a.name || '').toLowerCase());
+        return live && (live.chat_count || 0) >= 3;
+      });
+
+      if (allDone) {
+        chatCountdownText.textContent = '3 / 3';
+        if (chatCountdownSub) {
+          chatCountdownSub.textContent = 'Done';
+          chatCountdownSub.className = 'text-[9px] text-[#acff46] uppercase font-semibold';
+        }
+        chatCountdownRing.setAttribute('stroke-dasharray', '100, 100');
+        return;
+      }
+
+      // Next message trigger time calculation based on cycle seconds remaining
+      const secIntoInterval = secondsRemaining % CHAT_INTERVAL_SEC;
+      chatIntervalTimer = secIntoInterval > 0 ? secIntoInterval : CHAT_INTERVAL_SEC;
+      tickChatCountdown();
+    }
+
+    function tickChatCountdown() {
+      if (!chatCountdownText || !chatCountdownRing) return;
+      if (chatIntervalTimer <= 0) {
+        chatCountdownText.textContent = 'Sending';
+        if (chatCountdownSub) chatCountdownSub.textContent = 'Now';
+        chatCountdownRing.setAttribute('stroke-dasharray', '100, 100');
+        return;
+      }
+
+      const mins = Math.floor(chatIntervalTimer / 60);
+      const secs = chatIntervalTimer % 60;
+      chatCountdownText.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      if (chatCountdownSub) {
+        chatCountdownSub.textContent = 'Active';
+        chatCountdownSub.className = 'text-[9px] text-[#acff46] uppercase font-semibold';
+      }
+
+      const pct = Math.max(0, Math.min(100, (chatIntervalTimer / CHAT_INTERVAL_SEC) * 100));
+      chatCountdownRing.setAttribute('stroke-dasharray', `${pct.toFixed(1)}, 100`);
+    }
+
+    setInterval(() => {
+      if (chatIntervalTimer > 0) {
+        chatIntervalTimer--;
+        tickChatCountdown();
+      }
+    }, 1000);
 
     if (configureFarmerBtn) {
       configureFarmerBtn.addEventListener('click', (e) => {
