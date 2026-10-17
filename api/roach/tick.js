@@ -102,9 +102,24 @@ export default async function handler(req, res) {
     log(`Registered accounts active: ${accounts.length}`);
 
     const results = [];
+    const usedMessagesInTick = new Set();
+    const chatPool = [
+      ".", "gg", "gl", "rain", "<3", ":)", "!", "nice", "ty", "yo", "gm",
+      "gl all", "gl guys", "ggs", "lets go", "bux", "rain drop", "w", "huge",
+      "pog", "hype", "cool", ":D", "clean", "pot", "big rain"
+    ];
+
+    function pickUniqueMsg() {
+      const available = chatPool.filter(m => !usedMessagesInTick.has(m));
+      const pool = available.length > 0 ? available : chatPool;
+      const picked = pool[Math.floor(Math.random() * pool.length)];
+      usedMessagesInTick.add(picked);
+      return picked;
+    }
 
     // 3. Process each account individually
-    for (const acc of accounts) {
+    for (let i = 0; i < accounts.length; i++) {
+      const acc = accounts[i];
       const accId = acc.id;
       const accName = acc.name;
       const token = acc.token;
@@ -112,6 +127,11 @@ export default async function handler(req, res) {
       if (!token) {
         results.push({ account: accName, status: "NO_TOKEN" });
         continue;
+      }
+
+      // Stagger accounts by 1.2s so messages don't post at the exact same millisecond
+      if (i > 0) {
+        await new Promise(r => setTimeout(r, 1200));
       }
 
       // Check if this account already joined this cycle
@@ -139,19 +159,18 @@ export default async function handler(req, res) {
       const targetCount = secondsRemaining <= 220 ? 3 : (secondsRemaining <= 1200 ? 2 : (secondsRemaining <= 2400 ? 1 : 0));
 
       if (chatCount < targetCount && secondsRemaining > 90) {
-        const emotes = [".", "gg", "gl", "rain", "<3", ":)", "!"];
-        const randomMsg = emotes[Math.floor(Math.random() * emotes.length)];
+        const uniqueMsg = pickUniqueMsg();
 
         const chatRes = await rollbuxFetch('/users/chat', token, {
           method: 'POST',
           headers: { "Content-Type": "application/json" },
-          body: { message: randomMsg }
+          body: { message: uniqueMsg }
         });
 
         if (chatRes.ok) {
           chatCount += 1;
           await redis('set', chatKey, chatCount);
-          log(`[${accName}] Synchronized chat sent: "${randomMsg}" (${chatCount}/3)`);
+          log(`[${accName}] Synchronized chat sent: "${uniqueMsg}" (${chatCount}/3)`);
         }
       }
 
@@ -159,9 +178,8 @@ export default async function handler(req, res) {
       if (chatCount < 3 && secondsRemaining <= 90 && status === 'COLLECTING') {
         const missing = 3 - chatCount;
         log(`[${accName}] Late on messages (${chatCount}/3), bursting ${missing} message(s) before joining...`);
-        const emotes = [".", "gg", "gl", "rain", "!"];
-        for (let i = 0; i < missing; i++) {
-          const m = emotes[Math.floor(Math.random() * emotes.length)];
+        for (let j = 0; j < missing; j++) {
+          const m = pickUniqueMsg();
           const res = await rollbuxFetch('/users/chat', token, {
             method: 'POST',
             headers: { "Content-Type": "application/json" },
@@ -172,7 +190,7 @@ export default async function handler(req, res) {
             await redis('set', chatKey, chatCount);
             log(`[${accName}] Catchup message ${chatCount}/3 sent ("${m}")`);
             // Brief pause between burst messages
-            await new Promise(r => setTimeout(r, 600));
+            await new Promise(r => setTimeout(r, 800));
           }
         }
       }
