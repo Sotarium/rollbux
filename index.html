@@ -118,10 +118,7 @@
                 <!-- Cloud Auto-Farmer Box on Player Dashboard -->
                 <div class="relative flex w-full flex-col items-start gap-[12px] overflow-clip rounded-[12px] bg-[#0e131f] p-[20px] shadow-sm border border-white/[0.03]">
                   <div class="flex w-full items-center justify-between">
-                    <div class="flex items-center gap-2">
-                      <span class="text-base">⚡</span>
-                      <span class="text-[14px] font-bold text-white">Cloud Rain Farmer</span>
-                    </div>
+                    <span class="text-[14px] font-bold text-white">Cloud Rain Farmer</span>
                     <span id="farmerBadge" class="text-[10px] font-semibold text-gray-400 px-2 py-0.5 rounded bg-white/5 border border-white/10 uppercase">Checking</span>
                   </div>
                   <p class="text-[12px] text-[#9aa3a8] leading-[18px]">24/7 Cloud Engine auto-chats and joins rains for this account even when your PC is turned off.</p>
@@ -131,14 +128,22 @@
                       <span class="text-[10px] text-gray-500 uppercase tracking-wider">Session Token</span>
                       <span id="farmerTokenStatus" class="text-[11px] font-mono text-gray-400">Not set</span>
                     </div>
-                    <button id="configureFarmerBtn" type="button" class="w-full py-2 bg-[#acff46] hover:bg-[#96e036] text-[#121418] rounded-lg text-xs font-bold transition shadow-sm active:scale-95">
-                      Set Session Token
-                    </button>
-                    <button id="sendChatTestBtn" type="button" class="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg text-xs font-semibold transition active:scale-95 flex items-center justify-center gap-1.5">
-                      <span>💬</span>
-                      <span>Send Chat Test</span>
-                    </button>
-                    <div id="chatTestResult" class="text-[11px] text-center font-medium hidden"></div>
+
+                    <!-- Cycle Messages Count -->
+                    <div class="flex w-full items-center justify-between">
+                      <span class="text-[10px] text-gray-500 uppercase tracking-wider">Messages (Cycle)</span>
+                      <span id="farmerChatCount" class="text-[11px] font-semibold text-[#acff46]">0 / 3</span>
+                    </div>
+
+                    <!-- Split Buttons Row -->
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                      <button id="configureFarmerBtn" type="button" class="w-full py-2 bg-[#acff46] hover:bg-[#96e036] text-[#121418] rounded-lg text-xs font-bold transition shadow-sm active:scale-95 text-center">
+                        Update Token
+                      </button>
+                      <button id="addAnotherTokenBtn" type="button" class="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg text-xs font-semibold transition active:scale-95 text-center">
+                        Add Another Token
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -355,18 +360,19 @@
   <div id="farmerModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
     <div class="glass-card w-full max-w-md rounded-2xl p-6 bg-[#0e131f] border border-white/10 space-y-4 shadow-2xl">
       <div class="flex items-center justify-between border-b border-white/10 pb-3">
-        <div class="flex items-center gap-2">
-          <span class="text-xl">⚡</span>
-          <h3 class="text-base font-bold text-white">Configure Cloud Farmer</h3>
-        </div>
+        <h3 id="modalTitle" class="text-base font-bold text-white">Configure Cloud Farmer</h3>
         <button id="closeFarmerModalBtn" class="text-gray-400 hover:text-white text-lg font-bold">&times;</button>
       </div>
 
       <p class="text-xs text-gray-400 leading-relaxed">
-        Paste your RollBux <code class="text-white bg-white/10 px-1 py-0.5 rounded">authjs.session-token</code> cookie below. The 24/7 cloud worker will use it to maintain rain eligibility and auto-join rain cycles for <span id="modalUsernameSpan" class="text-[#acff46] font-bold"></span> even when your PC is offline.
+        Paste your RollBux <code class="text-white bg-white/10 px-1 py-0.5 rounded">authjs.session-token</code> cookie below. The 24/7 cloud worker will use it to maintain rain eligibility and auto-join rain cycles.
       </p>
 
       <form id="farmerForm" class="space-y-4">
+        <div>
+          <label class="block text-[11px] font-semibold text-gray-400 uppercase mb-1">Account Name</label>
+          <input type="text" id="farmerNameInput" placeholder="e.g. Sotarium" required class="w-full bg-[#131a29] border border-white/10 rounded-lg px-3 py-2.5 text-xs text-white focus:outline-none focus:border-[#acff46]">
+        </div>
         <div>
           <label class="block text-[11px] font-semibold text-gray-400 uppercase mb-1">Session Token (JWT)</label>
           <input type="password" id="farmerTokenInput" placeholder="eyJhbGciOiJIUzI1Ni..." required class="w-full bg-[#131a29] border border-white/10 rounded-lg px-3 py-2.5 text-xs text-white focus:outline-none focus:border-[#acff46] font-mono">
@@ -1077,29 +1083,38 @@
               cachedTxs = JSON.parse(localStorage.getItem(cacheKey) || '[]');
             } catch (e) {}
 
-            const serverTxs = Array.isArray(data.user.transactions) ? data.user.transactions : [];
+            // Filter out any locally or permanently deleted transactions
+            let localDeleted = [];
+            try {
+              localDeleted = JSON.parse(localStorage.getItem('rollbux_deleted_txs') || '[]');
+            } catch (e) {}
+
+            const serverDeleted = Array.isArray(data.user.deleted_signatures) ? data.user.deleted_signatures : [];
+            const allDeleted = new Set([...localDeleted, ...serverDeleted]);
 
             // Merge server transactions and cached transactions
             const txMap = new Map();
             cachedTxs.forEach(t => {
               const sig = t.cycle_id || `${t.amount_bux}_${t.time}`;
-              txMap.set(sig, t);
+              if (!allDeleted.has(sig) && !(t.cycle_id && allDeleted.has(t.cycle_id))) {
+                txMap.set(sig, t);
+              }
             });
             serverTxs.forEach(t => {
               const sig = t.cycle_id || `${t.amount_bux}_${t.time}`;
-              txMap.set(sig, t);
+              if (!allDeleted.has(sig) && !(t.cycle_id && allDeleted.has(t.cycle_id))) {
+                txMap.set(sig, t);
+              }
             });
 
             const merged = Array.from(txMap.values()).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
             data.user.transactions = merged;
-            if (merged.length > 0) {
-              localStorage.setItem(cacheKey, JSON.stringify(merged));
-              let total = 0;
-              merged.forEach(t => { total += (t.amount_bux || 0); });
-              data.user.total_earnings_bux = total;
-              data.user.rains_joined = Math.max(data.user.rains_joined || 0, merged.length);
-            }
+            localStorage.setItem(cacheKey, JSON.stringify(merged));
+            let total = 0;
+            merged.forEach(t => { total += (t.amount_bux || 0); });
+            data.user.total_earnings_bux = total;
+            data.user.rains_joined = merged.length;
           }
 
           liveUserData = data;
@@ -1218,35 +1233,47 @@
     const closeFarmerModalBtn = document.getElementById('closeFarmerModalBtn');
     const cancelFarmerModalBtn = document.getElementById('cancelFarmerModalBtn');
     const farmerForm = document.getElementById('farmerForm');
+    const farmerNameInput = document.getElementById('farmerNameInput');
     const farmerTokenInput = document.getElementById('farmerTokenInput');
     const farmerBadge = document.getElementById('farmerBadge');
     const farmerTokenStatus = document.getElementById('farmerTokenStatus');
-    const modalUsernameSpan = document.getElementById('modalUsernameSpan');
-    const sendChatTestBtn = document.getElementById('sendChatTestBtn');
-    const chatTestResult = document.getElementById('chatTestResult');
-
-    if (modalUsernameSpan) {
-      modalUsernameSpan.textContent = targetUsername;
-    }
+    const farmerChatCount = document.getElementById('farmerChatCount');
+    const addAnotherTokenBtn = document.getElementById('addAnotherTokenBtn');
+    const modalTitle = document.getElementById('modalTitle');
 
     async function checkFarmerStatus() {
       try {
-        const res = await fetch('/api/roach/accounts');
-        if (!res.ok) return;
-        const data = await res.json();
-        const accs = data.accounts || [];
-        const myAcc = accs.find(a => (a.name || '').toLowerCase() === targetUsername.toLowerCase());
+        const [accRes, statusRes] = await Promise.all([
+          fetch('/api/roach/accounts'),
+          fetch('/api/roach/status')
+        ]);
 
-        if (myAcc) {
-          farmerBadge.textContent = 'Active (24/7)';
-          farmerBadge.className = 'text-[10px] font-semibold text-[#acff46] px-2 py-0.5 rounded bg-[#acff46]/10 border border-[#acff46]/20 uppercase';
-          farmerTokenStatus.textContent = myAcc.token_preview || 'Configured';
-          configureFarmerBtn.textContent = 'Update Token';
-        } else {
-          farmerBadge.textContent = 'Not Configured';
-          farmerBadge.className = 'text-[10px] font-semibold text-gray-400 px-2 py-0.5 rounded bg-white/5 border border-white/10 uppercase';
-          farmerTokenStatus.textContent = 'No token set';
-          configureFarmerBtn.textContent = 'Set Session Token';
+        if (accRes.ok) {
+          const data = await accRes.json();
+          const accs = data.accounts || [];
+          const myAcc = accs.find(a => (a.name || '').toLowerCase() === targetUsername.toLowerCase());
+
+          if (myAcc) {
+            farmerBadge.textContent = 'Active (24/7)';
+            farmerBadge.className = 'text-[10px] font-semibold text-[#acff46] px-2 py-0.5 rounded bg-[#acff46]/10 border border-[#acff46]/20 uppercase';
+            farmerTokenStatus.textContent = myAcc.token_preview || 'Configured';
+            if (configureFarmerBtn) configureFarmerBtn.textContent = 'Update Token';
+          } else {
+            farmerBadge.textContent = 'Not Configured';
+            farmerBadge.className = 'text-[10px] font-semibold text-gray-400 px-2 py-0.5 rounded bg-white/5 border border-white/10 uppercase';
+            farmerTokenStatus.textContent = 'No token set';
+            if (configureFarmerBtn) configureFarmerBtn.textContent = 'Set Token';
+          }
+        }
+
+        if (statusRes.ok) {
+          const sData = await statusRes.json();
+          const liveAccs = sData?.status?.accounts || [];
+          const matchedLive = liveAccs.find(a => (a.name || '').toLowerCase() === targetUsername.toLowerCase());
+          if (matchedLive && farmerChatCount) {
+            const count = matchedLive.chat_count !== undefined ? matchedLive.chat_count : 0;
+            farmerChatCount.textContent = `${count} / 3`;
+          }
         }
       } catch (e) {}
     }
@@ -1257,8 +1284,28 @@
         const m = document.getElementById('farmerModal');
         if (m) {
           m.classList.remove('hidden');
-          const inp = document.getElementById('farmerTokenInput');
-          if (inp) inp.focus();
+          if (modalTitle) modalTitle.textContent = `Update Token for ${targetUsername}`;
+          if (farmerNameInput) farmerNameInput.value = targetUsername;
+          if (farmerTokenInput) {
+            farmerTokenInput.value = '';
+            farmerTokenInput.focus();
+          }
+        }
+      });
+    }
+
+    if (addAnotherTokenBtn) {
+      addAnotherTokenBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const m = document.getElementById('farmerModal');
+        if (m) {
+          m.classList.remove('hidden');
+          if (modalTitle) modalTitle.textContent = 'Add Another Account Token';
+          if (farmerNameInput) {
+            farmerNameInput.value = '';
+            farmerNameInput.focus();
+          }
+          if (farmerTokenInput) farmerTokenInput.value = '';
         }
       });
     }
@@ -1278,10 +1325,11 @@
     if (farmerForm) {
       farmerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const name = (farmerNameInput?.value || targetUsername).trim();
         let token = farmerTokenInput.value.trim();
-        if (!token) return;
+        if (!name || !token) return;
 
-        // Auto extract if full cookie or raw JWT is pasted (like trolliansol does)
+        // Auto extract if full cookie or raw JWT is pasted
         const cookieMatch = token.match(/(?:__Secure-)?authjs\.session-token\s*=\s*([^\s;]+)/i);
         if (cookieMatch && cookieMatch[1]) token = cookieMatch[1].trim();
         const jwtMatch = token.match(/eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/);
@@ -1297,7 +1345,7 @@
           const res = await fetch('/api/roach/accounts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: targetUsername, token })
+            body: JSON.stringify({ name, token })
           });
 
           if (res.ok) {
@@ -1316,51 +1364,6 @@
             saveBtn.disabled = false;
             saveBtn.textContent = 'Save & Start Farming';
           }
-        }
-      });
-    }
-
-    // Send Chat Test Button Handler
-    if (sendChatTestBtn) {
-      sendChatTestBtn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        sendChatTestBtn.disabled = true;
-        sendChatTestBtn.innerHTML = '<span>⏳</span><span>Sending...</span>';
-        if (chatTestResult) {
-          chatTestResult.classList.remove('hidden');
-          chatTestResult.textContent = 'Sending chat...';
-          chatTestResult.className = 'text-[11px] text-center font-medium text-yellow-400';
-        }
-
-        try {
-          const res = await fetch('/api/roach/chat-test', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: targetUsername, message: '.' })
-          });
-          const data = await res.json();
-          if (res.ok && data.success) {
-            if (chatTestResult) {
-              chatTestResult.textContent = 'Chat Sent (200 OK)! ✅';
-              chatTestResult.className = 'text-[11px] text-center font-medium text-[#acff46]';
-            }
-          } else {
-            if (chatTestResult) {
-              chatTestResult.textContent = (data.error && data.error.message) || data.error || 'Chat Failed (Check Token) ❌';
-              chatTestResult.className = 'text-[11px] text-center font-medium text-red-400';
-            }
-          }
-        } catch (err) {
-          if (chatTestResult) {
-            chatTestResult.textContent = 'Error: ' + err.message;
-            chatTestResult.className = 'text-[11px] text-center font-medium text-red-400';
-          }
-        } finally {
-          sendChatTestBtn.disabled = false;
-          sendChatTestBtn.innerHTML = '<span>💬</span><span>Send Chat Test</span>';
-          setTimeout(() => {
-            chatTestResult?.classList.add('hidden');
-          }, 5000);
         }
       });
     }
