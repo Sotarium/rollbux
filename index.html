@@ -1367,18 +1367,30 @@
         return;
       }
 
-      // Target thresholds: Msg 1 at 2400s, Msg 2 at 1200s, Msg 3 at 220s
+      // Find minimum chat count across active accounts to know which message we are waiting for
+      let minChatCount = 3;
+      accs.forEach(a => {
+        const live = (liveList || []).find(l => (l.name || '').toLowerCase() === (a.name || '').toLowerCase());
+        const c = live && live.chat_count !== undefined ? live.chat_count : 0;
+        if (c < minChatCount) minChatCount = c;
+      });
+
+      // Target threshold for next message:
+      // Msg 1 (minChatCount == 0): triggers at 2400s (40 min left)
+      // Msg 2 (minChatCount == 1): triggers at 1200s (20 min left)
+      // Msg 3 (minChatCount == 2): triggers at 220s (3.6 min left)
       let nextTarget = 0;
-      if (secondsRemaining > 2400) {
+      if (minChatCount === 0) {
         nextTarget = 2400;
-      } else if (secondsRemaining > 1200) {
+      } else if (minChatCount === 1) {
         nextTarget = 1200;
-      } else if (secondsRemaining > 220) {
+      } else if (minChatCount === 2) {
         nextTarget = 220;
       } else {
-        nextTarget = 60; // Final pre-join burst
+        nextTarget = 60;
       }
 
+      // If we are already past the threshold, timer is 0 (send now)
       chatIntervalTimer = Math.max(0, secondsRemaining - nextTarget);
       tickChatCountdown();
     }
