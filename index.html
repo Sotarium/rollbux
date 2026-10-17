@@ -1358,6 +1358,7 @@
       });
 
       if (allDone) {
+        chatIntervalTimer = -2; // -2 signals permanently completed for this cycle
         chatCountdownText.textContent = '3 / 3';
         if (chatCountdownSub) {
           chatCountdownSub.textContent = 'Done';
@@ -1399,7 +1400,17 @@
 
     function tickChatCountdown() {
       if (!chatCountdownText || !chatCountdownRing) return;
-      if (chatIntervalTimer < 0) {
+      if (chatIntervalTimer === -2) {
+        // Permanently locked at Done for this cycle
+        chatCountdownText.textContent = '3 / 3';
+        if (chatCountdownSub) {
+          chatCountdownSub.textContent = 'Done';
+          chatCountdownSub.className = 'text-[9px] text-[#acff46] uppercase font-semibold';
+        }
+        chatCountdownRing.setAttribute('stroke-dasharray', '100, 100');
+        return;
+      }
+      if (chatIntervalTimer === -1) {
         chatCountdownText.textContent = '--:--';
         if (chatCountdownSub) chatCountdownSub.textContent = 'Active';
         return;
