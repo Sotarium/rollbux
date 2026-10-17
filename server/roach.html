@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RainRoach Control Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #0b0e14; color: #d1d5db; font-family: ui-sans-serif, system-ui, sans-serif; }
+    .glass-card { background: rgba(18, 24, 38, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .neon-glow { box-shadow: 0 0 20px rgba(172, 255, 70, 0.15); }
+  </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 flex flex-col items-center">
+  <div class="w-full max-w-4xl space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <div class="flex items-center space-x-3">
+        <span class="text-3xl">🪳</span>
+        <div>
+          <h1 class="text-2xl font-black text-white tracking-wide">RainRoach <span class="text-[#acff46] text-sm uppercase px-2 py-0.5 rounded bg-[#acff46]/10 border border-[#acff46]/30">Cloud Engine</span></h1>
+          <p class="text-xs text-gray-400">Headless RollBux Rain Auto-Joiner • Always-On Serverless</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <span class="inline-block w-2.5 h-2.5 rounded-full bg-[#acff46] animate-pulse"></span>
+        <span id="botStatus" class="text-xs font-semibold text-[#acff46] uppercase">Cloud Active</span>
+      </div>
+    </div>
+
+    <!-- Main Metric Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="glass-card rounded-xl p-4 flex flex-col justify-between">
+        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Time Remaining</span>
+        <div id="timeRemaining" class="text-3xl font-extrabold text-white mt-2">--:--</div>
+        <span id="cycleStatus" class="text-[11px] text-gray-500 mt-1">Status: IDLE</span>
+      </div>
+
+      <div class="glass-card rounded-xl p-4 flex flex-col justify-between">
+        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Live Rain Pot</span>
+        <div id="livePot" class="text-3xl font-extrabold text-[#acff46] mt-2">-- BUX</div>
+        <span id="joinerCount" class="text-[11px] text-gray-500 mt-1">0 Joiners</span>
+      </div>
+
+      <div class="glass-card rounded-xl p-4 flex flex-col justify-between">
+        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Join Status</span>
+        <div id="joinStatus" class="text-2xl font-extrabold text-yellow-400 mt-2">WAITING</div>
+        <span class="text-[11px] text-gray-500 mt-1">Triggers at &le; 60s</span>
+      </div>
+
+      <div class="glass-card rounded-xl p-4 flex flex-col justify-between">
+        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Chat Eligibility</span>
+        <div id="chatCount" class="text-3xl font-extrabold text-blue-400 mt-2">0 / 3</div>
+        <span class="text-[11px] text-gray-500 mt-1">Goal: 3 msgs/hr</span>
+      </div>
+    </div>
+
+    <!-- Quick Action / Trigger -->
+    <div class="glass-card rounded-xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div>
+        <h3 class="text-sm font-bold text-white">Manual Cloud Trigger</h3>
+        <p class="text-xs text-gray-400 mt-0.5">cron-job.org calls this automatically every 30s. Click below to trigger a test tick right now.</p>
+      </div>
+      <button id="triggerBtn" class="px-5 py-2.5 bg-[#acff46] text-black font-bold text-sm rounded-lg hover:bg-[#96e036] transition shadow-lg shadow-[#acff46]/10 whitespace-nowrap">
+        Trigger Tick Now
+      </button>
+    </div>
+
+    <!-- Live Log Console -->
+    <div class="glass-card rounded-xl p-5">
+      <div class="flex items-center justify-between mb-3 border-b border-white/5 pb-2">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400">Cloud Execution Logs</h3>
+        <span id="lastUpdated" class="text-[11px] text-gray-500">Last tick: Never</span>
+      </div>
+      <div id="logConsole" class="bg-black/60 rounded-lg p-3 font-mono text-xs text-gray-300 h-64 overflow-y-auto space-y-1 border border-white/5">
+        <div class="text-gray-500">// Waiting for first tick...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function updateStatus() {
+      try {
+        const res = await fetch('/api/roach/status');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data || !data.status) return;
+        const s = data.status;
+
+        // Timer formatting
+        const sec = s.seconds_remaining || 0;
+        const m = Math.floor(sec / 60);
+        const remSec = sec % 60;
+        document.getElementById('timeRemaining').textContent = `${String(m).padStart(2, '0')}:${String(remSec).padStart(2, '0')}`;
+        document.getElementById('cycleStatus').textContent = `Status: ${s.status || 'COLLECTING'}`;
+
+        // Pot
+        const bux = ((s.live_pool || 0) / 10000000).toFixed(2);
+        document.getElementById('livePot').textContent = `${bux} BUX`;
+
+        // Join status
+        const joinEl = document.getElementById('joinStatus');
+        if (s.is_joined) {
+          joinEl.textContent = 'JOINED';
+          joinEl.className = 'text-2xl font-extrabold text-[#acff46] mt-2';
+        } else if (sec <= 60) {
+          joinEl.textContent = 'JOINING...';
+          joinEl.className = 'text-2xl font-extrabold text-yellow-400 mt-2 animate-pulse';
+        } else {
+          joinEl.textContent = 'WAITING';
+          joinEl.className = 'text-2xl font-extrabold text-yellow-400 mt-2';
+        }
+
+        // Chat
+        document.getElementById('chatCount').textContent = `${s.chat_count || 0} / 3`;
+
+        // Logs
+        if (s.last_logs && s.last_logs.length) {
+          const logBox = document.getElementById('logConsole');
+          logBox.innerHTML = s.last_logs.map(l => `<div>${l}</div>`).join('');
+          logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        if (s.updated_at) {
+          document.getElementById('lastUpdated').textContent = `Last tick: ${new Date(s.updated_at).toLocaleTimeString()}`;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    document.getElementById('triggerBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('triggerBtn');
+      btn.disabled = true;
+      btn.textContent = 'Executing...';
+      try {
+        await fetch('/api/roach/tick', { method: 'POST' });
+        await updateStatus();
+      } catch (err) {
+        alert('Tick error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Trigger Tick Now';
+      }
+    });
+
+    setInterval(updateStatus, 3000);
+    updateStatus();
+  </script>
+</body>
+</html>

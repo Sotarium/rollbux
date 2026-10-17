@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { handleAction, getUser, clearUserStats, getAllUsers, getSolPrice, buxToUsd, buxToSol } from '../server/db.js';
+import roachTickHandler from './roach/tick.js';
 
 const ALLOWED_IP = '24.49.252.230';
 
@@ -49,6 +50,67 @@ export default async function handler(req, res) {
   const rawPath = req.headers['x-matched-path'] || req.headers['x-vercel-matched-path'] || url.pathname;
   const pathname = rawPath.split('?')[0];
 
+
+  // Roach Engine Routes
+  if (pathname === '/api/roach/tick') {
+    return roachTickHandler(req, res);
+  }
+
+  if (pathname === '/api/roach/status') {
+    const url = process.env.UPSTASH_REDIS_REST_URL || "https://flowing-chigger-149490.upstash.io";
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    if (!token) {
+      res.setHeader('Content-Type', 'application/json');
+      res.status(200).json({ status: null, error: "Upstash token missing" });
+      return;
+    }
+    try {
+      const resp = await fetch(`${url}/get/roach%3Astatus`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await resp.json();
+      const statusObj = data.result ? JSON.parse(data.result) : null;
+      res.setHeader('Content-Type', 'application/json');
+      res.status(200).json({ status: statusObj });
+    } catch (e) {
+      res.status(500).json({ status: null, error: e.message });
+    }
+    return;
+  }
+
+  if (pathname === '/roach') {
+    if (!isAllowedIp(req)) {
+      res.statusCode = 403;
+      res.end('Forbidden');
+      return;
+    }
+    try {
+      const candidates = [
+        path.resolve(process.cwd(), 'server', 'roach.html'),
+        path.resolve(process.cwd(), 'roach.html')
+      ];
+      let html = null;
+      for (const p of candidates) {
+        if (fs.existsSync(p)) {
+          html = fs.readFileSync(p, 'utf-8');
+          break;
+        }
+      }
+      if (!html) {
+        res.statusCode = 404;
+        res.end('Roach portal not found');
+        return;
+      }
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.statusCode = 200;
+      res.end(html);
+      return;
+    } catch (err) {
+      res.statusCode = 500;
+      res.end('Internal Server Error');
+      return;
+    }
+  }
 
   if (pathname === '/api/status' && req.method === 'POST') {
     const payload = req.body || await parseBody(req);
