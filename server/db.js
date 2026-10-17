@@ -319,11 +319,20 @@ export function handleAction(payload) {
   if (action === 'balance_update') {
     if (typeof balance === 'number' && balance >= 0) {
       user.balance_bux = balance;
-      user.history.push({
-        time: now,
-        balance_bux: balance
-      });
-      if (user.history.length > 500) user.history.shift();
+      if (!Array.isArray(user.history)) user.history = [];
+      const last = user.history[user.history.length - 1];
+      // Only record a new history point if balance actually changed or at least 15 minutes elapsed
+      const lastTime = last ? new Date(last.time).getTime() : 0;
+      const isChanged = !last || Math.abs((last.balance_bux || 0) - balance) >= 0.01;
+      const isIntervalElapsed = (Date.now() - lastTime) > 900000; // 15 mins
+
+      if (isChanged || isIntervalElapsed) {
+        user.history.push({
+          time: now,
+          balance_bux: balance
+        });
+        if (user.history.length > 500) user.history.shift();
+      }
     }
   }
 

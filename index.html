@@ -1053,10 +1053,19 @@
 
         // Keep Tooltip within bounds
         const tooltipX = Math.max(60, Math.min(rect.width - 60, pointPixelX));
-        const tooltipY = Math.max(45, pointPixelY);
-
-        chartTooltip.style.left = `${tooltipX}px`;
-        chartTooltip.style.top = `${tooltipY}px`;
+        
+        // If near the top border (< 70px), flip tooltip underneath the cursor/dot so it never gets cut off
+        if (pointPixelY < 70) {
+          chartTooltip.style.left = `${tooltipX}px`;
+          chartTooltip.style.top = `${pointPixelY + 20}px`;
+          chartTooltip.classList.remove('-translate-y-full', 'mb-2');
+          chartTooltip.classList.add('mt-2');
+        } else {
+          chartTooltip.style.left = `${tooltipX}px`;
+          chartTooltip.style.top = `${pointPixelY}px`;
+          chartTooltip.classList.remove('mt-2');
+          chartTooltip.classList.add('-translate-y-full', 'mb-2');
+        }
         chartTooltip.classList.remove('opacity-0');
       });
 
