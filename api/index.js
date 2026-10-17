@@ -282,6 +282,21 @@ export default async function handler(req, res) {
     }
     const username = decodeURIComponent(pathname.replace('/api/user/', '').replace('/clear', '')).trim();
     const user = clearUserStats(username);
+
+    // Save cleared state to Upstash so ephemeral serverless containers never forget the clear
+    try {
+      const upstashUrl = process.env.UPSTASH_REDIS_REST_URL || "https://flowing-chigger-149490.upstash.io";
+      const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+      if (upstashToken) {
+        const clearKey = `roach:cleared:${username.toLowerCase().trim()}`;
+        await fetch(upstashUrl, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${upstashToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(["SET", clearKey, String(Date.now())])
+        });
+      }
+    } catch (e) {}
+
     res.status(200).json({ ok: true, user });
     return;
   }
@@ -306,6 +321,25 @@ export default async function handler(req, res) {
       let sessionToken = process.env.ROLLBUX_SESSION_TOKEN;
 
       if (upstashToken) {
+        // Sync cleared_at timestamp from Upstash if serverless instance lost it
+        try {
+          const clearCheck = await fetch(`${upstashUrl}/get/roach%3Acleared%3A${encodeURIComponent(username.toLowerCase())}`, {
+            headers: { Authorization: `Bearer ${upstashToken}` }
+          });
+          const clearData = await clearCheck.json();
+          if (clearData.result) {
+            const savedClear = parseInt(clearData.result, 10);
+            if (savedClear > (user.cleared_at || 0)) {
+              user.cleared_at = savedClear;
+              user.transactions = (user.transactions || []).filter(t => (t.timestamp || 0) > savedClear);
+              let total = 0;
+              user.transactions.forEach(t => total += (t.amount_bux || 0));
+              user.total_earnings_bux = total;
+              user.rains_joined = user.transactions.length;
+            }
+          }
+        } catch (e) {}
+
         const accResp = await fetch(`${upstashUrl}/get/roach%3Aaccounts`, {
           headers: { Authorization: `Bearer ${upstashToken}` }
         });
@@ -372,13 +406,18 @@ export default async function handler(req, res) {
           }
         }
 
-        // 3. Live Rain Transactions
+        // 3. Live Rain Transactions (only sync if user has not cleared their history, or only sync txs newer than cleared_at)
+        const clearedAt = user.cleared_at || 0;
         const txResp = await fetch("https://rollbux.com/_api/users/me/transactions", { headers: rollHeaders });
         if (txResp.ok) {
           const txData = await txResp.json();
           const items = txData?.data?.items || [];
           const rainTxs = items
-            .filter(t => t.type === 'RAIN_REWARD')
+            .filter(t => {
+              if (t.type !== 'RAIN_REWARD') return false;
+              const txTime = typeof t.date === 'number' ? t.date : new Date(t.date || Date.now()).getTime();
+              return txTime > clearedAt;
+            })
             .map(t => ({
               amount_bux: parseFloat(((t.amount || 0) / 1000000).toFixed(2)),
               time: new Date(t.date || Date.now()).toLocaleString('fr-FR', {

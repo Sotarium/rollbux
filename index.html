@@ -1118,15 +1118,21 @@
 
             const serverTxs = Array.isArray(data.user.transactions) ? data.user.transactions : [];
 
+            const activeClearedAt = Math.max(serverClearedAt, lastClearedAt);
+
             // Merge server transactions and cached transactions
             const txMap = new Map();
             cachedTxs.forEach(t => {
+              const txTime = t.timestamp || 0;
+              if (activeClearedAt > 0 && txTime > 0 && txTime <= activeClearedAt) return;
               const sig = t.cycle_id || `${t.amount_bux}_${t.time}`;
               if (!allDeleted.has(sig) && !(t.cycle_id && allDeleted.has(t.cycle_id))) {
                 txMap.set(sig, t);
               }
             });
             serverTxs.forEach(t => {
+              const txTime = t.timestamp || 0;
+              if (activeClearedAt > 0 && txTime > 0 && txTime <= activeClearedAt) return;
               const sig = t.cycle_id || `${t.amount_bux}_${t.time}`;
               if (!allDeleted.has(sig) && !(t.cycle_id && allDeleted.has(t.cycle_id))) {
                 txMap.set(sig, t);
