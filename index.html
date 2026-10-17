@@ -480,11 +480,13 @@
 
       // Optimistic UI update: reset locally immediately
       if (liveUserData && liveUserData.user) {
+        const savedActiveRain = liveUserData.user.active_rain;
         liveUserData.user.transactions = [];
         liveUserData.user.total_earnings_bux = 0;
         liveUserData.user.rains_joined = 0;
         liveUserData.user.history = [];
         liveUserData.user.first_tx_time = null;
+        if (savedActiveRain) liveUserData.user.active_rain = savedActiveRain;
         renderDashboard(liveUserData);
       }
       try {
@@ -492,7 +494,11 @@
         if (res.ok) {
           const data = await res.json();
           if (data && data.user) {
+            const currentActive = liveUserData?.user?.active_rain;
             liveUserData.user = data.user;
+            if (currentActive && (!data.user.active_rain || !data.user.active_rain.time_left)) {
+              liveUserData.user.active_rain = currentActive;
+            }
             renderDashboard(liveUserData);
           }
         }

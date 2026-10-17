@@ -339,6 +339,26 @@ export default async function handler(req, res) {
           }
         }
 
+        // Live Rain Cycle & Countdown
+        try {
+          const rainResp = await fetch("https://rollbux.com/_api/rain/current");
+          if (rainResp.ok) {
+            const rainData = await rainResp.json();
+            const cycleEnd = rainData?.data?.cycle?.cycle_end;
+            const livePool = rainData?.data?.live_pool || 0;
+            if (cycleEnd) {
+              const secondsLeft = Math.max(0, Math.floor((new Date(cycleEnd).getTime() - Date.now()) / 1000));
+              const potBux = parseFloat((livePool / 1000000).toFixed(2));
+              handleAction({
+                action: 'rain_tick',
+                username,
+                time_left: secondsLeft,
+                pot_amount: potBux
+              });
+            }
+          }
+        } catch (e) {}
+
         // 2. Live Avatar & Details
         const meResp = await fetch("https://rollbux.com/_api/users/me", { headers: rollHeaders });
         if (meResp.ok) {
