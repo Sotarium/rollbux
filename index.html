@@ -1088,6 +1088,8 @@
             const serverDeleted = Array.isArray(data.user.deleted_signatures) ? data.user.deleted_signatures : [];
             const allDeleted = new Set([...localDeleted, ...serverDeleted]);
 
+            const serverTxs = Array.isArray(data.user.transactions) ? data.user.transactions : [];
+
             // Merge server transactions and cached transactions
             const txMap = new Map();
             cachedTxs.forEach(t => {
