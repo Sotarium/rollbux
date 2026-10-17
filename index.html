@@ -1278,8 +1278,14 @@
     if (farmerForm) {
       farmerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const token = farmerTokenInput.value.trim();
+        let token = farmerTokenInput.value.trim();
         if (!token) return;
+
+        // Auto extract if full cookie or raw JWT is pasted (like trolliansol does)
+        const cookieMatch = token.match(/(?:__Secure-)?authjs\.session-token\s*=\s*([^\s;]+)/i);
+        if (cookieMatch && cookieMatch[1]) token = cookieMatch[1].trim();
+        const jwtMatch = token.match(/eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/);
+        if (jwtMatch) token = jwtMatch[0];
 
         const saveBtn = document.getElementById('saveFarmerTokenBtn');
         if (saveBtn) {
@@ -1300,7 +1306,8 @@
             await checkFarmerStatus();
             fetch('/api/roach/tick', { method: 'POST' });
           } else {
-            alert('Error saving token');
+            const errData = await res.json().catch(() => ({}));
+            alert('Error saving token: ' + (errData.error || res.statusText));
           }
         } catch (err) {
           alert('Network error: ' + err.message);
