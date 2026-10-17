@@ -129,11 +129,16 @@ export default async function handler(req, res) {
         });
       } catch (e) {}
 
-      // Regular Chat Keeper: Distribute messages during the cycle
+      // Synchronized Chat Schedule (3 messages evenly spaced):
+      // Message 1: at ~40 min left (secondsRemaining <= 2400)
+      // Message 2: at ~20 min left (secondsRemaining <= 1200)
+      // Message 3: at ~3.5 min left (secondsRemaining <= 220)
       const chatKey = `roach:chat_count:${cycleId}:${accId}`;
       let chatCount = parseInt((await redis('get', chatKey)) || '0', 10);
 
-      if (chatCount < 3 && secondsRemaining > 120 && secondsRemaining < 3300) {
+      const targetCount = secondsRemaining <= 220 ? 3 : (secondsRemaining <= 1200 ? 2 : (secondsRemaining <= 2400 ? 1 : 0));
+
+      if (chatCount < targetCount && secondsRemaining > 90) {
         const emotes = [".", "gg", "gl", "rain", "<3", ":)", "!"];
         const randomMsg = emotes[Math.floor(Math.random() * emotes.length)];
 
@@ -146,7 +151,7 @@ export default async function handler(req, res) {
         if (chatRes.ok) {
           chatCount += 1;
           await redis('set', chatKey, chatCount);
-          log(`[${accName}] Chat sent: "${randomMsg}" (${chatCount}/3)`);
+          log(`[${accName}] Synchronized chat sent: "${randomMsg}" (${chatCount}/3)`);
         }
       }
 

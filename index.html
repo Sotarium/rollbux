@@ -905,13 +905,10 @@
     function renderChart(user) {
       let history = [];
 
-      if (user.history && user.history.length >= 2) {
-        history = [...user.history];
-      } else if (user.transactions && user.transactions.length > 0) {
-        // Build cumulative earnings progression
+      // Prioritize building chart from cumulative rain earnings so rain distributions show growth
+      if (user.transactions && user.transactions.length > 0) {
         const sorted = [...user.transactions].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
         
-        // Start from 0 before the first transaction so the graph shows growth from 0
         const firstTime = (sorted[0].timestamp || Date.now()) - 3600000;
         history.push({
           time: new Date(firstTime).toISOString(),
@@ -928,6 +925,8 @@
             earnings_bux: tx.amount_bux
           });
         });
+      } else if (user.history && user.history.length >= 2) {
+        history = [...user.history];
       }
 
       if (history.length < 2) {
@@ -1341,9 +1340,19 @@
         return;
       }
 
-      // Next message trigger time calculation based on cycle seconds remaining
-      const secIntoInterval = secondsRemaining % CHAT_INTERVAL_SEC;
-      chatIntervalTimer = secIntoInterval > 0 ? secIntoInterval : CHAT_INTERVAL_SEC;
+      // Target thresholds: Msg 1 at 2400s, Msg 2 at 1200s, Msg 3 at 220s
+      let nextTarget = 0;
+      if (secondsRemaining > 2400) {
+        nextTarget = 2400;
+      } else if (secondsRemaining > 1200) {
+        nextTarget = 1200;
+      } else if (secondsRemaining > 220) {
+        nextTarget = 220;
+      } else {
+        nextTarget = 60; // Final pre-join burst
+      }
+
+      chatIntervalTimer = Math.max(0, secondsRemaining - nextTarget);
       tickChatCountdown();
     }
 
