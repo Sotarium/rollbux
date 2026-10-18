@@ -4,6 +4,8 @@ import { handleAction, getUser, clearUserStats, getAllUsers, getSolPrice, buxToU
 import roachTickHandler from './roach/tick.js';
 
 const ALLOWED_IP = '24.49.252.230';
+const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || "https://flowing-chigger-149490.upstash.io";
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || "gQAAAAAAAkfyAAIgcDEyNjE1YWY1MGQ4YTQ0YmIwYjI3MzkyNDk1NWJkOTU2Mg";
 
 function getClientIp(req) {
   return (
@@ -16,6 +18,7 @@ function getClientIp(req) {
 
 function isAllowedIp(req) {
   const ip = getClientIp(req);
+  if (!ip || ip === '127.0.0.1' || ip === '::1' || ip === 'localhost') return true;
   return ip === ALLOWED_IP;
 }
 
@@ -57,8 +60,8 @@ export default async function handler(req, res) {
   }
 
   if (pathname === '/api/roach/status') {
-    const url = process.env.UPSTASH_REDIS_REST_URL || "https://flowing-chigger-149490.upstash.io";
-    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    const url = UPSTASH_URL;
+    const token = UPSTASH_TOKEN;
     if (!token) {
       res.setHeader('Content-Type', 'application/json');
       res.status(200).json({ status: null, error: "Upstash token missing" });
@@ -80,8 +83,8 @@ export default async function handler(req, res) {
 
   // Roach Config (Auto Messages on/off toggle)
   if (pathname === '/api/roach/config') {
-    const url = process.env.UPSTASH_REDIS_REST_URL || "https://flowing-chigger-149490.upstash.io";
-    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    const url = UPSTASH_URL;
+    const token = UPSTASH_TOKEN;
     if (!token) {
       res.status(200).json({ auto_messages: false, error: "Upstash token missing" });
       return;
@@ -136,8 +139,8 @@ export default async function handler(req, res) {
       return;
     }
 
-    const url = process.env.UPSTASH_REDIS_REST_URL || "https://flowing-chigger-149490.upstash.io";
-    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    const url = UPSTASH_URL;
+    const token = UPSTASH_TOKEN;
     if (!token) {
       res.status(500).json({ error: "Upstash token missing" });
       return;
@@ -150,13 +153,56 @@ export default async function handler(req, res) {
         });
         const data = await resp.json();
         const accounts = data.result ? JSON.parse(data.result) : [];
-        // Mask tokens in UI response for security
-        const safeAccounts = accounts.map(a => ({
-          id: a.id,
-          name: a.name,
-          token_preview: a.token ? `${a.token.slice(0, 8)}...${a.token.slice(-6)}` : '',
-          created_at: a.created_at
+
+        // In parallel, fetch live cart (inventory) and balance for each account from RollBux
+        const safeAccounts = await Promise.all(accounts.map(async (a) => {
+          let cart = { count: 0, value: 0, items: [] };
+          let liveBal = null;
+
+          if (a.token) {
+            const rollHeaders = {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+              "Accept": "application/json, text/plain, */*",
+              "Authorization": `Bearer ${a.token}`,
+              "Cookie": `authjs.session-token=${a.token}`
+            };
+
+            try {
+              const [invRes, balRes] = await Promise.all([
+                fetch("https://rollbux.com/_api/users/me/inventory", { headers: rollHeaders }).then(r => r.ok ? r.json() : null).catch(() => null),
+                fetch("https://rollbux.com/_api/users/me/balance", { headers: rollHeaders }).then(r => r.ok ? r.json() : null).catch(() => null)
+              ]);
+
+              if (invRes?.data) {
+                const items = Array.isArray(invRes.data.items) ? invRes.data.items : [];
+                cart = {
+                  count: invRes.data.total_count !== undefined ? invRes.data.total_count : items.length,
+                  value: parseFloat(((invRes.data.total_value || 0) / 1000000).toFixed(2)),
+                  items: items
+                };
+              }
+
+              if (balRes?.data?.token_balance !== undefined) {
+                liveBal = parseFloat((balRes.data.token_balance / 1000000).toFixed(2));
+                handleAction({
+                  action: 'balance_update',
+                  username: a.name,
+                  balance: liveBal
+                });
+              }
+            } catch (e) {}
+          }
+
+          return {
+            id: a.id,
+            name: a.name,
+            token_preview: a.token ? `${a.token.slice(0, 8)}...${a.token.slice(-6)}` : '',
+            created_at: a.created_at,
+            cart,
+            live_balance: liveBal
+          };
         }));
+
         res.status(200).json({ accounts: safeAccounts });
       } catch (err) {
         res.status(500).json({ error: err.message });
@@ -228,6 +274,126 @@ export default async function handler(req, res) {
       } catch (err) {
         res.status(500).json({ error: err.message });
       }
+      return;
+    }
+  }
+
+  // Cart Item Selling Endpoint (Manual Sell / Auto-Sell for Upgrader)
+  if (pathname === '/api/roach/accounts/cart/sell' && req.method === 'POST') {
+    if (!isAllowedIp(req)) {
+      res.statusCode = 403;
+      res.end('Forbidden');
+      return;
+    }
+
+    try {
+      const payload = req.body || await parseBody(req);
+      const accountId = payload.account_id;
+      const accountName = (payload.name || '').toLowerCase().trim();
+      const sellAll = payload.sell_all !== false;
+      const inventoryIds = Array.isArray(payload.inventory_ids) ? payload.inventory_ids : null;
+
+      const url = process.env.UPSTASH_REDIS_REST_URL || "https://flowing-chigger-149490.upstash.io";
+      const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+      if (!token) {
+        res.status(500).json({ success: false, error: "Upstash token missing" });
+        return;
+      }
+
+      const accResp = await fetch(`${url}/get/roach%3Aaccounts`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const accData = await accResp.json();
+      const accounts = accData.result ? JSON.parse(accData.result) : [];
+
+      let targetAccount = null;
+      if (accountId) {
+        targetAccount = accounts.find(a => a.id === accountId);
+      }
+      if (!targetAccount && accountName) {
+        targetAccount = accounts.find(a => (a.name || '').toLowerCase().trim() === accountName);
+      }
+      if (!targetAccount && accounts.length === 1) {
+        targetAccount = accounts[0];
+      }
+
+      if (!targetAccount || !targetAccount.token) {
+        res.status(404).json({ success: false, error: "Account or session token not found" });
+        return;
+      }
+
+      const rollHeaders = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${targetAccount.token}`,
+        "Cookie": `authjs.session-token=${targetAccount.token}`,
+        "Origin": "https://rollbux.com",
+        "Referer": "https://rollbux.com/"
+      };
+
+      const sellBody = sellAll || !inventoryIds || inventoryIds.length === 0
+        ? { sell_all: true }
+        : { inventory_ids: inventoryIds };
+
+      const sellRes = await fetch("https://rollbux.com/_api/users/me/inventory/sell", {
+        method: 'POST',
+        headers: rollHeaders,
+        body: JSON.stringify(sellBody)
+      });
+
+      const sellText = await sellRes.text();
+      let sellJson = null;
+      try { sellJson = JSON.parse(sellText); } catch {}
+
+      if (!sellRes.ok) {
+        res.status(sellRes.status).json({
+          success: false,
+          error: sellJson?.message || sellJson?.error || `Sell failed (HTTP ${sellRes.status})`,
+          detail: sellJson || sellText
+        });
+        return;
+      }
+
+      // Fetch fresh balance and inventory
+      let updatedBalance = null;
+      let updatedCart = { count: 0, value: 0, items: [] };
+
+      try {
+        const [balRes, invRes] = await Promise.all([
+          fetch("https://rollbux.com/_api/users/me/balance", { headers: rollHeaders }).then(r => r.ok ? r.json() : null),
+          fetch("https://rollbux.com/_api/users/me/inventory", { headers: rollHeaders }).then(r => r.ok ? r.json() : null)
+        ]);
+
+        if (balRes?.data?.token_balance !== undefined) {
+          updatedBalance = parseFloat((balRes.data.token_balance / 1000000).toFixed(2));
+          handleAction({
+            action: 'balance_update',
+            username: targetAccount.name,
+            balance: updatedBalance
+          });
+        }
+
+        if (invRes?.data) {
+          const items = Array.isArray(invRes.data.items) ? invRes.data.items : [];
+          updatedCart = {
+            count: invRes.data.total_count !== undefined ? invRes.data.total_count : items.length,
+            value: parseFloat(((invRes.data.total_value || 0) / 1000000).toFixed(2)),
+            items: items
+          };
+        }
+      } catch (e) {}
+
+      res.status(200).json({
+        success: true,
+        account: targetAccount.name,
+        new_balance: updatedBalance,
+        cart: updatedCart,
+        result: sellJson
+      });
+      return;
+    } catch (e) {
+      res.status(500).json({ success: false, error: e.message });
       return;
     }
   }
@@ -752,12 +918,14 @@ export default async function handler(req, res) {
         }
       } catch (e) {}
 
-      // 2. Iterate through ALL registered accounts to fetch balances and transactions
+      // 2. Iterate through ALL registered accounts to fetch balances and transactions concurrently
       const clearedAt = user.cleared_at || 0;
-      for (const acc of allAccountsToSync) {
+      const allRainTxs = [];
+
+      await Promise.all(allAccountsToSync.map(async (acc) => {
         const accName = acc.name || 'Account';
         const sessionToken = acc.token;
-        if (!sessionToken) continue;
+        if (!sessionToken) return;
 
         const rollHeaders = {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -766,79 +934,68 @@ export default async function handler(req, res) {
           "Cookie": `authjs.session-token=${sessionToken}`
         };
 
-        // Live Balance (if main account matches current URL, update main balance)
-        try {
-          const balResp = await fetch("https://rollbux.com/_api/users/me/balance", { headers: rollHeaders });
-          if (balResp.ok) {
-            const balData = await balResp.json();
-            if (balData?.data?.token_balance !== undefined) {
-              const liveBalBux = parseFloat((balData.data.token_balance / 1000000).toFixed(2));
-              handleAction({
-                action: 'balance_update',
-                username: accName,
-                balance: liveBalBux
-              });
-              if (accName.toLowerCase() === username.toLowerCase()) {
-                handleAction({
-                  action: 'balance_update',
-                  username,
-                  balance: liveBalBux
-                });
-              }
-            }
-          }
-        } catch (e) {}
+        const [balRes, meRes, txRes] = await Promise.all([
+          fetch("https://rollbux.com/_api/users/me/balance", { headers: rollHeaders }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch("https://rollbux.com/_api/users/me", { headers: rollHeaders }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch("https://rollbux.com/_api/users/me/transactions", { headers: rollHeaders }).then(r => r.ok ? r.json() : null).catch(() => null)
+        ]);
 
-        // Live Avatar for each account (so if player changes it, it updates immediately)
-        try {
-          const meResp = await fetch("https://rollbux.com/_api/users/me", { headers: rollHeaders });
-          if (meResp.ok) {
-            const meData = await meResp.json();
-            if (meData?.data?.user?.avatar_url) {
-              handleAction({
-                action: 'rain_tick',
-                username: accName,
-                avatar: meData.data.user.avatar_url
-              });
-            }
+        if (balRes?.data?.token_balance !== undefined) {
+          const liveBalBux = parseFloat((balRes.data.token_balance / 1000000).toFixed(2));
+          handleAction({
+            action: 'balance_update',
+            username: accName,
+            balance: liveBalBux
+          });
+          if (accName.toLowerCase() === username.toLowerCase()) {
+            handleAction({
+              action: 'balance_update',
+              username,
+              balance: liveBalBux
+            });
           }
-        } catch (e) {}
+        }
 
-        // Live Rain Transactions for this specific account
-        try {
-          const txResp = await fetch("https://rollbux.com/_api/users/me/transactions", { headers: rollHeaders });
-          if (txResp.ok) {
-            const txData = await txResp.json();
-            const items = txData?.data?.items || [];
-            const rainTxs = items
-              .filter(t => {
-                if (t.type !== 'RAIN_REWARD') return false;
-                const txTime = typeof t.date === 'number' ? t.date : new Date(t.date || Date.now()).getTime();
-                return txTime > clearedAt;
-              })
-              .map(t => ({
-                account: accName,
-                amount_bux: parseFloat(((t.amount || 0) / 1000000).toFixed(2)),
-                time: new Date(t.date || Date.now()).toLocaleString('fr-FR', {
-                  day: 'numeric',
-                  month: 'short',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                }).replace(':', 'h'),
-                cycle_id: t.id ? `${accName}_${t.id}` : undefined,
-                timestamp: typeof t.date === 'number' ? t.date : new Date(t.date || Date.now()).getTime()
-              }));
+        if (meRes?.data?.user?.avatar_url) {
+          handleAction({
+            action: 'rain_tick',
+            username: accName,
+            avatar: meRes.data.user.avatar_url
+          });
+        }
 
-            if (rainTxs.length > 0) {
-              handleAction({
-                action: 'sync_transactions',
-                username,
-                sync_all_history: true,
-                transactions: rainTxs
-              });
-            }
-          }
-        } catch (e) {}
+        if (txRes?.data?.items) {
+          const items = txRes.data.items;
+          const rainTxs = items
+            .filter(t => {
+              if (t.type !== 'RAIN_REWARD') return false;
+              const txTime = typeof t.date === 'number' ? t.date : new Date(t.date || Date.now()).getTime();
+              return txTime > clearedAt;
+            })
+            .map(t => ({
+              account: accName,
+              amount_bux: parseFloat(((t.amount || 0) / 1000000).toFixed(2)),
+              time: new Date(t.date || Date.now()).toLocaleString('fr-FR', {
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit'
+              }).replace(':', 'h'),
+              cycle_id: t.id ? `${accName}_${t.id}` : `${accName}_${t.date}_${t.amount}`,
+              timestamp: typeof t.date === 'number' ? t.date : new Date(t.date || Date.now()).getTime()
+            }));
+
+          allRainTxs.push(...rainTxs);
+        }
+      }));
+
+      if (allRainTxs.length > 0) {
+        handleAction({
+          action: 'sync_transactions',
+          username,
+          sync_all_history: true,
+          transactions: allRainTxs
+        });
       }
     } catch (e) {
       console.error("Live cloud sync error:", e.message);

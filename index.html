@@ -796,8 +796,11 @@
         const localDeleted = JSON.parse(localStorage.getItem('rollbux_deleted_txs') || '[]');
         if (localDeleted.length > 0) {
           txs = txs.filter(t => {
+            const accKey = (t.account || '').toLowerCase().trim();
             if (t.cycle_id && localDeleted.includes(t.cycle_id)) return false;
+            if (localDeleted.includes(`${accKey}_${t.amount_bux}_${t.time || ''}`)) return false;
             if (localDeleted.includes(`${t.amount_bux}_${t.time || ''}`)) return false;
+            if (t.timestamp && localDeleted.includes(String(t.timestamp))) return false;
             return true;
           });
         }
@@ -1016,9 +1019,12 @@
         // Keep local blacklist in localStorage as well
         if (removedTx) {
           try {
+            const accKey = (removedTx.account || '').toLowerCase().trim();
             const localDeleted = JSON.parse(localStorage.getItem('rollbux_deleted_txs') || '[]');
             if (removedTx.cycle_id) localDeleted.push(removedTx.cycle_id);
+            localDeleted.push(`${accKey}_${removedTx.amount_bux}_${removedTx.time || ''}`);
             localDeleted.push(`${removedTx.amount_bux}_${removedTx.time || ''}`);
+            if (removedTx.timestamp) localDeleted.push(String(removedTx.timestamp));
             localStorage.setItem('rollbux_deleted_txs', JSON.stringify(localDeleted));
           } catch (e) {}
         }
@@ -1270,16 +1276,18 @@
             cachedTxs.forEach(t => {
               const txTime = t.timestamp || 0;
               if (activeClearedAt > 0 && txTime > 0 && txTime <= activeClearedAt) return;
-              const sig = t.cycle_id || `${t.amount_bux}_${t.time}`;
-              if (!allDeleted.has(sig) && !(t.cycle_id && allDeleted.has(t.cycle_id))) {
+              const accKey = (t.account || '').toLowerCase().trim();
+              const sig = `${accKey}_` + (t.cycle_id || `${t.amount_bux}_${t.timestamp || t.time}`);
+              if (!allDeleted.has(sig) && !allDeleted.has(`${accKey}_${t.amount_bux}_${t.time}`) && !(t.cycle_id && allDeleted.has(t.cycle_id))) {
                 txMap.set(sig, t);
               }
             });
             serverTxs.forEach(t => {
               const txTime = t.timestamp || 0;
               if (activeClearedAt > 0 && txTime > 0 && txTime <= activeClearedAt) return;
-              const sig = t.cycle_id || `${t.amount_bux}_${t.time}`;
-              if (!allDeleted.has(sig) && !(t.cycle_id && allDeleted.has(t.cycle_id))) {
+              const accKey = (t.account || '').toLowerCase().trim();
+              const sig = `${accKey}_` + (t.cycle_id || `${t.amount_bux}_${t.timestamp || t.time}`);
+              if (!allDeleted.has(sig) && !allDeleted.has(`${accKey}_${t.amount_bux}_${t.time}`) && !(t.cycle_id && allDeleted.has(t.cycle_id))) {
                 txMap.set(sig, t);
               }
             });

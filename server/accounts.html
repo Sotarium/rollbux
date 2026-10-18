@@ -75,18 +75,22 @@
         <span id="accountCountBadge" class="text-[13px] text-[#9aa3a8]">0 accounts</span>
       </div>
 
-      <!-- Accounts Table: User column only + Status + Action -->
+      <!-- Accounts Table: User | Balance | Cart | Action -->
       <div class="w-full flex flex-col items-center gap-[12px]">
         <div class="custom-scroll w-full max-w-full overflow-x-auto overflow-y-hidden">
           <div class="relative w-full shrink-0 rounded-[12px] border border-white/[0.03] overflow-hidden" style="min-height: 164px;">
             <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
 
-            <!-- Table Column Headers: User | Balance | Messages | Rain Status | Action -->
-            <div class="relative z-10 grid grid-cols-[1fr_100px_100px_110px_40px] items-center gap-[12px] px-[16px] py-[14px] text-[13px] font-semibold tracking-[0.28px] text-[#9aa3a8] border-b border-white/[0.04]">
+            <!-- Table Column Headers: User | Balance | Cart | Action -->
+            <div class="relative z-10 grid grid-cols-[1fr_120px_180px_40px] items-center gap-[12px] px-[16px] py-[14px] text-[13px] font-semibold tracking-[0.28px] text-[#9aa3a8] border-b border-white/[0.04]">
               <div>User</div>
               <div class="text-right">Balance</div>
-              <div class="text-center">Messages</div>
-              <div class="text-center">Rain Status</div>
+              <div class="flex items-center justify-center gap-1.5">
+                <svg class="size-4 text-[#9aa3a8]" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M7.6714 10.2684H12.6584L14.0123 15.4299L14.0481 15.5517L17.5061 32.9179L17.549 33.1975L19.0494 40.7247V40.7354C19.2553 41.7474 19.8033 42.657 20.6008 43.3102C21.3982 43.9633 22.3961 44.32 23.4255 44.3198H45.1812C45.8918 44.3198 46.5733 44.0366 47.0758 43.5324C47.5782 43.0283 47.8605 42.3445 47.8605 41.6315C47.8605 40.9185 47.5782 40.2348 47.0758 39.7306C46.5733 39.2265 45.8918 38.9432 45.1812 38.9432H24.1579L23.2648 34.4628H48.257C48.3821 34.4628 48.7393 34.4735 49.068 34.4198C49.6572 34.3198 50.2124 34.0746 50.6838 33.7061C51.1552 33.3376 51.5279 32.8574 51.7687 32.3086C51.9616 31.8641 52.058 31.3014 52.0902 31.115L52.1009 31.0648L54.9266 17.222L54.9338 17.1862C55.0278 16.6705 55.008 16.1404 54.8757 15.6332C54.7434 15.1261 54.5018 14.6542 54.1679 14.2509C53.8341 13.8476 53.4162 13.5227 52.9436 13.2991C52.4711 13.0755 51.9553 12.9586 51.4329 12.9567H18.8993L17.7097 8.3866C17.4867 7.39414 16.9336 6.50741 16.1415 5.87225C15.3494 5.2371 14.3654 4.89134 13.3515 4.89185H7.6714C6.96081 4.89185 6.27933 5.17507 5.77687 5.67922C5.27441 6.18337 4.99213 6.86714 4.99213 7.58011C4.99213 8.29309 5.27441 8.97686 5.77687 9.48101C6.27933 9.98516 6.96081 10.2684 7.6714 10.2684ZM46.5387 50.7716C46.5387 49.6794 46.1063 48.6318 45.3365 47.8595C44.5667 47.0871 43.5227 46.6532 42.4341 46.6532C41.3455 46.6532 40.3014 47.0871 39.5317 47.8595C38.7619 48.6318 38.3294 49.6794 38.3294 50.7716C38.3609 51.8424 38.807 52.8587 39.573 53.6049C40.339 54.3512 41.3646 54.7686 42.4323 54.7686C43.4999 54.7686 44.5256 54.3512 45.2916 53.6049C46.0576 52.8587 46.5037 51.8424 46.5351 50.7716H46.5387ZM24.5687 46.6568C25.1177 46.6405 25.6643 46.735 26.1763 46.9345C26.6882 47.1341 27.155 47.4347 27.5491 47.8186C27.9431 48.2025 28.2564 48.6618 28.4703 49.1693C28.6842 49.6769 28.7944 50.2224 28.7944 50.7734C28.7944 51.3245 28.6842 51.8699 28.4703 52.3775C28.2564 52.885 27.9431 53.3444 27.5491 53.7282C27.155 54.1121 26.6882 54.4127 26.1763 54.6123C25.6643 54.8119 25.1177 54.9063 24.5687 54.8901C23.5015 54.8585 22.4886 54.4109 21.7448 53.6423C21.0011 52.8737 20.5851 51.8447 20.5851 50.7734C20.5851 49.7022 21.0011 48.6731 21.7448 47.9045C22.4886 47.136 23.5015 46.6884 24.5687 46.6568Z" fill="currentColor"/>
+                </svg>
+                <span>Cart</span>
+              </div>
               <div class="text-center"></div>
             </div>
 
@@ -102,6 +106,61 @@
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- Cart / Inventory Modal with Select All & Sell All -->
+  <div id="cartModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div class="w-full max-w-lg rounded-[16px] bg-[#0e131f] border border-white/[0.08] p-6 space-y-4 shadow-2xl flex flex-col max-h-[85vh]">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-white/[0.06] pb-3 shrink-0">
+        <div class="flex items-center gap-2.5">
+          <span class="size-8 rounded-lg bg-[#acff46]/10 border border-[#acff46]/30 flex items-center justify-center text-[#acff46]">
+            <svg class="size-4" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M7.6714 10.2684H12.6584L14.0123 15.4299L14.0481 15.5517L17.5061 32.9179L17.549 33.1975L19.0494 40.7247V40.7354C19.2553 41.7474 19.8033 42.657 20.6008 43.3102C21.3982 43.9633 22.3961 44.32 23.4255 44.3198H45.1812C45.8918 44.3198 46.5733 44.0366 47.0758 43.5324C47.5782 43.0283 47.8605 42.3445 47.8605 41.6315C47.8605 40.9185 47.5782 40.2348 47.0758 39.7306C46.5733 39.2265 45.8918 38.9432 45.1812 38.9432H24.1579L23.2648 34.4628H48.257C48.3821 34.4628 48.7393 34.4735 49.068 34.4198C49.6572 34.3198 50.2124 34.0746 50.6838 33.7061C51.1552 33.3376 51.5279 32.8574 51.7687 32.3086C51.9616 31.8641 52.058 31.3014 52.0902 31.115L52.1009 31.0648L54.9266 17.222L54.9338 17.1862C55.0278 16.6705 55.008 16.1404 54.8757 15.6332C54.7434 15.1261 54.5018 14.6542 54.1679 14.2509C53.8341 13.8476 53.4162 13.5227 52.9436 13.2991C52.4711 13.0755 51.9553 12.9586 51.4329 12.9567H18.8993L17.7097 8.3866C17.4867 7.39414 16.9336 6.50741 16.1415 5.87225C15.3494 5.2371 14.3654 4.89134 13.3515 4.89185H7.6714C6.96081 4.89185 6.27933 5.17507 5.77687 5.67922C5.27441 6.18337 4.99213 6.86714 4.99213 7.58011C4.99213 8.29309 5.27441 8.97686 5.77687 9.48101C6.27933 9.98516 6.96081 10.2684 7.6714 10.2684ZM46.5387 50.7716C46.5387 49.6794 46.1063 48.6318 45.3365 47.8595C44.5667 47.0871 43.5227 46.6532 42.4341 46.6532C41.3455 46.6532 40.3014 47.0871 39.5317 47.8595C38.7619 48.6318 38.3294 49.6794 38.3294 50.7716C38.3609 51.8424 38.807 52.8587 39.573 53.6049C40.339 54.3512 41.3646 54.7686 42.4323 54.7686C43.4999 54.7686 44.5256 54.3512 45.2916 53.6049C46.0576 52.8587 46.5037 51.8424 46.5351 50.7716H46.5387ZM24.5687 46.6568C25.1177 46.6405 25.6643 46.735 26.1763 46.9345C26.6882 47.1341 27.155 47.4347 27.5491 47.8186C27.9431 48.2025 28.2564 48.6618 28.4703 49.1693C28.6842 49.6769 28.7944 50.2224 28.7944 50.7734C28.7944 51.3245 28.6842 51.8699 28.4703 52.3775C28.2564 52.885 27.9431 53.3444 27.5491 53.7282C27.155 54.1121 26.6882 54.4127 26.1763 54.6123C25.6643 54.8119 25.1177 54.9063 24.5687 54.8901C23.5015 54.8585 22.4886 54.4109 21.7448 53.6423C21.0011 52.8737 20.5851 51.8447 20.5851 50.7734C20.5851 49.7022 21.0011 48.6731 21.7448 47.9045C22.4886 47.136 23.5015 46.6884 24.5687 46.6568Z" fill="currentColor"/>
+            </svg>
+          </span>
+          <div>
+            <h3 id="cartModalTitle" class="text-base font-bold text-white italic">Player Cart</h3>
+            <p id="cartModalSubtitle" class="text-[11px] text-[#9aa3a8]">Won items in RollBux inventory</p>
+          </div>
+        </div>
+        <button id="closeCartModalBtn" class="text-gray-400 hover:text-white text-lg font-bold">&times;</button>
+      </div>
+
+      <!-- Cart Overview & Select All Bar -->
+      <div class="flex items-center justify-between bg-[#131a29] rounded-[10px] p-3 border border-white/[0.05] shrink-0">
+        <div class="flex items-center gap-3">
+          <div>
+            <span class="text-[10px] uppercase font-semibold text-[#9aa3a8] block">Items in Cart</span>
+            <span id="cartTotalCount" class="text-[14px] font-bold text-white">0</span>
+          </div>
+          <div class="h-6 w-px bg-white/10"></div>
+          <div>
+            <span class="text-[10px] uppercase font-semibold text-[#9aa3a8] block">Total Value</span>
+            <span id="cartTotalValue" class="text-[14px] font-bold text-[#acff46] font-mono">0 BUX</span>
+          </div>
+        </div>
+        <button id="cartSelectAllBtn" type="button" class="px-3.5 py-1.5 rounded-[8px] text-xs font-bold bg-white/10 hover:bg-white/15 text-white transition active:scale-95 border border-white/10">
+          Select All
+        </button>
+      </div>
+
+      <!-- Items List (Scrollable) -->
+      <div id="cartItemsList" class="custom-scroll overflow-y-auto space-y-2 pr-1 flex-1 min-h-[140px]">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Modal Footer with Sell All / Sell Selected Button -->
+      <div class="flex items-center justify-between border-t border-white/[0.06] pt-3 shrink-0">
+        <button type="button" id="closeCartModalBtn2" class="px-4 py-2 text-xs font-semibold text-gray-400 hover:text-white transition">Close</button>
+        <button id="sellSelectedBtn" type="button" class="hidden px-5 py-2.5 bg-[#acff46] text-[#121418] font-black text-xs rounded-[8px] hover:brightness-110 transition active:scale-95 shadow-md shadow-[#acff46]/10 flex items-center gap-2">
+          <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span id="sellSelectedBtnText">Sell All</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -137,18 +196,20 @@
 
   <script>
     let registeredAccounts = [];
-    let liveStatusMap = {};
     let usersDataMap = {};
+    let activeCartAccountId = null;
+    let selectedCartItemIds = new Set();
 
-    // Avatar ring color palette (matching RollBux avatar rings)
+    // RollBux Cart SVG Icon Helper
+    const CART_SVG_ICON = `
+      <svg class="size-4 shrink-0" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M7.6714 10.2684H12.6584L14.0123 15.4299L14.0481 15.5517L17.5061 32.9179L17.549 33.1975L19.0494 40.7247V40.7354C19.2553 41.7474 19.8033 42.657 20.6008 43.3102C21.3982 43.9633 22.3961 44.32 23.4255 44.3198H45.1812C45.8918 44.3198 46.5733 44.0366 47.0758 43.5324C47.5782 43.0283 47.8605 42.3445 47.8605 41.6315C47.8605 40.9185 47.5782 40.2348 47.0758 39.7306C46.5733 39.2265 45.8918 38.9432 45.1812 38.9432H24.1579L23.2648 34.4628H48.257C48.3821 34.4628 48.7393 34.4735 49.068 34.4198C49.6572 34.3198 50.2124 34.0746 50.6838 33.7061C51.1552 33.3376 51.5279 32.8574 51.7687 32.3086C51.9616 31.8641 52.058 31.3014 52.0902 31.115L52.1009 31.0648L54.9266 17.222L54.9338 17.1862C55.0278 16.6705 55.008 16.1404 54.8757 15.6332C54.7434 15.1261 54.5018 14.6542 54.1679 14.2509C53.8341 13.8476 53.4162 13.5227 52.9436 13.2991C52.4711 13.0755 51.9553 12.9586 51.4329 12.9567H18.8993L17.7097 8.3866C17.4867 7.39414 16.9336 6.50741 16.1415 5.87225C15.3494 5.2371 14.3654 4.89134 13.3515 4.89185H7.6714C6.96081 4.89185 6.27933 5.17507 5.77687 5.67922C5.27441 6.18337 4.99213 6.86714 4.99213 7.58011C4.99213 8.29309 5.27441 8.97686 5.77687 9.48101C6.27933 9.98516 6.96081 10.2684 7.6714 10.2684ZM46.5387 50.7716C46.5387 49.6794 46.1063 48.6318 45.3365 47.8595C44.5667 47.0871 43.5227 46.6532 42.4341 46.6532C41.3455 46.6532 40.3014 47.0871 39.5317 47.8595C38.7619 48.6318 38.3294 49.6794 38.3294 50.7716C38.3609 51.8424 38.807 52.8587 39.573 53.6049C40.339 54.3512 41.3646 54.7686 42.4323 54.7686C43.4999 54.7686 44.5256 54.3512 45.2916 53.6049C46.0576 52.8587 46.5037 51.8424 46.5351 50.7716H46.5387ZM24.5687 46.6568C25.1177 46.6405 25.6643 46.735 26.1763 46.9345C26.6882 47.1341 27.155 47.4347 27.5491 47.8186C27.9431 48.2025 28.2564 48.6618 28.4703 49.1693C28.6842 49.6769 28.7944 50.2224 28.7944 50.7734C28.7944 51.3245 28.6842 51.8699 28.4703 52.3775C28.2564 52.885 27.9431 53.3444 27.5491 53.7282C27.155 54.1121 26.6882 54.4127 26.1763 54.6123C25.6643 54.8119 25.1177 54.9063 24.5687 54.8901C23.5015 54.8585 22.4886 54.4109 21.7448 53.6423C21.0011 52.8737 20.5851 51.8447 20.5851 50.7734C20.5851 49.7022 21.0011 48.6731 21.7448 47.9045C22.4886 47.136 23.5015 46.6884 24.5687 46.6568Z" fill="currentColor"/>
+      </svg>
+    `;
+
+    // Avatar ring color palette
     const ringColors = [
-      '#10b981', // emerald
-      '#f59e0b', // amber
-      '#ef4444', // red
-      '#3b82f6', // blue
-      '#8b5cf6', // purple
-      '#06b6d4', // cyan
-      '#acff46'  // lime
+      '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#06b6d4', '#acff46'
     ];
 
     function getAvatarRingColor(name) {
@@ -160,9 +221,8 @@
 
     async function fetchAll() {
       try {
-        const [accRes, statusRes, usersRes] = await Promise.all([
+        const [accRes, usersRes] = await Promise.all([
           fetch('/api/roach/accounts'),
-          fetch('/api/roach/status'),
           fetch('/api/users')
         ]);
 
@@ -171,20 +231,20 @@
           registeredAccounts = data.accounts || [];
         }
 
-        if (statusRes.ok) {
-          const sData = await statusRes.json();
-          liveStatusMap = {};
-          (sData?.status?.accounts || []).forEach(a => {
-            liveStatusMap[(a.name || '').toLowerCase()] = a;
-          });
-        }
-
         if (usersRes.ok) {
           const uData = await usersRes.json();
           usersDataMap = uData.users || {};
         }
 
         renderAccounts();
+
+        // If cart modal is currently open, refresh its data live
+        if (activeCartAccountId) {
+          const currentAcc = registeredAccounts.find(a => a.id === activeCartAccountId);
+          if (currentAcc) {
+            renderCartModalItems(currentAcc);
+          }
+        }
       } catch (err) {
         console.error('Error fetching accounts:', err);
       }
@@ -192,7 +252,7 @@
 
     function formatNumber(num) {
       const val = parseFloat(num) || 0;
-      return val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     function renderAccounts() {
@@ -212,26 +272,33 @@
 
       list.innerHTML = registeredAccounts.map(a => {
         const nameLower = (a.name || '').toLowerCase();
-        const live = liveStatusMap[nameLower] || {};
         const userDb = usersDataMap[nameLower] || {};
         const ringColor = getAvatarRingColor(a.name);
-        const isJoined = live.joined === true;
-        const chatCount = live.chat_count !== undefined ? live.chat_count : 0;
-        const balanceBux = userDb.balance_bux !== undefined ? userDb.balance_bux : 0;
+        const balanceBux = a.live_balance !== null && a.live_balance !== undefined ? a.live_balance : (userDb.balance_bux || 0);
+        const cart = a.cart || { count: 0, value: 0, items: [] };
 
-        let statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-white/5 text-gray-400 border border-white/5">Waiting</span>';
-        if (isJoined) {
-          statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-green-950/80 text-[#acff46] border border-[#acff46]/30">Joined 🎉</span>';
-        } else if (live.join_status && live.join_status.startsWith('FAILED')) {
-          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-red-950/60 text-red-400 border border-red-500/30 font-mono">${live.join_status.split(' ')[0]}</span>`;
-        } else if (chatCount >= 3) {
-          statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#8b5cf6]/20 text-[#a78bfa] border border-[#8b5cf6]/30">Ready (< 60s)</span>';
+        let cartBadge = '';
+        if (cart.count > 0) {
+          cartBadge = `
+            <button type="button" onclick="openCartModal('${a.id}')" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-[8px] text-[12px] font-bold bg-[#acff46]/10 text-[#acff46] border border-[#acff46]/30 hover:bg-[#acff46]/20 transition active:scale-95 cursor-pointer shadow-sm shadow-[#acff46]/10" title="Click to view & sell ${cart.count} won item(s)">
+              ${CART_SVG_ICON}
+              <span>${cart.count} item${cart.count > 1 ? 's' : ''}</span>
+              <span class="text-[11px] text-[#acff46]/80 font-mono">(${formatNumber(cart.value)} BUX)</span>
+            </button>
+          `;
+        } else {
+          cartBadge = `
+            <button type="button" onclick="openCartModal('${a.id}')" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[7px] text-[11px] font-semibold bg-white/[0.03] text-[#717882] border border-white/[0.04] hover:border-white/10 hover:text-gray-300 transition cursor-pointer" title="View cart">
+              <svg class="size-3.5 opacity-50" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M7.6714 10.2684H12.6584L14.0123 15.4299L14.0481 15.5517L17.5061 32.9179L17.549 33.1975L19.0494 40.7247V40.7354C19.2553 41.7474 19.8033 42.657 20.6008 43.3102C21.3982 43.9633 22.3961 44.32 23.4255 44.3198H45.1812C45.8918 44.3198 46.5733 44.0366 47.0758 43.5324C47.5782 43.0283 47.8605 42.3445 47.8605 41.6315C47.8605 40.9185 47.5782 40.2348 47.0758 39.7306C46.5733 39.2265 45.8918 38.9432 45.1812 38.9432H24.1579L23.2648 34.4628H48.257C48.3821 34.4628 48.7393 34.4735 49.068 34.4198C49.6572 34.3198 50.2124 34.0746 50.6838 33.7061C51.1552 33.3376 51.5279 32.8574 51.7687 32.3086C51.9616 31.8641 52.058 31.3014 52.0902 31.115L52.1009 31.0648L54.9266 17.222L54.9338 17.1862C55.0278 16.6705 55.008 16.1404 54.8757 15.6332C54.7434 15.1261 54.5018 14.6542 54.1679 14.2509C53.8341 13.8476 53.4162 13.5227 52.9436 13.2991C52.4711 13.0755 51.9553 12.9586 51.4329 12.9567H18.8993L17.7097 8.3866C17.4867 7.39414 16.9336 6.50741 16.1415 5.87225C15.3494 5.2371 14.3654 4.89134 13.3515 4.89185H7.6714C6.96081 4.89185 6.27933 5.17507 5.77687 5.67922C5.27441 6.18337 4.99213 6.86714 4.99213 7.58011C4.99213 8.29309 5.27441 8.97686 5.77687 9.48101C6.27933 9.98516 6.96081 10.2684 7.6714 10.2684ZM46.5387 50.7716C46.5387 49.6794 46.1063 48.6318 45.3365 47.8595C44.5667 47.0871 43.5227 46.6532 42.4341 46.6532C41.3455 46.6532 40.3014 47.0871 39.5317 47.8595C38.7619 48.6318 38.3294 49.6794 38.3294 50.7716C38.3609 51.8424 38.807 52.8587 39.573 53.6049C40.339 54.3512 41.3646 54.7686 42.4323 54.7686C43.4999 54.7686 44.5256 54.3512 45.2916 53.6049C46.0576 52.8587 46.5037 51.8424 46.5351 50.7716H46.5387ZM24.5687 46.6568C25.1177 46.6405 25.6643 46.735 26.1763 46.9345C26.6882 47.1341 27.155 47.4347 27.5491 47.8186C27.9431 48.2025 28.2564 48.6618 28.4703 49.1693C28.6842 49.6769 28.7944 50.2224 28.7944 50.7734C28.7944 51.3245 28.6842 51.8699 28.4703 52.3775C28.2564 52.885 27.9431 53.3444 27.5491 53.7282C27.155 54.1121 26.6882 54.4127 26.1763 54.6123C25.6643 54.8119 25.1177 54.9063 24.5687 54.8901C23.5015 54.8585 22.4886 54.4109 21.7448 53.6423C21.0011 52.8737 20.5851 51.8447 20.5851 50.7734C20.5851 49.7022 21.0011 48.6731 21.7448 47.9045C22.4886 47.136 23.5015 46.6884 24.5687 46.6568Z" fill="currentColor"/>
+              </svg>
+              <span>Empty</span>
+            </button>
+          `;
         }
 
-        const chatBadge = `<span class="text-[12px] font-black tracking-tight ${chatCount >= 3 ? 'text-[#acff46]' : 'text-gray-300'}">${chatCount} / 3</span>`;
-
         return `
-          <div class="grid grid-cols-[1fr_100px_100px_110px_40px] items-center gap-[12px] relative min-h-[58px] px-[16px] py-[8px] transition-colors hover:bg-[rgba(255,255,255,0.02)] group" role="row">
+          <div class="grid grid-cols-[1fr_120px_180px_40px] items-center gap-[12px] relative min-h-[58px] px-[16px] py-[8px] transition-colors hover:bg-[rgba(255,255,255,0.02)] group" role="row">
             
             <!-- User Column: Avatar ring + username -->
             <a href="/user/${encodeURIComponent(a.name)}" class="flex items-center gap-2.5 min-w-0 group/user">
@@ -249,14 +316,9 @@
               <span class="text-[10px] text-[#9aa3a8] ml-0.5">BUX</span>
             </div>
 
-            <!-- Messages Column -->
+            <!-- Cart Column -->
             <div class="flex items-center justify-center">
-              ${chatBadge}
-            </div>
-
-            <!-- Rain Status Column -->
-            <div class="flex items-center justify-center">
-              ${statusBadge}
+              ${cartBadge}
             </div>
 
             <!-- Delete Action -->
@@ -273,25 +335,195 @@
       }).join('');
     }
 
-    async function deleteAccount(id, name) {
-      if (!confirm(`Are you sure you want to remove account "${name}"?`)) return;
-      try {
-        const res = await fetch('/api/roach/accounts', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id })
-        });
-        if (res.ok) {
-          await fetchAll();
+    // --- Interactive Cart Modal & Auto-Sell Logic ---
+    const cartModal = document.getElementById('cartModal');
+    const closeCartModalBtn = document.getElementById('closeCartModalBtn');
+    const closeCartModalBtn2 = document.getElementById('closeCartModalBtn2');
+    const cartModalTitle = document.getElementById('cartModalTitle');
+    const cartTotalCount = document.getElementById('cartTotalCount');
+    const cartTotalValue = document.getElementById('cartTotalValue');
+    const cartItemsList = document.getElementById('cartItemsList');
+    const cartSelectAllBtn = document.getElementById('cartSelectAllBtn');
+    const sellSelectedBtn = document.getElementById('sellSelectedBtn');
+    const sellSelectedBtnText = document.getElementById('sellSelectedBtnText');
+
+    function openCartModal(accountId) {
+      const acc = registeredAccounts.find(a => a.id === accountId);
+      if (!acc) return;
+      activeCartAccountId = accountId;
+      selectedCartItemIds.clear();
+
+      cartModalTitle.textContent = `${acc.name}'s Cart`;
+      renderCartModalItems(acc);
+      cartModal.classList.remove('hidden');
+    }
+
+    function closeCartModal() {
+      cartModal.classList.add('hidden');
+      activeCartAccountId = null;
+      selectedCartItemIds.clear();
+    }
+
+    if (closeCartModalBtn) closeCartModalBtn.addEventListener('click', closeCartModal);
+    if (closeCartModalBtn2) closeCartModalBtn2.addEventListener('click', closeCartModal);
+
+    function renderCartModalItems(acc) {
+      const cart = acc.cart || { count: 0, value: 0, items: [] };
+      const items = cart.items || [];
+
+      cartTotalCount.textContent = cart.count;
+      cartTotalValue.textContent = `${formatNumber(cart.value)} BUX`;
+
+      if (items.length === 0) {
+        cartItemsList.innerHTML = `
+          <div class="flex flex-col items-center justify-center h-[160px] text-center space-y-2">
+            <span class="size-12 rounded-full bg-white/5 flex items-center justify-center text-gray-500">
+              <svg class="size-6 opacity-60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M7.6714 10.2684H12.6584L14.0123 15.4299L14.0481 15.5517L17.5061 32.9179L17.549 33.1975L19.0494 40.7247V40.7354C19.2553 41.7474 19.8033 42.657 20.6008 43.3102C21.3982 43.9633 22.3961 44.32 23.4255 44.3198H45.1812C45.8918 44.3198 46.5733 44.0366 47.0758 43.5324C47.5782 43.0283 47.8605 42.3445 47.8605 41.6315C47.8605 40.9185 47.5782 40.2348 47.0758 39.7306C46.5733 39.2265 45.8918 38.9432 45.1812 38.9432H24.1579L23.2648 34.4628H48.257C48.3821 34.4628 48.7393 34.4735 49.068 34.4198C49.6572 34.3198 50.2124 34.0746 50.6838 33.7061C51.1552 33.3376 51.5279 32.8574 51.7687 32.3086C51.9616 31.8641 52.058 31.3014 52.0902 31.115L52.1009 31.0648L54.9266 17.222L54.9338 17.1862C55.0278 16.6705 55.008 16.1404 54.8757 15.6332C54.7434 15.1261 54.5018 14.6542 54.1679 14.2509C53.8341 13.8476 53.4162 13.5227 52.9436 13.2991C52.4711 13.0755 51.9553 12.9586 51.4329 12.9567H18.8993L17.7097 8.3866C17.4867 7.39414 16.9336 6.50741 16.1415 5.87225C15.3494 5.2371 14.3654 4.89134 13.3515 4.89185H7.6714C6.96081 4.89185 6.27933 5.17507 5.77687 5.67922C5.27441 6.18337 4.99213 6.86714 4.99213 7.58011C4.99213 8.29309 5.27441 8.97686 5.77687 9.48101C6.27933 9.98516 6.96081 10.2684 7.6714 10.2684ZM46.5387 50.7716C46.5387 49.6794 46.1063 48.6318 45.3365 47.8595C44.5667 47.0871 43.5227 46.6532 42.4341 46.6532C41.3455 46.6532 40.3014 47.0871 39.5317 47.8595C38.7619 48.6318 38.3294 49.6794 38.3294 50.7716C38.3609 51.8424 38.807 52.8587 39.573 53.6049C40.339 54.3512 41.3646 54.7686 42.4323 54.7686C43.4999 54.7686 44.5256 54.3512 45.2916 53.6049C46.0576 52.8587 46.5037 51.8424 46.5351 50.7716H46.5387ZM24.5687 46.6568C25.1177 46.6405 25.6643 46.735 26.1763 46.9345C26.6882 47.1341 27.155 47.4347 27.5491 47.8186C27.9431 48.2025 28.2564 48.6618 28.4703 49.1693C28.6842 49.6769 28.7944 50.2224 28.7944 50.7734C28.7944 51.3245 28.6842 51.8699 28.4703 52.3775C28.2564 52.885 27.9431 53.3444 27.5491 53.7282C27.155 54.1121 26.6882 54.4127 26.1763 54.6123C25.6643 54.8119 25.1177 54.9063 24.5687 54.8901C23.5015 54.8585 22.4886 54.4109 21.7448 53.6423C21.0011 52.8737 20.5851 51.8447 20.5851 50.7734C20.5851 49.7022 21.0011 48.6731 21.7448 47.9045C22.4886 47.136 23.5015 46.6884 24.5687 46.6568Z" fill="currentColor"/>
+              </svg>
+            </span>
+            <p class="text-sm font-semibold text-white">Your inventory is empty</p>
+            <p class="text-xs text-[#9aa3a8]">Items won from Upgrader, Cases, or Battles appear here.</p>
+          </div>
+        `;
+        cartSelectAllBtn.classList.add('hidden');
+        sellSelectedBtn.classList.add('hidden');
+        return;
+      }
+
+      cartSelectAllBtn.classList.remove('hidden');
+
+      cartItemsList.innerHTML = items.map(item => {
+        const isSelected = selectedCartItemIds.has(item.id);
+        const itemValBux = (item.item_price || 0) / 1000000;
+        return `
+          <div onclick="toggleCartItemSelection('${item.id}')" class="flex items-center justify-between p-2.5 rounded-[10px] bg-[#131a29] hover:bg-[#182133] border ${isSelected ? 'border-[#acff46] bg-[#acff46]/5' : 'border-white/[0.05]'} transition cursor-pointer select-none">
+            <div class="flex items-center gap-3 min-w-0">
+              <input type="checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); toggleCartItemSelection('${item.id}')" class="size-4 rounded accent-[#acff46] cursor-pointer">
+              <img src="${item.item_image_url || 'https://rollbux.com/icons/token.png'}" alt="" class="size-11 object-contain rounded-lg bg-[#0e131f] p-1 border border-white/5 shrink-0" onerror="this.onerror=null; this.src='https://rollbux.com/icons/token.png';">
+              <div class="min-w-0">
+                <p class="text-xs font-bold text-white truncate">${item.item_name || 'Won Item'}</p>
+                <p class="text-[10px] text-[#9aa3a8]">Source: <span class="text-gray-300 font-semibold">${item.case_name || 'RollBux'}</span></p>
+              </div>
+            </div>
+            <div class="text-right shrink-0 pl-2">
+              <p class="text-xs font-bold text-[#acff46] font-mono">${formatNumber(itemValBux)} BUX</p>
+              <span class="text-[9px] uppercase px-1.5 py-0.5 rounded bg-white/5 text-gray-400 font-bold">${item.item_rarity || 'item'}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      updateSellButtonState(acc);
+    }
+
+    function toggleCartItemSelection(itemId) {
+      if (selectedCartItemIds.has(itemId)) {
+        selectedCartItemIds.delete(itemId);
+      } else {
+        selectedCartItemIds.add(itemId);
+      }
+      const acc = registeredAccounts.find(a => a.id === activeCartAccountId);
+      if (acc) renderCartModalItems(acc);
+    }
+
+    // Toggle "Select All"
+    if (cartSelectAllBtn) {
+      cartSelectAllBtn.addEventListener('click', () => {
+        const acc = registeredAccounts.find(a => a.id === activeCartAccountId);
+        if (!acc || !acc.cart || !acc.cart.items) return;
+
+        const allIds = acc.cart.items.map(it => it.id);
+        const isAllSelected = allIds.length > 0 && allIds.every(id => selectedCartItemIds.has(id));
+
+        if (isAllSelected) {
+          selectedCartItemIds.clear();
         } else {
-          alert('Failed to remove account.');
+          allIds.forEach(id => selectedCartItemIds.add(id));
         }
-      } catch (err) {
-        alert('Error: ' + err.message);
+
+        renderCartModalItems(acc);
+      });
+    }
+
+    function updateSellButtonState(acc) {
+      const items = acc.cart?.items || [];
+      const totalCount = items.length;
+      const isAllSelected = totalCount > 0 && items.every(it => selectedCartItemIds.has(it.id));
+      const hasAnySelected = selectedCartItemIds.size > 0;
+
+      // Update Select All button label
+      if (cartSelectAllBtn) {
+        cartSelectAllBtn.textContent = isAllSelected ? 'Deselect All' : 'Select All';
+      }
+
+      // Show/Hide Sell Button
+      if (hasAnySelected) {
+        sellSelectedBtn.classList.remove('hidden');
+        let selValue = 0;
+        items.forEach(it => {
+          if (selectedCartItemIds.has(it.id)) {
+            selValue += (it.item_price || 0) / 1000000;
+          }
+        });
+
+        if (isAllSelected) {
+          sellSelectedBtnText.textContent = `Sell All (${formatNumber(selValue)} BUX)`;
+        } else {
+          sellSelectedBtnText.textContent = `Sell ${selectedCartItemIds.size} Item${selectedCartItemIds.size > 1 ? 's' : ''} (${formatNumber(selValue)} BUX)`;
+        }
+      } else {
+        sellSelectedBtn.classList.add('hidden');
       }
     }
 
-    // Modal controls
+    // Sell Selected Items / Sell All Action
+    if (sellSelectedBtn) {
+      sellSelectedBtn.addEventListener('click', async () => {
+        const acc = registeredAccounts.find(a => a.id === activeCartAccountId);
+        if (!acc || selectedCartItemIds.size === 0) return;
+
+        const items = acc.cart?.items || [];
+        const isAllSelected = items.length > 0 && items.every(it => selectedCartItemIds.has(it.id));
+
+        sellSelectedBtn.disabled = true;
+        sellSelectedBtnText.textContent = 'Selling items...';
+
+        try {
+          const res = await fetch('/api/roach/accounts/cart/sell', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              account_id: acc.id,
+              name: acc.name,
+              sell_all: isAllSelected,
+              inventory_ids: isAllSelected ? undefined : Array.from(selectedCartItemIds)
+            })
+          });
+
+          const data = await res.json();
+          if (res.ok && data.success) {
+            sellSelectedBtnText.textContent = 'Sold Successfully 🎉';
+            selectedCartItemIds.clear();
+            await fetchAll();
+            setTimeout(() => {
+              const updatedAcc = registeredAccounts.find(a => a.id === activeCartAccountId);
+              if (updatedAcc) renderCartModalItems(updatedAcc);
+            }, 500);
+          } else {
+            alert('Sell error: ' + (data.error || 'Failed to sell item(s)'));
+            updateSellButtonState(acc);
+          }
+        } catch (err) {
+          alert('Error: ' + err.message);
+          updateSellButtonState(acc);
+        } finally {
+          sellSelectedBtn.disabled = false;
+        }
+      });
+    }
+
+    // Modal controls for Add Account
     const modal = document.getElementById('addModal');
     const openBtn = document.getElementById('openAddModalBtn');
     const closeBtn = document.getElementById('closeAddModalBtn');
@@ -345,8 +577,26 @@
       }
     });
 
+    async function deleteAccount(id, name) {
+      if (!confirm(`Are you sure you want to remove account "${name}"?`)) return;
+      try {
+        const res = await fetch('/api/roach/accounts', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        if (res.ok) {
+          await fetchAll();
+        } else {
+          alert('Failed to remove account.');
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
     fetchAll();
-    setInterval(fetchAll, 3000);
+    setInterval(fetchAll, 3500);
   </script>
 </body>
 </html>

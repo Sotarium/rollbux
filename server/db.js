@@ -383,20 +383,25 @@ export function handleAction(payload) {
         }
 
         // Check if permanently blacklisted/deleted by user
+        const txAccount = (tx.account || username || 'Main').trim();
         const txSig = `${amt}_${displayTime}`;
+        const accTxSig = `${txAccount.toLowerCase()}_${txSig}`;
         const isDeleted = user.deleted_signatures.some(d => {
           if (tx.cycle_id && String(d) === String(tx.cycle_id)) return true;
+          if (String(d) === accTxSig) return true;
           if (String(d) === txSig) return true;
+          if (String(d) === String(txTimestamp)) return true;
           return false;
         });
         if (isDeleted) {
           continue;
         }
 
-        // Deduplicate: check cycle_id or same exact time and amount
+        // Deduplicate: check cycle_id or same exact account, time and amount
         const alreadyInTxs = user.transactions.some(t => {
           if (tx.cycle_id && t.cycle_id && tx.cycle_id === t.cycle_id) return true;
-          return t.time === displayTime && Math.abs(parseFloat(t.amount_bux) - amt) < 0.001;
+          const sameAcc = (t.account || '').toLowerCase().trim() === txAccount.toLowerCase();
+          return sameAcc && t.time === displayTime && Math.abs(parseFloat(t.amount_bux) - amt) < 0.001;
         });
 
         if (!alreadyInTxs) {
@@ -410,8 +415,8 @@ export function handleAction(payload) {
                 : knownPot.toFixed(2))
             : 'X';
 
-          user.transactions.unshift({
-            account: tx.account || username || 'Main',
+          user.transactions.push({
+            account: txAccount,
             amount_bux: amt,
             rain_total: rainTotalDisplay,
             status: 'Completed',
@@ -422,6 +427,9 @@ export function handleAction(payload) {
         }
       }
 
+      // Sort newest to oldest
+      user.transactions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
       // Ensure active_rain stays in progress for the new upcoming rain
       if (user.active_rain) {
         user.active_rain.status = 'in_progress';
@@ -431,7 +439,7 @@ export function handleAction(payload) {
       for (const t of user.transactions) {
         total += (t.amount_bux || 0);
       }
-      user.total_earnings_bux = total;
+      user.total_earnings_bux = parseFloat(total.toFixed(2));
       user.rains_joined = user.transactions.length;
     }
   }
