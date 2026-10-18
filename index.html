@@ -2557,11 +2557,11 @@
         }
 
         const won = cashData.payout_bux || '?';
-        setMinesFeedback(`${acc} : ${won} BUX`, '#acff46');
+        setMinesFeedback(`${acc} : ${won} BUX Success`, '#acff46');
 
       } catch (e) {
         const msg = e instanceof Error ? e.message : JSON.stringify(e);
-        setMinesFeedback(`${acc} : ${msg}`, '#ff6b6b');
+        setMinesFeedback(`${acc} : ${msg} Failed`, '#ff6b6b');
       } finally {
         isMinesExecuting = false;
         if (minesManualPlayBtn) { minesManualPlayBtn.disabled = false; minesManualPlayBtn.classList.remove('opacity-50'); }
