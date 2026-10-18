@@ -511,54 +511,28 @@
                       </div>
 
                     </div>
-                  </div>
 
-                </div>
-
-                <!-- Auto Mines Section -->
-                <div class="flex w-full shrink-0 flex-col items-start gap-[16px]">
-                  <div class="flex w-full shrink-0 items-center justify-between">
-                    <div class="flex items-center gap-2">
-                      <p class="whitespace-nowrap text-[20px] leading-[30px] text-white font-black tracking-tight italic">Auto Mines</p>
-                      <span id="minesStatusBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-500/10 border border-red-500/20 text-red-400">Disabled</span>
-                    </div>
-                    <label class="relative inline-flex items-center cursor-pointer select-none">
-                      <input type="checkbox" id="minesMasterToggle" class="sr-only peer">
-                      <div class="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#acff46]"></div>
-                    </label>
-                  </div>
-
-                  <div class="relative flex w-full flex-col items-center justify-center gap-3 overflow-clip rounded-[12px] bg-[#0e131f] p-[16px] border border-white/[0.03]">
-                    <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
-
-                    <!-- Info row -->
-                    <div class="relative z-10 flex items-center justify-between p-2.5 rounded-lg bg-[#131a29] border border-white/5 w-full">
+                    <!-- ── Auto Mines (below battle card, same column) ── -->
+                    <div class="flex w-full shrink-0 items-center justify-between mt-4">
                       <div class="flex items-center gap-2">
-                        <!-- Mine icon -->
-                        <svg class="size-4 text-red-400 shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <circle cx="12" cy="12" r="6" fill="currentColor"/>
-                          <line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                          <line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                          <line x1="2" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                          <line x1="19" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                          <line x1="4.93" y1="4.93" x2="7.05" y2="7.05" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                          <line x1="16.95" y1="16.95" x2="19.07" y2="19.07" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                          <line x1="19.07" y1="4.93" x2="16.95" y2="7.05" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                          <line x1="7.05" y1="16.95" x2="4.93" y2="19.07" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                        <span class="text-xs font-black tracking-tight text-white">1 Mine · All In · 3 Reveals</span>
+                        <p class="whitespace-nowrap text-[20px] leading-[30px] text-white font-black tracking-tight italic">Auto Mines</p>
+                        <span id="minesStatusBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-500/10 border border-red-500/20 text-red-400">Disabled</span>
                       </div>
-                      <span class="px-2 py-0.5 rounded bg-[#acff46]/10 border border-[#acff46]/20 text-[11px] font-extrabold text-[#acff46] tracking-wider">AUTO</span>
+                      <label class="relative inline-flex items-center cursor-pointer select-none">
+                        <input type="checkbox" id="minesMasterToggle" class="sr-only peer">
+                        <div class="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#acff46]"></div>
+                      </label>
+                    </div>
+                    <div class="relative flex w-full flex-col justify-center gap-3 overflow-clip rounded-[12px] bg-[#0e131f] p-[16px] border border-white/[0.03]">
+                      <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
+                      <div class="relative z-10 flex items-center gap-2 w-full">
+                        <span id="minesFeedback" class="text-xs font-black tracking-tight text-[#9aa3a8] truncate flex-1">Ready</span>
+                        <button id="minesManualPlayBtn" type="button" class="shrink-0 px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-black tracking-tight rounded-lg transition active:scale-95 shadow-sm">Play</button>
+                      </div>
                     </div>
 
-                    <!-- Feedback + Manual Play Button -->
-                    <div class="relative z-10 flex items-center gap-2 w-full">
-                      <span id="minesFeedback" class="text-xs font-black tracking-tight text-[#9aa3a8] truncate flex-1">Ready</span>
-                      <button id="minesManualPlayBtn" type="button" class="shrink-0 px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-black tracking-tight rounded-lg transition active:scale-95 shadow-sm">
-                        Play
-                      </button>
-                    </div>
                   </div>
+
                 </div>
 
                 <!-- Spacer -->
