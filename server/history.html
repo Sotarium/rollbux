@@ -4,10 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rollbux - Battles History</title>
+  <!-- Suppress cdn.tailwindcss.com console warning -->
+  <script>
+    const _origWarn = console.warn;
+    console.warn = function(...args) {
+      if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
+      _origWarn.apply(console, args);
+    };
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,600;1,700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,600;1,700&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -24,12 +32,13 @@
   <style>
     body {
       background-color: #0b0e14;
+      background-image: radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.05) 0%, transparent 60%);
       color: #ffffff;
       font-family: 'Inter', sans-serif;
     }
     .custom-scroll::-webkit-scrollbar {
-      width: 4px;
-      height: 4px;
+      width: 5px;
+      height: 5px;
     }
     .custom-scroll::-webkit-scrollbar-track {
       background: rgba(0, 0, 0, 0.2);
@@ -38,63 +47,122 @@
       background: rgba(255, 255, 255, 0.1);
       border-radius: 4px;
     }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
   </style>
 </head>
-<body class="selection:bg-[#acff46] selection:text-black">
-  <div class="flex w-full justify-center pb-[50px] pt-[30px]">
-    <div class="flex w-full max-w-[960px] flex-col items-start gap-[20px] px-4 md:px-6">
+<body class="selection:bg-[#acff46] selection:text-black antialiased">
+  <div class="flex w-full justify-center pb-[60px] pt-[30px]">
+    <div class="flex w-full max-w-[1020px] flex-col items-start gap-[22px] px-4 md:px-6">
       
-      <!-- Top Navigation Bar -->
-      <div class="flex w-full items-start justify-between">
+      <!-- Top Navigation & Controls Bar -->
+      <div class="flex w-full flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.04] pb-4">
         <div class="flex flex-col items-start gap-1">
           <div class="flex items-center gap-2">
-            <a href="/" class="px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/5 text-[#9aa3a8] hover:text-white rounded-lg text-xs font-semibold transition active:scale-95 shadow-sm">
+            <a href="/" class="px-3 py-1 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] text-[#9aa3a8] hover:text-white rounded-lg text-xs font-semibold transition active:scale-95 shadow-sm">
               Dashboard
             </a>
-            <a href="/accounts" class="px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/5 text-[#9aa3a8] hover:text-white rounded-lg text-xs font-semibold transition active:scale-95 shadow-sm">
+            <a href="/accounts" class="px-3 py-1 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] text-[#9aa3a8] hover:text-white rounded-lg text-xs font-semibold transition active:scale-95 shadow-sm">
               Accounts
             </a>
           </div>
-          <h1 class="whitespace-nowrap text-[22px] tracking-[0.5px] text-white font-bold italic mt-0.5">Battles History</h1>
+          <div class="flex items-center gap-2.5 mt-1">
+            <h1 class="whitespace-nowrap text-[24px] tracking-tight text-white font-black italic">Battles History</h1>
+            <span class="px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-[#a855f7] text-[10px] font-bold uppercase tracking-wider">Site Battles</span>
+          </div>
         </div>
 
-        <!-- Refresh Button -->
-        <button id="refreshBattlesBtn" type="button" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-[8px] bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-xs tracking-wide transition active:scale-95 cursor-pointer mt-1">
-          <svg class="size-3.5 text-[#acff46]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-          </svg>
-          <span>Refresh</span>
-        </button>
+        <!-- Controls: Currency Switcher + Refresh Button -->
+        <div class="flex items-center gap-3 self-end sm:self-auto">
+          <!-- Currency Switcher Pill -->
+          <div class="flex items-center gap-1 bg-[#0e131f] border border-white/[0.06] p-1 rounded-[10px] shadow-inner">
+            <button id="unitBuxBtn" type="button" class="flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] text-xs font-bold bg-[#acff46] text-[#121418] transition shadow-sm active:scale-95">
+              <img src="https://rollbux.com/icons/token.png" alt="BUX" class="size-3.5 shrink-0">
+              <span>BUX</span>
+            </button>
+            <button id="unitUsdBtn" type="button" class="flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] text-xs font-bold text-[#9aa3a8] hover:text-white transition active:scale-95">
+              <img src="https://betdice.net/currency/USD.svg" alt="USD" class="size-3.5 shrink-0">
+              <span>USD</span>
+            </button>
+            <button id="unitSolBtn" type="button" class="flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] text-xs font-bold text-[#9aa3a8] hover:text-white transition active:scale-95">
+              <img src="/figma/af-coin-24.svg" alt="SOL" class="size-3.5 shrink-0">
+              <span>SOL</span>
+            </button>
+          </div>
+
+          <!-- Refresh Button -->
+          <button id="refreshBattlesBtn" type="button" class="flex items-center gap-1.5 px-3.5 py-2 rounded-[9px] bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-white font-bold text-xs tracking-wide transition active:scale-95 cursor-pointer shadow-sm hover:border-white/20">
+            <svg id="refreshIcon" class="size-3.5 text-[#acff46] transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+            <span>Refresh</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Summary Stats Bar -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
+        <div class="relative flex flex-col p-3.5 rounded-[12px] bg-[#0e131f] border border-white/[0.04]">
+          <span class="text-[11px] font-semibold text-[#9aa3a8] uppercase tracking-wider">Total Battles</span>
+          <span id="statTotalBattles" class="text-xl font-bold font-mono text-white mt-1">0</span>
+        </div>
+        <div class="relative flex flex-col p-3.5 rounded-[12px] bg-[#0e131f] border border-white/[0.04]">
+          <span class="text-[11px] font-semibold text-[#9aa3a8] uppercase tracking-wider">Total Staked</span>
+          <div class="flex items-center gap-1.5 mt-1">
+            <img id="summaryStakeCoinIcon" src="https://rollbux.com/icons/token.png" alt="" class="size-4 shrink-0">
+            <span id="statTotalPaid" class="text-xl font-bold font-mono text-white">0.00</span>
+          </div>
+        </div>
+        <div class="relative flex flex-col p-3.5 rounded-[12px] bg-[#0e131f] border border-white/[0.04]">
+          <span class="text-[11px] font-semibold text-[#acff46] uppercase tracking-wider">Total Winnings</span>
+          <div class="flex items-center gap-1.5 mt-1">
+            <img id="summaryWinCoinIcon" src="https://rollbux.com/icons/token.png" alt="" class="size-4 shrink-0">
+            <span id="statTotalWon" class="text-xl font-bold font-mono text-[#acff46]">0.00</span>
+          </div>
+        </div>
+        <div class="relative flex flex-col p-3.5 rounded-[12px] bg-[#0e131f] border border-white/[0.04]">
+          <span class="text-[11px] font-semibold text-[#9aa3a8] uppercase tracking-wider">Win Rate</span>
+          <span id="statWinRate" class="text-xl font-bold font-mono text-purple-400 mt-1">0%</span>
+        </div>
       </div>
 
       <!-- Section Title & Counter -->
-      <div class="flex w-full items-center justify-between">
-        <p class="whitespace-nowrap text-[17px] leading-[26px] text-white font-bold italic">Recent Battles</p>
-        <span id="battlesCountBadge" class="text-[12px] text-[#9aa3a8]">Loading...</span>
+      <div class="flex w-full items-center justify-between mt-1">
+        <div class="flex items-center gap-2">
+          <p class="whitespace-nowrap text-[16px] text-white font-bold tracking-tight">Battles Activity</p>
+          <span class="size-1.5 rounded-full bg-[#acff46] animate-pulse"></span>
+        </div>
+        <span id="battlesCountBadge" class="text-[12px] font-medium text-[#9aa3a8]">Loading...</span>
       </div>
 
-      <!-- Battles History Table: Game | Amount Paid | Amount Won | Date -->
+      <!-- Premium Battles History Table -->
       <div class="w-full flex flex-col items-center gap-[10px]">
-        <div class="custom-scroll w-full max-w-full overflow-x-auto overflow-y-hidden">
-          <div class="relative w-full shrink-0 rounded-[12px] border border-white/[0.04] overflow-hidden" style="min-height: 140px;">
-            <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
+        <div class="custom-scroll w-full max-w-full overflow-x-auto overflow-y-hidden rounded-[14px] border border-white/[0.06] bg-[#0e131f] shadow-2xl">
+          <div class="relative w-full min-w-[760px] overflow-hidden" style="min-height: 160px;">
 
-            <!-- Column Headers matching RollBux Bets table: Game | Amount Paid | Amount Won | Date -->
-            <div class="relative z-10 grid grid-cols-[1.5fr_1fr_1fr_1.2fr] items-center gap-[12px] px-[20px] py-[13px] text-[12px] font-semibold tracking-[0.25px] text-[#9aa3a8] border-b border-white/[0.04]">
-              <div>Game</div>
-              <div>Amount Paid</div>
-              <div>Amount Won</div>
-              <div class="text-right">Date</div>
+            <!-- Table Header -->
+            <div class="grid grid-cols-[2fr_1.1fr_1.1fr_1.2fr_44px] items-center gap-3 px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-[#9aa3a8] border-b border-white/[0.05] bg-[#121826]/70">
+              <div>Game / Battle</div>
+              <div class="text-right">Amount Paid</div>
+              <div class="text-right">Amount Won</div>
+              <div class="text-right">Date & Time</div>
+              <div class="text-center">Replay</div>
             </div>
 
             <!-- Table Rows Container -->
-            <div id="battlesList" class="relative z-10 flex flex-col divide-y divide-white/[0.02]">
-              <div id="loadingState" class="flex h-[140px] items-center justify-center px-[32px] text-center">
-                <p class="text-[13px] text-[#9aa3a8]">Loading battle history from RollBux...</p>
+            <div id="battlesList" class="flex flex-col divide-y divide-white/[0.03]">
+              <div id="loadingState" class="flex h-[160px] items-center justify-center px-6 text-center">
+                <div class="flex flex-col items-center gap-2">
+                  <svg class="animate-spin size-5 text-[#acff46]" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <p class="text-[13px] text-[#9aa3a8] font-medium">Listening for site-created battles...</p>
+                </div>
               </div>
             </div>
 
-            <span aria-hidden="true" class="pointer-events-none absolute inset-0" style="border-radius: 12px; box-shadow: rgb(66, 66, 66) 0px 2px 0px 0px inset; mix-blend-mode: color-dodge;"></span>
           </div>
         </div>
       </div>
@@ -103,17 +171,58 @@
   </div>
 
   <script>
+    let currentUnit = 'BUX';
+    let liveSolPrice = 150.00;
     let battlesData = [];
 
-    function formatNumber(num) {
-      const val = parseFloat(num) || 0;
-      return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const unitBuxBtn = document.getElementById('unitBuxBtn');
+    const unitUsdBtn = document.getElementById('unitUsdBtn');
+    const unitSolBtn = document.getElementById('unitSolBtn');
+
+    function getCoinIcon() {
+      if (currentUnit === 'BUX') return 'https://rollbux.com/icons/token.png';
+      if (currentUnit === 'USD') return 'https://betdice.net/currency/USD.svg';
+      return '/figma/af-coin-24.svg';
     }
+
+    function formatCurrency(bux) {
+      const buxVal = parseFloat(bux) || 0;
+      const usdVal = buxVal * 0.002;
+      const solVal = liveSolPrice > 0 ? (usdVal / liveSolPrice) : 0;
+
+      if (currentUnit === 'SOL') {
+        return solVal.toFixed(4);
+      }
+      if (currentUnit === 'USD') {
+        return '$' + usdVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+      return buxVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function setUnit(unit) {
+      currentUnit = unit;
+      [unitBuxBtn, unitUsdBtn, unitSolBtn].forEach(b => {
+        b.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] text-xs font-bold text-[#9aa3a8] hover:text-white transition active:scale-95';
+      });
+      const activeBtn = unit === 'BUX' ? unitBuxBtn : (unit === 'USD' ? unitUsdBtn : unitSolBtn);
+      activeBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] text-xs font-bold bg-[#acff46] text-[#121418] transition shadow-sm active:scale-95';
+
+      const coinIcon = getCoinIcon();
+      document.getElementById('summaryStakeCoinIcon').src = coinIcon;
+      document.getElementById('summaryWinCoinIcon').src = coinIcon;
+
+      renderBattles();
+      updateSummaryStats();
+    }
+
+    unitBuxBtn.addEventListener('click', () => setUnit('BUX'));
+    unitUsdBtn.addEventListener('click', () => setUnit('USD'));
+    unitSolBtn.addEventListener('click', () => setUnit('SOL'));
 
     function formatDate(timestamp) {
       if (!timestamp) return '--';
       const d = new Date(timestamp);
-      const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const day = d.getDate();
       const month = months[d.getMonth()];
       let hours = d.getHours();
@@ -124,90 +233,161 @@
       return `${day} ${month}, ${hours}:${mins} ${ampm}`;
     }
 
-    async function fetchBattles() {
+    function updateSummaryStats() {
+      const statTotalBattles = document.getElementById('statTotalBattles');
+      const statTotalPaid = document.getElementById('statTotalPaid');
+      const statTotalWon = document.getElementById('statTotalWon');
+      const statWinRate = document.getElementById('statWinRate');
+
+      if (!battlesData || battlesData.length === 0) {
+        if (statTotalBattles) statTotalBattles.textContent = '0';
+        if (statTotalPaid) statTotalPaid.textContent = '0.00';
+        if (statTotalWon) statTotalWon.textContent = '0.00';
+        if (statWinRate) statWinRate.textContent = '0%';
+        return;
+      }
+
+      let totalPaidBux = 0;
+      let totalWonBux = 0;
+      let winsCount = 0;
+
+      battlesData.forEach(b => {
+        totalPaidBux += parseFloat(b.amount_paid_bux || 0);
+        const won = parseFloat(b.amount_won_bux || 0);
+        totalWonBux += won;
+        if (b.won || won > 0) winsCount++;
+      });
+
+      if (statTotalBattles) statTotalBattles.textContent = battlesData.length;
+      if (statTotalPaid) statTotalPaid.textContent = formatCurrency(totalPaidBux);
+      if (statTotalWon) statTotalWon.textContent = formatCurrency(totalWonBux);
+      if (statWinRate) {
+        const rate = Math.round((winsCount / battlesData.length) * 100);
+        statWinRate.textContent = `${rate}%`;
+      }
+    }
+
+    function renderBattles() {
       const list = document.getElementById('battlesList');
       const badge = document.getElementById('battlesCountBadge');
-      
-      try {
-        const res = await fetch('/api/battles/history');
-        if (!res.ok) {
-          list.innerHTML = `
-            <div class="flex h-[120px] items-center justify-center px-[32px] text-center">
-              <p class="text-[13px] text-red-400">Failed to load battles history.</p>
+      if (!list) return;
+
+      if (badge) {
+        badge.textContent = `${battlesData.length} battle${battlesData.length === 1 ? '' : 's'}`;
+      }
+
+      if (battlesData.length === 0) {
+        list.innerHTML = `
+          <div class="flex flex-col h-[180px] items-center justify-center px-6 text-center gap-2">
+            <div class="size-10 rounded-full bg-white/[0.03] border border-white/[0.06] flex items-center justify-center text-gray-500">
+              <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
             </div>
-          `;
-          return;
-        }
+            <p class="text-[13px] font-semibold text-white">No site battles yet</p>
+            <p class="text-[11px] text-[#9aa3a8] max-w-sm">Battles generated automatically by the site or manually via the dashboard will appear here live with replay links.</p>
+          </div>
+        `;
+        return;
+      }
 
-        const data = await res.json();
-        battlesData = data.battles || [];
+      const coinIcon = getCoinIcon();
 
-        if (badge) {
-          badge.textContent = `${battlesData.length} battle${battlesData.length === 1 ? '' : 's'}`;
-        }
+      list.innerHTML = battlesData.map((b, idx) => {
+        const won = b.won || parseFloat(b.amount_won_bux) > 0;
+        const wonAmount = parseFloat(b.amount_won_bux || 0);
+        const wonColorClass = won ? 'text-[#acff46] font-bold' : 'text-gray-500 font-medium';
+        const wonIconClass = won ? 'opacity-100' : 'opacity-30 grayscale';
+        const battleIdShort = b.battle_id ? b.battle_id.slice(0, 8) : `#${idx + 1}`;
 
-        if (battlesData.length === 0) {
-          list.innerHTML = `
-            <div class="flex h-[120px] items-center justify-center px-[32px] text-center">
-              <p class="text-[13px] text-[#9aa3a8]">No battles recorded yet.</p>
-            </div>
-          `;
-          return;
-        }
-
-        list.innerHTML = battlesData.map(b => {
-          const won = b.won || parseFloat(b.amount_won_bux) > 0;
-          const wonTextClass = won ? 'text-[#acff46]' : 'text-gray-400';
-          const wonIconClass = won ? 'opacity-100' : 'opacity-40';
-          const modeLabel = `${b.game_mode} Case Battle${b.crazy_mode ? ' (Crazy)' : ''}`;
-
-          return `
-            <a href="${b.url}" target="_blank" rel="noopener noreferrer" class="grid grid-cols-[1.5fr_1fr_1fr_1.2fr] items-center gap-[12px] relative min-h-[52px] px-[20px] py-[10px] transition-colors hover:bg-[rgba(255,255,255,0.02)] group cursor-pointer" title="Click to view live battle replay on RollBux">
-              
-              <!-- Game Column (Swords Icon + Battle Name + Mode) -->
-              <div class="flex items-center gap-2.5 min-w-0">
-                <span class="size-6 rounded-md bg-[#8b5cf6]/10 border border-[#8b5cf6]/30 flex items-center justify-center text-[#8b5cf6] shrink-0">
-                  <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75l16.5 16.5m0-16.5L3.75 20.25" />
-                  </svg>
-                </span>
-                <div class="min-w-0">
-                  <span class="text-[13px] font-bold text-white group-hover:text-[#acff46] transition-colors truncate block">
-                    ${modeLabel}
+        return `
+          <a href="${b.url}" target="_blank" rel="noopener noreferrer" class="grid grid-cols-[2fr_1.1fr_1.1fr_1.2fr_44px] items-center gap-3 px-6 py-3.5 transition-all duration-150 hover:bg-white/[0.03] group cursor-pointer border-l-2 ${won ? 'border-l-[#acff46]' : 'border-l-transparent'}">
+            
+            <!-- Game / Battle Column -->
+            <div class="flex items-center gap-3 min-w-0">
+              <span class="size-8 rounded-lg ${b.crazy_mode ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-purple-500/10 border-purple-500/30 text-purple-400'} border flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 shadow-sm">
+                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75l16.5 16.5m0-16.5L3.75 20.25" />
+                </svg>
+              </span>
+              <div class="min-w-0 flex flex-col gap-0.5">
+                <div class="flex items-center gap-2">
+                  <span class="text-[13px] font-bold text-white group-hover:text-[#acff46] transition-colors truncate">
+                    ${b.game_mode || '3v3'} Battle
                   </span>
-                  ${b.borrow ? '<span class="text-[9px] uppercase px-1 py-0.2 rounded bg-red-500/10 text-red-400 font-bold">Borrow 80%</span>' : ''}
+                  ${b.crazy_mode ? '<span class="text-[9px] uppercase px-1.5 py-0.2 rounded font-extrabold bg-amber-500/15 border border-amber-500/30 text-amber-400">Crazy</span>' : ''}
+                  ${b.borrow ? '<span class="text-[9px] uppercase px-1.5 py-0.2 rounded font-extrabold bg-blue-500/15 border border-blue-500/30 text-blue-400">Borrow 80%</span>' : ''}
                 </div>
+                <span class="text-[10px] font-mono text-[#9aa3a8] truncate">ID: ${battleIdShort}</span>
               </div>
+            </div>
 
-              <!-- Amount Paid -->
-              <div class="flex items-center gap-1.5">
-                <img src="https://rollbux.com/icons/token.png" alt="" class="size-4 shrink-0">
-                <span class="text-[13px] font-bold text-white font-mono">${formatNumber(b.amount_paid_bux)}</span>
-              </div>
+            <!-- Amount Paid Column -->
+            <div class="flex items-center justify-end gap-1.5">
+              <img src="${coinIcon}" alt="" class="size-4 shrink-0">
+              <span class="text-[13px] font-bold text-white font-mono tracking-tight">${formatCurrency(b.amount_paid_bux)}</span>
+            </div>
 
-              <!-- Amount Won -->
-              <div class="flex items-center gap-1.5">
-                <img src="https://rollbux.com/icons/token.png" alt="" class="size-4 shrink-0 ${wonIconClass}">
-                <span class="text-[13px] font-bold ${wonTextClass} font-mono">${formatNumber(b.amount_won_bux)}</span>
-              </div>
+            <!-- Amount Won Column -->
+            <div class="flex items-center justify-end gap-1.5">
+              <img src="${coinIcon}" alt="" class="size-4 shrink-0 ${wonIconClass}">
+              <span class="text-[13px] font-mono tracking-tight ${wonColorClass}">${formatCurrency(b.amount_won_bux)}</span>
+            </div>
 
-              <!-- Date -->
-              <div class="text-right">
-                <span class="text-[12px] font-medium text-[#9aa3a8]">${formatDate(b.created_at)}</span>
-              </div>
+            <!-- Date & Time Column -->
+            <div class="text-right">
+              <span class="text-[12px] font-medium text-[#9aa3a8]">${formatDate(b.created_at)}</span>
+            </div>
 
-            </a>
-          `;
-        }).join('');
+            <!-- Replay Arrow Icon -->
+            <div class="flex items-center justify-center">
+              <span class="size-7 rounded-lg bg-white/[0.03] group-hover:bg-[#acff46] group-hover:text-black text-gray-400 flex items-center justify-center transition-all duration-150">
+                <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </span>
+            </div>
 
+          </a>
+        `;
+      }).join('');
+    }
+
+    async function fetchBattles() {
+      const refreshIcon = document.getElementById('refreshIcon');
+      if (refreshIcon) refreshIcon.classList.add('rotate-180');
+
+      try {
+        const [battlesRes, userRes] = await Promise.all([
+          fetch('/api/battles/history'),
+          fetch('/api/user/Sotarium').catch(() => null)
+        ]);
+
+        if (userRes && userRes.ok) {
+          const uData = await userRes.json();
+          if (uData && uData.solPrice) {
+            liveSolPrice = parseFloat(uData.solPrice) || 150.00;
+          }
+        }
+
+        if (battlesRes.ok) {
+          const data = await battlesRes.json();
+          battlesData = data.battles || [];
+          renderBattles();
+          updateSummaryStats();
+        }
       } catch (err) {
         console.error('Error fetching battles:', err);
+      } finally {
+        if (refreshIcon) {
+          setTimeout(() => refreshIcon.classList.remove('rotate-180'), 500);
+        }
       }
     }
 
     document.getElementById('refreshBattlesBtn')?.addEventListener('click', fetchBattles);
     fetchBattles();
-    setInterval(fetchBattles, 10000);
+    setInterval(fetchBattles, 8000);
   </script>
 </body>
 </html>
