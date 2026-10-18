@@ -1612,12 +1612,36 @@ export default async function handler(req, res) {
       const payload = req.body || await parseBody(req);
       const targetName = (payload.username || '').toLowerCase().trim();
       const sessionToken = await getMinesSessionToken(targetName);
+
+      // Verify live balance directly with RollBux using this account's sessionToken
+      let betMicro = payload.amount_micro_tokens;
+      try {
+        const balRes = await fetch("https://rollbux.com/_api/users/me/balance", { headers: minesHeaders(sessionToken) });
+        if (balRes.ok) {
+          const balData = await balRes.json();
+          const liveTokens = balData?.data?.token_balance;
+          if (typeof liveTokens === 'number') {
+            console.log(`[API Mines Start] ${targetName} live balance on RollBux: ${liveTokens} micro tokens (${liveTokens / 1000000} BUX), requested: ${betMicro}`);
+            // If requested bet exceeds live tokens or is all-in, clamp to actual live balance
+            betMicro = Math.min(betMicro, liveTokens);
+          }
+        }
+      } catch (balErr) {
+        console.warn('[API Mines Start] Live balance check warning:', balErr.message);
+      }
+
+      if (!betMicro || betMicro < 50_000_000) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ success: false, status: 400, error: `Balance too low (${((betMicro || 0) / 1000000).toFixed(2)} BUX, min 50 BUX)` }));
+        return;
+      }
+
       const idKey = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
       const rbRes = await fetch('https://rollbux.com/_api/games/mines/start', {
         method: 'POST',
         headers: { ...minesHeaders(sessionToken), 'Idempotency-Key': idKey },
         body: JSON.stringify({
-          amount_micro_tokens: payload.amount_micro_tokens,
+          amount_micro_tokens: betMicro,
           number_of_mines: payload.number_of_mines || 1
         })
       });
@@ -1631,7 +1655,7 @@ export default async function handler(req, res) {
       }
       res.setHeader('Content-Type', 'application/json');
       res.statusCode = 200;
-      res.end(JSON.stringify({ success: true, data: rbData }));
+      res.end(JSON.stringify({ success: true, bet_bux: (betMicro / 1000000).toFixed(2), data: rbData }));
     } catch (e) {
       res.statusCode = 500;
       res.end(JSON.stringify({ success: false, error: e.message }));
