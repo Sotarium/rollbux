@@ -539,6 +539,7 @@ export default async function handler(req, res) {
       const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN;
       let sessionToken = process.env.ROLLBUX_SESSION_TOKEN;
 
+      let allAccountsToSync = [];
       if (upstashToken) {
         // Sync cleared_at timestamp from Upstash if serverless instance lost it
         try {
@@ -563,14 +564,41 @@ export default async function handler(req, res) {
           headers: { Authorization: `Bearer ${upstashToken}` }
         });
         const accData = await accResp.json();
-        const accounts = accData.result ? JSON.parse(accData.result) : [];
-        const match = accounts.find(a => (a.name || '').toLowerCase().trim() === username.toLowerCase().trim());
-        if (match && match.token) {
-          sessionToken = match.token;
-        }
+        allAccountsToSync = accData.result ? JSON.parse(accData.result) : [];
       }
 
-      if (sessionToken) {
+      // If no accounts found in Redis, fall back to ENV token for the requested username
+      if (allAccountsToSync.length === 0 && process.env.ROLLBUX_SESSION_TOKEN) {
+        allAccountsToSync = [{ name: username, token: process.env.ROLLBUX_SESSION_TOKEN }];
+      }
+
+      // 1. Live Rain Cycle & Countdown (Fetch once publicly)
+      try {
+        const rainResp = await fetch("https://rollbux.com/_api/rain/current");
+        if (rainResp.ok) {
+          const rainData = await rainResp.json();
+          const cycleEnd = rainData?.data?.cycle?.cycle_end;
+          const livePool = rainData?.data?.live_pool || 0;
+          if (cycleEnd) {
+            const secondsLeft = Math.max(0, Math.floor((new Date(cycleEnd).getTime() - Date.now()) / 1000));
+            const potBux = parseFloat((livePool / 1000000).toFixed(2));
+            handleAction({
+              action: 'rain_tick',
+              username,
+              time_left: secondsLeft,
+              pot_amount: potBux
+            });
+          }
+        }
+      } catch (e) {}
+
+      // 2. Iterate through ALL registered accounts to fetch balances and transactions
+      const clearedAt = user.cleared_at || 0;
+      for (const acc of allAccountsToSync) {
+        const accName = acc.name || 'Account';
+        const sessionToken = acc.token;
+        if (!sessionToken) continue;
+
         const rollHeaders = {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
           "Accept": "application/json, text/plain, */*",
@@ -578,86 +606,76 @@ export default async function handler(req, res) {
           "Cookie": `authjs.session-token=${sessionToken}`
         };
 
-        // 1. Live Balance
-        const balResp = await fetch("https://rollbux.com/_api/users/me/balance", { headers: rollHeaders });
-        if (balResp.ok) {
-          const balData = await balResp.json();
-          if (balData?.data?.token_balance !== undefined) {
-            const liveBalBux = parseFloat((balData.data.token_balance / 1000000).toFixed(2));
-            handleAction({
-              action: 'balance_update',
-              username,
-              balance: liveBalBux
-            });
-          }
-        }
-
-        // Live Rain Cycle & Countdown
+        // Live Balance (if main account matches current URL, update main balance)
         try {
-          const rainResp = await fetch("https://rollbux.com/_api/rain/current");
-          if (rainResp.ok) {
-            const rainData = await rainResp.json();
-            const cycleEnd = rainData?.data?.cycle?.cycle_end;
-            const livePool = rainData?.data?.live_pool || 0;
-            if (cycleEnd) {
-              const secondsLeft = Math.max(0, Math.floor((new Date(cycleEnd).getTime() - Date.now()) / 1000));
-              const potBux = parseFloat((livePool / 1000000).toFixed(2));
-              handleAction({
-                action: 'rain_tick',
-                username,
-                time_left: secondsLeft,
-                pot_amount: potBux
-              });
+          const balResp = await fetch("https://rollbux.com/_api/users/me/balance", { headers: rollHeaders });
+          if (balResp.ok) {
+            const balData = await balResp.json();
+            if (balData?.data?.token_balance !== undefined) {
+              const liveBalBux = parseFloat((balData.data.token_balance / 1000000).toFixed(2));
+              if (accName.toLowerCase() === username.toLowerCase()) {
+                handleAction({
+                  action: 'balance_update',
+                  username,
+                  balance: liveBalBux
+                });
+              }
             }
           }
         } catch (e) {}
 
-        // 2. Live Avatar & Details
-        const meResp = await fetch("https://rollbux.com/_api/users/me", { headers: rollHeaders });
-        if (meResp.ok) {
-          const meData = await meResp.json();
-          if (meData?.data?.user?.avatar_url) {
-            handleAction({
-              action: 'rain_tick',
-              username,
-              avatar: meData.data.user.avatar_url
-            });
-          }
+        // Live Avatar (for main account)
+        if (accName.toLowerCase() === username.toLowerCase()) {
+          try {
+            const meResp = await fetch("https://rollbux.com/_api/users/me", { headers: rollHeaders });
+            if (meResp.ok) {
+              const meData = await meResp.json();
+              if (meData?.data?.user?.avatar_url) {
+                handleAction({
+                  action: 'rain_tick',
+                  username,
+                  avatar: meData.data.user.avatar_url
+                });
+              }
+            }
+          } catch (e) {}
         }
 
-        // 3. Live Rain Transactions (only sync if user has not cleared their history, or only sync txs newer than cleared_at)
-        const clearedAt = user.cleared_at || 0;
-        const txResp = await fetch("https://rollbux.com/_api/users/me/transactions", { headers: rollHeaders });
-        if (txResp.ok) {
-          const txData = await txResp.json();
-          const items = txData?.data?.items || [];
-          const rainTxs = items
-            .filter(t => {
-              if (t.type !== 'RAIN_REWARD') return false;
-              const txTime = typeof t.date === 'number' ? t.date : new Date(t.date || Date.now()).getTime();
-              return txTime > clearedAt;
-            })
-            .map(t => ({
-              amount_bux: parseFloat(((t.amount || 0) / 1000000).toFixed(2)),
-              time: new Date(t.date || Date.now()).toLocaleString('fr-FR', {
-                day: 'numeric',
-                month: 'short',
-                hour: '2-digit',
-                minute: '2-digit'
-              }).replace(':', 'h'),
-              cycle_id: t.id,
-              timestamp: typeof t.date === 'number' ? t.date : new Date(t.date || Date.now()).getTime()
-            }));
+        // Live Rain Transactions for this specific account
+        try {
+          const txResp = await fetch("https://rollbux.com/_api/users/me/transactions", { headers: rollHeaders });
+          if (txResp.ok) {
+            const txData = await txResp.json();
+            const items = txData?.data?.items || [];
+            const rainTxs = items
+              .filter(t => {
+                if (t.type !== 'RAIN_REWARD') return false;
+                const txTime = typeof t.date === 'number' ? t.date : new Date(t.date || Date.now()).getTime();
+                return txTime > clearedAt;
+              })
+              .map(t => ({
+                account: accName,
+                amount_bux: parseFloat(((t.amount || 0) / 1000000).toFixed(2)),
+                time: new Date(t.date || Date.now()).toLocaleString('fr-FR', {
+                  day: 'numeric',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                }).replace(':', 'h'),
+                cycle_id: t.id ? `${accName}_${t.id}` : undefined,
+                timestamp: typeof t.date === 'number' ? t.date : new Date(t.date || Date.now()).getTime()
+              }));
 
-          if (rainTxs.length > 0) {
-            handleAction({
-              action: 'sync_transactions',
-              username,
-              sync_all_history: true,
-              transactions: rainTxs
-            });
+            if (rainTxs.length > 0) {
+              handleAction({
+                action: 'sync_transactions',
+                username,
+                sync_all_history: true,
+                transactions: rainTxs
+              });
+            }
           }
-        }
+        } catch (e) {}
       }
     } catch (e) {
       console.error("Live cloud sync error:", e.message);
@@ -702,6 +720,44 @@ export default async function handler(req, res) {
       if (!html) {
         res.statusCode = 404;
         res.end('Dashboard not found');
+        return;
+      }
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.statusCode = 200;
+      res.end(html);
+      return;
+    } catch (err) {
+      res.statusCode = 500;
+      res.end('Internal Server Error');
+      return;
+    }
+  }
+
+  const isAccountsPage = matchedPath === '/accounts' || matchedPath === '/accounts.html' || pathname === '/accounts' || pathname === '/accounts.html';
+
+  // Protect the Accounts Management HTML page (/accounts)
+  if (isAccountsPage) {
+    if (!isAllowedIp(req)) {
+      res.statusCode = 403;
+      res.end('Forbidden');
+      return;
+    }
+    try {
+      const candidates = [
+        path.resolve(process.cwd(), 'server', 'accounts.html'),
+        path.resolve(process.cwd(), 'accounts.html'),
+        path.resolve(process.cwd(), 'dist', 'accounts.html')
+      ];
+      let html = null;
+      for (const p of candidates) {
+        if (fs.existsSync(p)) {
+          html = fs.readFileSync(p, 'utf-8');
+          break;
+        }
+      }
+      if (!html) {
+        res.statusCode = 404;
+        res.end('Accounts page not found');
         return;
       }
       res.setHeader('Content-Type', 'text/html; charset=utf-8');

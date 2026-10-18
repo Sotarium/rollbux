@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accounts • RainRoach</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #0b0e14; color: #d1d5db; font-family: ui-sans-serif, system-ui, sans-serif; }
+    .glass-card { background: rgba(14, 19, 31, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+    .purple-btn {
+      background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 14px 0 rgba(139, 92, 246, 0.25);
+    }
+    .purple-btn:hover {
+      background: linear-gradient(135deg, #b469f8 0%, #986df7 100%);
+      box-shadow: 0 6px 20px 0 rgba(139, 92, 246, 0.35);
+    }
+  </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 flex flex-col items-center">
+  <div class="w-full max-w-4xl space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <div class="flex items-center space-x-3">
+        <a href="/" class="text-xs font-semibold text-gray-400 hover:text-white transition flex items-center gap-1.5 bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg border border-white/5">
+          <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+          </svg>
+          Dashboard
+        </a>
+        <div>
+          <h1 class="text-2xl font-black text-white tracking-wide">Player Accounts</h1>
+          <p class="text-xs text-gray-400">Manage all registered farming accounts and session tokens</p>
+        </div>
+      </div>
+      <!-- Add Account Button in Clean Purple -->
+      <button id="openAddModalBtn" type="button" class="purple-btn flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition active:scale-95 cursor-pointer">
+        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+        <span>Add Account</span>
+      </button>
+    </div>
+
+    <!-- Accounts Card -->
+    <div class="glass-card rounded-2xl p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-white/5 pb-3">
+        <div>
+          <h2 class="text-sm font-bold text-white uppercase tracking-wider">Registered Accounts</h2>
+          <p class="text-xs text-gray-400 mt-0.5">All accounts listed here are automatically checked, farmed, and joined in every rain cycle.</p>
+        </div>
+        <span id="accountCountBadge" class="text-xs font-mono font-semibold text-[#a855f7] bg-[#a855f7]/10 px-2.5 py-1 rounded-full border border-[#a855f7]/20">0 accounts</span>
+      </div>
+
+      <!-- Accounts Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="text-gray-500 uppercase border-b border-white/5 text-[10px]">
+            <tr>
+              <th class="pb-3 font-semibold">Account Name</th>
+              <th class="pb-3 font-semibold">Session Token</th>
+              <th class="pb-3 font-semibold">Eligibility Chat</th>
+              <th class="pb-3 font-semibold">Rain Status</th>
+              <th class="pb-3 font-semibold text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="accountsTableBody" class="divide-y divide-white/5">
+            <tr>
+              <td colspan="5" class="py-8 text-center text-gray-500">Loading accounts...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Account Modal -->
+  <div id="addModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="glass-card w-full max-w-md rounded-2xl p-6 bg-[#0e131f] border border-white/10 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <h3 class="text-base font-bold text-white">Add Player Account</h3>
+        <button id="closeAddModalBtn" class="text-gray-400 hover:text-white text-lg font-bold">&times;</button>
+      </div>
+
+      <p class="text-xs text-gray-400 leading-relaxed">
+        Paste the RollBux account nickname and its <code class="text-white bg-white/10 px-1 py-0.5 rounded">authjs.session-token</code> cookie or JWT.
+      </p>
+
+      <form id="addAccountForm" class="space-y-4">
+        <div>
+          <label class="block text-[11px] font-semibold text-gray-400 uppercase mb-1">Account Nickname</label>
+          <input type="text" id="accNameInput" placeholder="e.g. Dracko" required class="w-full bg-[#131a29] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#a855f7]">
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-gray-400 uppercase mb-1">Session Token (Cookie or JWT)</label>
+          <input type="password" id="accTokenInput" placeholder="eyJhbGciOiJIUzI1Ni..." required class="w-full bg-[#131a29] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#a855f7] font-mono">
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-white/10">
+          <button type="button" id="cancelAddModalBtn" class="px-4 py-2 text-xs font-semibold text-gray-400 hover:text-white transition">Cancel</button>
+          <button type="submit" id="saveAccountBtn" class="purple-btn px-5 py-2 font-bold text-xs rounded-lg transition active:scale-95">Save Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let registeredAccounts = [];
+    let liveStatusMap = {};
+
+    async function fetchAccounts() {
+      try {
+        const [accRes, statusRes] = await Promise.all([
+          fetch('/api/roach/accounts'),
+          fetch('/api/roach/status')
+        ]);
+
+        if (accRes.ok) {
+          const data = await accRes.json();
+          registeredAccounts = data.accounts || [];
+        }
+
+        if (statusRes.ok) {
+          const sData = await statusRes.json();
+          liveStatusMap = {};
+          (sData?.status?.accounts || []).forEach(a => {
+            liveStatusMap[(a.name || '').toLowerCase()] = a;
+          });
+        }
+
+        renderAccountsTable();
+      } catch (err) {
+        console.error('Error fetching accounts:', err);
+      }
+    }
+
+    function renderAccountsTable() {
+      const tbody = document.getElementById('accountsTableBody');
+      const badge = document.getElementById('accountCountBadge');
+      if (badge) badge.textContent = `${registeredAccounts.length} account${registeredAccounts.length === 1 ? '' : 's'}`;
+
+      if (registeredAccounts.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="py-8 text-center text-gray-500">
+              No accounts registered yet. Click <span class="text-[#a855f7] font-bold">+ Add Account</span> above.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = registeredAccounts.map(a => {
+        const nameLower = (a.name || '').toLowerCase();
+        const live = liveStatusMap[nameLower] || {};
+        const chatCount = live.chat_count !== undefined ? live.chat_count : '-';
+        const isJoined = live.joined === true;
+
+        let statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-gray-800 text-gray-400">Waiting</span>';
+        if (isJoined) {
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-green-950 text-[#acff46] border border-[#acff46]/30">Joined 🎉</span>';
+        } else if (live.join_status && live.join_status.startsWith('FAILED')) {
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-red-950 text-red-400 border border-red-500/30">${live.join_status}</span>`;
+        }
+
+        return `
+          <tr class="hover:bg-white/[0.02] transition">
+            <td class="py-3.5 pr-4 font-bold text-white flex items-center gap-2">
+              <span class="size-2 rounded-full ${isJoined ? 'bg-[#acff46]' : 'bg-gray-500'}"></span>
+              <span>${a.name}</span>
+            </td>
+            <td class="py-3.5 pr-4 font-mono text-gray-400 text-[11px]">${a.token_preview || '••••••••'}</td>
+            <td class="py-3.5 pr-4">
+              <span class="font-bold ${chatCount >= 3 ? 'text-[#acff46]' : 'text-gray-300'}">${chatCount} / 3</span>
+            </td>
+            <td class="py-3.5 pr-4">${statusBadge}</td>
+            <td class="py-3.5 text-right">
+              <button onclick="deleteAccount('${a.id}', '${a.name}')" class="px-2.5 py-1 text-[11px] font-semibold text-red-400 hover:text-white hover:bg-red-500/20 rounded transition">
+                Remove
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function deleteAccount(id, name) {
+      if (!confirm(`Are you sure you want to remove account "${name}"?`)) return;
+      try {
+        const res = await fetch('/api/roach/accounts', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        if (res.ok) {
+          await fetchAccounts();
+        } else {
+          alert('Failed to remove account.');
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    // Modal logic
+    const modal = document.getElementById('addModal');
+    const openBtn = document.getElementById('openAddModalBtn');
+    const closeBtn = document.getElementById('closeAddModalBtn');
+    const cancelBtn = document.getElementById('cancelAddModalBtn');
+    const form = document.getElementById('addAccountForm');
+
+    openBtn.addEventListener('click', () => {
+      form.reset();
+      modal.classList.remove('hidden');
+      document.getElementById('accNameInput').focus();
+    });
+
+    closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+    cancelBtn.addEventListener('click', () => modal.classList.add('hidden'));
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('accNameInput').value.trim();
+      let token = document.getElementById('accTokenInput').value.trim();
+      if (!name || !token) return;
+
+      const cookieMatch = token.match(/(?:__Secure-)?authjs\.session-token\s*=\s*([^\s;]+)/i);
+      if (cookieMatch && cookieMatch[1]) token = cookieMatch[1].trim();
+      const jwtMatch = token.match(/eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/);
+      if (jwtMatch) token = jwtMatch[0];
+
+      const saveBtn = document.getElementById('saveAccountBtn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+
+      try {
+        const res = await fetch('/api/roach/accounts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, token })
+        });
+
+        if (res.ok) {
+          modal.classList.add('hidden');
+          form.reset();
+          await fetchAccounts();
+        } else {
+          const errData = await res.json();
+          alert('Error: ' + (errData.error || 'Failed to save account'));
+        }
+      } catch (err) {
+        alert('Save error: ' + err.message);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Account';
+      }
+    });
+
+    fetchAccounts();
+    setInterval(fetchAccounts, 4000);
+  </script>
+</body>
+</html>
