@@ -719,7 +719,7 @@ export default async function handler(req, res) {
         roll: outcome.roll,
         rollPrecision: outcome.rollPrecision || 1000000,
         range: calculatedRange,
-        chancePercent: (exactChance * 100).toFixed(2),
+        chancePercent: (chance * 100).toFixed(2),
         stakeBux: (stakeMicroTokens / 1000000).toFixed(2),
         targetItem: {
           id: bestItem.itemId,
@@ -877,19 +877,12 @@ export default async function handler(req, res) {
       const totalCostBux = currentCostMicro / 1000000;
 
       // 5. Construct battle payload matching RollBux format
-      // In battles, cases array specifies distinct case IDs and rounds array specifies the case order for each round
       const caseIds = selectedCases.map(c => c.id);
       const isCrazy = payload.crazy_mode !== undefined ? Boolean(payload.crazy_mode) : (Math.random() < 0.5);
 
       const battleBody = {
-        game_mode: {
-          type: "team",
-          mode: "3v3"
-        },
-        player_count: 6,
-        team_size: 3,
-        cases: caseIds,
-        rounds: caseIds,
+        case_ids: caseIds,
+        game_mode: "3v3",
         modifiers: {
           crazy_mode: isCrazy,
           jackpot: false
