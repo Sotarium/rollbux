@@ -376,8 +376,23 @@ export default async function handler(req, res) {
         return;
       }
 
-      // Stake all in (or floor to whole BUX / micro-tokens)
-      const stakeMicroTokens = Math.floor(tokenBalanceMicro);
+      // Stake amount: All In or custom BUX amount
+      const betAmountRaw = String(payload.betAmount || '').trim().toLowerCase();
+      let stakeMicroTokens = Math.floor(tokenBalanceMicro);
+      if (betAmountRaw && betAmountRaw !== 'all in' && betAmountRaw !== 'allin' && betAmountRaw !== 'all') {
+        const customBux = parseFloat(betAmountRaw);
+        if (!isNaN(customBux) && customBux >= 50) {
+          stakeMicroTokens = Math.min(stakeMicroTokens, Math.floor(customBux * 1000000));
+        }
+      }
+
+      if (stakeMicroTokens < 50000000) {
+        res.status(400).json({
+          success: false,
+          error: `Stake amount is ${(stakeMicroTokens / 1000000).toFixed(2)} BUX. Minimum required is 50 BUX.`
+        });
+        return;
+      }
 
       // 3. Fetch upgrader config to get rtpBP
       const configResp = await fetch("https://rollbux.com/_api/upgrader/config", { headers: rollHeaders });
@@ -453,9 +468,27 @@ export default async function handler(req, res) {
       try { playJson = JSON.parse(playText); } catch {}
 
       if (!playResp.ok) {
+        let errMsg = "Upgrade play rejected";
+        if (playJson?.error) {
+          if (typeof playJson.error === 'string') {
+            errMsg = playJson.error;
+          } else if (playJson.error.message) {
+            errMsg = playJson.error.message;
+            if (playJson.error.details) {
+              errMsg += ': ' + JSON.stringify(playJson.error.details);
+            }
+          } else {
+            errMsg = JSON.stringify(playJson.error);
+          }
+        } else if (playJson?.message) {
+          errMsg = playJson.message;
+        } else if (playText) {
+          errMsg = playText.slice(0, 200);
+        }
+        console.error(`[AutoUpgrader Error ${playResp.status}]:`, errMsg);
         res.status(playResp.status).json({
           success: false,
-          error: playJson?.message || playJson?.error || playText || "Upgrade play rejected"
+          error: errMsg
         });
         return;
       }
