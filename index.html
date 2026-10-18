@@ -241,8 +241,8 @@
                   </div>
                 </div>
 
-                <!-- Statistics + Auto Upgrader Grid -->
-                <div class="grid grid-cols-1 xl:grid-cols-[1fr_290px] gap-6 w-full items-start">
+                <!-- Statistics + Auto Upgrader + Auto Battle Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-[1fr_270px_270px] gap-5 w-full items-start">
                   
                   <!-- Left: Statistics Section -->
                   <div data-node-id="671:33117" class="flex w-full min-w-0 flex-col items-start gap-[16px]" bis_skin_checked="1">
@@ -424,6 +424,87 @@
                         <span id="upgraderFeedback" class="text-xs text-[#9aa3a8] truncate flex-1">Ready</span>
                         <button id="upgraderManualPlayBtn" type="button" class="shrink-0 px-4 py-2 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white text-xs font-bold rounded-lg transition active:scale-95 shadow-sm">
                           Play
+                        </button>
+                      </div>
+
+                    </div>
+                  </div>
+
+                  <!-- Right: Clean Auto Battle GUI -->
+                  <div id="autoBattleSection" class="flex w-full flex-col items-start gap-[16px]">
+                    <div class="flex w-full shrink-0 items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <p class="whitespace-nowrap text-[20px] leading-[30px] text-white font-bold italic">Auto Battle</p>
+                        <span id="battleStatusBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-500/10 border border-red-500/20 text-red-400">Disabled</span>
+                      </div>
+                      <!-- Master On/Off Switch -->
+                      <label class="relative inline-flex items-center cursor-pointer select-none">
+                        <input type="checkbox" id="battleMasterToggle" class="sr-only peer">
+                        <div class="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#acff46]"></div>
+                      </label>
+                    </div>
+
+                    <!-- Clean Battle Card Box -->
+                    <div class="relative flex w-full flex-col items-center justify-center gap-3 overflow-clip rounded-[12px] bg-[#0e131f] p-[16px] border border-white/[0.03]">
+                      <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
+
+                      <!-- RollBux Borrow Mode Toggle Component -->
+                      <div class="relative z-10 w-full">
+                        <label for="battleBorrowToggle" class="transition-all hover:bg-neutral-800/60 px-3 py-2.5 rounded-lg flex items-center justify-between gap-2 bg-[#131a29] border border-white/[0.06] shadow-sm cursor-pointer select-none">
+                          <span class="flex items-center space-x-2">
+                            <!-- Borrow SVG Pie Icon -->
+                            <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg" class="size-5 text-red-500 shrink-0">
+                              <path d="M24.7075 5.51752C25.8966 5.37738 27.0948 5.69151 28.0623 6.39704C29.0297 7.10257 29.695 8.14744 29.925 9.32252L29.9875 9.74002L30 10V27.5C30.0001 28.1124 30.2249 28.7034 30.6318 29.161C31.0387 29.6185 31.5994 29.9109 32.2075 29.9825L32.5 30H49.5C50.8261 30 52.0978 30.5268 53.0355 31.4645C53.9732 32.4022 54.5 33.6739 54.5 35C54.4999 35.1902 54.4781 35.3798 54.435 35.565C53.4345 39.8817 51.3047 43.8549 48.2637 47.0777C45.2226 50.3005 41.3797 52.6572 37.1283 53.9063C32.877 55.1555 28.37 55.2523 24.0689 54.1868C19.7679 53.1213 15.8273 50.9317 12.6507 47.8424C9.47416 44.7531 7.17577 40.875 5.99091 36.6053C4.80605 32.3355 4.77731 27.8276 5.90762 23.5431C7.03794 19.2586 9.28669 15.3516 12.4236 12.222C15.5605 9.09241 19.4729 6.8528 23.76 5.73252L24.435 5.56502L24.7075 5.51752Z" fill="currentColor"></path>
+                              <path d="M35 8.75006V22.5001C35 23.1631 35.2634 23.799 35.7322 24.2678C36.2011 24.7367 36.837 25.0001 37.5 25.0001H51.25C51.6496 25 52.0433 24.9041 52.3982 24.7204C52.7531 24.5368 53.0588 24.2707 53.2897 23.9446C53.5206 23.6185 53.67 23.2417 53.7253 22.846C53.7805 22.4502 53.7402 22.047 53.6075 21.6701C52.3659 18.1434 50.349 14.9401 47.7054 12.2962C45.0619 9.65216 41.859 7.63478 38.3325 6.39256C37.9554 6.2594 37.5519 6.21863 37.1558 6.27368C36.7597 6.32873 36.3827 6.478 36.0562 6.70895C35.7297 6.93989 35.4634 7.24578 35.2797 7.60094C35.0959 7.9561 35 8.35017 35 8.75006Z" fill="currentColor"></path>
+                            </svg>
+                            <span class="font-semibold text-xs text-white">Borrow Mode</span>
+                          </span>
+                          <!-- Switch Input -->
+                          <div class="relative inline-flex items-center">
+                            <input type="checkbox" id="battleBorrowToggle" checked class="sr-only peer">
+                            <div class="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#acff46]"></div>
+                          </div>
+                        </label>
+                      </div>
+
+                      <!-- Filter: Price 0 - 5,000 BUX badge -->
+                      <div class="relative z-10 flex items-center justify-between p-2 rounded-lg bg-[#131a29] border border-white/5 w-full">
+                        <div class="flex items-center gap-1.5">
+                          <span class="text-[11px] font-semibold text-[#9aa3a8]">Price Filter:</span>
+                        </div>
+                        <div class="flex items-center gap-1 px-2 py-0.5 rounded bg-white/5 border border-white/5 text-[11px] font-bold text-white">
+                          <img src="https://rollbux.com/icons/token.png" alt="" class="size-3.5">
+                          <span>0 - 5,000 BUX</span>
+                        </div>
+                      </div>
+
+                      <!-- Filter: Sort By Rarity (Low to High) -->
+                      <div class="relative z-10 flex items-center justify-between p-2 rounded-lg bg-[#131a29] border border-white/5 w-full">
+                        <div class="flex items-center gap-1.5">
+                          <span class="text-[11px] font-semibold text-[#9aa3a8]">Sort By:</span>
+                        </div>
+                        <div class="flex items-center gap-1 px-2 py-0.5 rounded bg-white/5 border border-white/5 text-[11px] font-bold text-[#acff46]">
+                          <span>Rarity (Low to High)</span>
+                        </div>
+                      </div>
+
+                      <!-- Total Cost Indicator (Closest to Account Balance) -->
+                      <div class="relative z-10 flex items-center justify-between p-2.5 rounded-lg bg-[#131a29] border border-[#acff46]/20 w-full">
+                        <div class="flex flex-col">
+                          <span class="text-[10px] font-bold uppercase tracking-wider text-[#9aa3a8]">Target Battle Cost</span>
+                          <span class="text-[9px] text-[#acff46]">Closest to Account Balance</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                          <img src="https://rollbux.com/icons/token.png" alt="Coin" class="size-4 shrink-0">
+                          <span id="battleTotalCostPreview" class="text-sm font-bold text-white font-mono">Auto (Balance)</span>
+                        </div>
+                      </div>
+
+                      <!-- Action Feedback & Manual Battle Create Button -->
+                      <div class="relative z-10 flex items-center gap-2 w-full pt-1">
+                        <span id="battleFeedback" class="text-xs text-[#9aa3a8] truncate flex-1">Ready</span>
+                        <button id="battleManualCreateBtn" type="button" class="shrink-0 px-4 py-2 bg-[#acff46] hover:brightness-110 text-[#121418] text-xs font-bold rounded-lg transition active:scale-95 shadow-sm">
+                          Create
                         </button>
                       </div>
 
@@ -1309,6 +1390,11 @@
           if (typeof checkAutoUpgraderConditions === 'function') {
             checkAutoUpgraderConditions(data);
           }
+
+          // Check Auto Battle Automated Triggers
+          if (typeof checkAutoBattleConditions === 'function') {
+            checkAutoBattleConditions(data);
+          }
         }
       } catch (err) {
         console.error('Error fetching user data:', err);
@@ -2175,6 +2261,158 @@
 
     syncUpgraderStatusBadge();
     updateUpgraderWheelUI();
+
+    // ==========================================
+    // AUTO BATTLE CONTROLLER & STATE LOGIC
+    // ==========================================
+    const battleMasterToggle = document.getElementById('battleMasterToggle');
+    const battleStatusBadge = document.getElementById('battleStatusBadge');
+    const battleBorrowToggle = document.getElementById('battleBorrowToggle');
+    const battleManualCreateBtn = document.getElementById('battleManualCreateBtn');
+    const battleFeedback = document.getElementById('battleFeedback');
+    const battleTotalCostPreview = document.getElementById('battleTotalCostPreview');
+
+    let isBattleExecuting = false;
+    const lastBattleAccountPlayTimes = {};
+
+    function syncBattleStatusBadge() {
+      if (!battleStatusBadge || !battleMasterToggle) return;
+      if (battleMasterToggle.checked) {
+        battleStatusBadge.textContent = 'Active';
+        battleStatusBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#acff46]/10 border border-[#acff46]/30 text-[#acff46]';
+      } else {
+        battleStatusBadge.textContent = 'Disabled';
+        battleStatusBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-500/10 border border-red-500/20 text-red-400';
+      }
+    }
+
+    // Initialize stored toggle states
+    if (battleMasterToggle) {
+      battleMasterToggle.checked = localStorage.getItem('rollbux_battle_active') === 'true';
+      syncBattleStatusBadge();
+      battleMasterToggle.addEventListener('change', () => {
+        localStorage.setItem('rollbux_battle_active', battleMasterToggle.checked ? 'true' : 'false');
+        syncBattleStatusBadge();
+      });
+    }
+
+    if (battleBorrowToggle) {
+      const storedBorrow = localStorage.getItem('rollbux_battle_borrow');
+      battleBorrowToggle.checked = storedBorrow !== null ? storedBorrow === 'true' : true;
+      battleBorrowToggle.addEventListener('change', () => {
+        localStorage.setItem('rollbux_battle_borrow', battleBorrowToggle.checked ? 'true' : 'false');
+      });
+    }
+
+    // Execute Battle Creation
+    async function executeBattleCreate(isAuto = false, accountName = null) {
+      if (isBattleExecuting) return;
+      isBattleExecuting = true;
+
+      const currentAccount = accountName || targetUsername;
+      const borrowMode = battleBorrowToggle ? battleBorrowToggle.checked : true;
+
+      if (battleFeedback) {
+        battleFeedback.textContent = `[${currentAccount}] Creating battle...`;
+        battleFeedback.className = 'text-xs text-[#acff46] font-medium truncate flex-1';
+      }
+      if (battleManualCreateBtn) {
+        battleManualCreateBtn.disabled = true;
+        battleManualCreateBtn.classList.add('opacity-50');
+      }
+
+      try {
+        const res = await fetch('/api/battles/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: currentAccount,
+            borrow: borrowMode
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          const errText = data?.error || 'Failed to create battle';
+          if (battleFeedback) {
+            battleFeedback.textContent = `[${currentAccount}] ${errText}`;
+            battleFeedback.className = 'text-xs text-red-400 truncate flex-1';
+          }
+          console.warn(`[AutoBattle][${currentAccount}] Failed:`, errText);
+          return;
+        }
+
+        // Success!
+        const bId = data.battle_id || 'OK';
+        const cost = data.totalCostBux || '0.00';
+        const count = data.casesCount || 1;
+        if (battleFeedback) {
+          battleFeedback.textContent = `[${currentAccount}] Battle #${String(bId).slice(0, 6)} created! (${cost} BUX, ${count} cases)`;
+          battleFeedback.className = 'text-xs text-[#acff46] font-bold truncate flex-1';
+        }
+        console.log(`[AutoBattle][${currentAccount}] Battle created successfully:`, data);
+      } catch (e) {
+        if (battleFeedback) {
+          battleFeedback.textContent = `[${currentAccount}] Network error: ` + e.message;
+          battleFeedback.className = 'text-xs text-red-400 truncate flex-1';
+        }
+        console.error(`[AutoBattle][${currentAccount}] Error:`, e.message);
+      } finally {
+        isBattleExecuting = false;
+        if (battleManualCreateBtn) {
+          battleManualCreateBtn.disabled = false;
+          battleManualCreateBtn.classList.remove('opacity-50');
+        }
+      }
+    }
+
+    if (battleManualCreateBtn) {
+      battleManualCreateBtn.addEventListener('click', () => {
+        executeBattleCreate(false);
+      });
+    }
+
+    // Auto Battle Condition Checker: Triggers for all registered accounts after a rain
+    async function checkAutoBattleConditions(userData) {
+      if (!battleMasterToggle || !battleMasterToggle.checked) return;
+      if (isBattleExecuting) return;
+
+      const accounts = await getRegisteredAccountsList();
+      const now = Date.now();
+
+      // Minimum required balance to open the cheapest case (~57.6 BUX)
+      const minRequired = 57.6;
+
+      for (const acc of accounts) {
+        const accName = acc.name || 'Account';
+        const key = accName.toLowerCase().trim();
+
+        // 45s cooldown per account
+        const lastPlay = lastBattleAccountPlayTimes[key] || 0;
+        if (now - lastPlay < 45000) continue;
+
+        let balance = 0;
+        if (key === targetUsername.toLowerCase()) {
+          balance = (liveUserData && liveUserData.user && liveUserData.user.balance_bux) || (userData && userData.user && userData.user.balance_bux) || 0;
+        } else {
+          try {
+            const uRes = await fetch(`/api/user/${encodeURIComponent(accName)}`);
+            if (uRes.ok) {
+              const uData = await uRes.json();
+              balance = (uData && uData.user && uData.user.balance_bux) || 0;
+            }
+          } catch (e) {}
+        }
+
+        if (balance >= minRequired) {
+          lastBattleAccountPlayTimes[key] = now;
+          console.log(`[AutoBattle][${accName}] Triggered after rain! Balance is ${balance.toFixed(2)} BUX. Creating battle with borrow mode...`);
+          await executeBattleCreate(true, accName);
+          break; // Process one account per cycle to avoid concurrency conflicts
+        }
+      }
+    }
   </script>
 </body>
 </html>

@@ -737,6 +737,204 @@ export default async function handler(req, res) {
     }
   }
 
+  // Auto-Battle Creation Endpoint
+  if (pathname === '/api/battles/create' && req.method === 'POST') {
+    if (!isAllowedIp(req)) {
+      res.statusCode = 403;
+      res.end('Forbidden');
+      return;
+    }
+
+    try {
+      const payload = req.body || await parseBody(req);
+      const targetName = (payload.username || '').toLowerCase().trim();
+      const borrowEnabled = payload.borrow !== false; // Default true as requested
+
+      const url = process.env.UPSTASH_REDIS_REST_URL || "https://flowing-chigger-149490.upstash.io";
+      const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+      if (!token) {
+        res.status(500).json({ success: false, error: "Upstash token missing" });
+        return;
+      }
+
+      // 1. Fetch account session token
+      const accResp = await fetch(`${url}/get/roach%3Aaccounts`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const accData = await accResp.json();
+      let accounts = accData.result ? JSON.parse(accData.result) : [];
+      let acc = accounts.find(a => (a.name || '').toLowerCase().trim() === targetName);
+      if (!acc && accounts.length === 1) acc = accounts[0];
+      if (!acc && accounts.length > 0 && (!targetName || targetName === 'sotarium')) acc = accounts[0];
+      let sessionToken = acc ? acc.token : (payload.token || process.env.ROLLBUX_SESSION_TOKEN);
+      if (!sessionToken) {
+        res.status(400).json({
+          success: false,
+          error: `No session token found for "${targetName}".`
+        });
+        return;
+      }
+
+      const rollHeaders = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${sessionToken}`,
+        "Cookie": `authjs.session-token=${sessionToken}`,
+        "Origin": "https://rollbux.com",
+        "Referer": "https://rollbux.com/games/battles/create"
+      };
+
+      // 2. Fetch live user balance
+      let tokenBalanceMicro = 0;
+      try {
+        const balResp = await fetch("https://rollbux.com/_api/users/me/balance", { headers: rollHeaders });
+        if (balResp.ok) {
+          const balData = await balResp.json();
+          if (balData?.data?.token_balance !== undefined) {
+            tokenBalanceMicro = balData.data.token_balance;
+          }
+        }
+      } catch (e) {
+        console.error("[AutoBattle] Failed to fetch /users/me/balance:", e);
+      }
+
+      if (!tokenBalanceMicro) {
+        try {
+          const meResp = await fetch("https://rollbux.com/_api/users/me", { headers: rollHeaders });
+          if (meResp.ok) {
+            const meData = await meResp.json();
+            tokenBalanceMicro = meData?.data?.user?.token_balance || meData?.data?.token_balance || 0;
+          }
+        } catch (e) {}
+      }
+
+      const balanceBux = tokenBalanceMicro / 1000000;
+
+      // 3. Fetch cases in 0 - 5,000 price range sorted by price/rarity ascending
+      // RollBux micro-tokens: 5,000 BUX = 5,000,000,000 micro tokens
+      const casesResp = await fetch("https://rollbux.com/_api/cases?limit=100", { headers: rollHeaders });
+      if (!casesResp.ok) {
+        res.status(500).json({ success: false, error: "Failed to fetch RollBux cases list" });
+        return;
+      }
+      const casesData = await casesResp.json();
+      const allCases = casesData?.data?.items || [];
+      
+      // Filter cases within 0 - 5,000 BUX (price <= 5,000,000,000)
+      const maxPriceMicro = 5000 * 1000000;
+      const validCases = allCases.filter(c => c.isActive !== false && c.price > 0 && c.price <= maxPriceMicro);
+
+      // Sort by price (low to high) / rarity low
+      validCases.sort((a, b) => a.price - b.price);
+
+      if (validCases.length === 0) {
+        res.status(400).json({ success: false, error: "No available cases in 0 - 5,000 BUX range" });
+        return;
+      }
+
+      // 4. Select cases until Total Cost is closest to the account's total balance
+      const cheapestCase = validCases[0];
+      const minNeededBux = cheapestCase.price / 1000000;
+      if (balanceBux < minNeededBux) {
+        res.status(400).json({
+          success: false,
+          error: `Balance is ${balanceBux.toFixed(2)} BUX. Cheapest case "${cheapestCase.name}" costs ${minNeededBux.toFixed(2)} BUX.`
+        });
+        return;
+      }
+
+      // Greedily pick cases to get total cost closest to total balance without exceeding it
+      const selectedCases = [];
+      let currentCostMicro = 0;
+      const targetMicro = tokenBalanceMicro;
+
+      let added = true;
+      while (added) {
+        added = false;
+        const remainingMicro = targetMicro - currentCostMicro;
+        let bestFit = null;
+        for (let i = validCases.length - 1; i >= 0; i--) {
+          if (validCases[i].price <= remainingMicro) {
+            bestFit = validCases[i];
+            break;
+          }
+        }
+
+        if (bestFit) {
+          selectedCases.push(bestFit);
+          currentCostMicro += bestFit.price;
+          added = true;
+          if (selectedCases.length >= 30) break;
+        }
+      }
+
+      if (selectedCases.length === 0) {
+        selectedCases.push(cheapestCase);
+        currentCostMicro = cheapestCase.price;
+      }
+
+      const totalCostBux = currentCostMicro / 1000000;
+
+      // 5. Construct battle payload matching RollBux format
+      const battleBody = {
+        game_mode: {
+          type: "standard",
+          mode: "1v1"
+        },
+        player_count: 2,
+        team_size: 1,
+        cases: selectedCases.map(c => c.id),
+        modifiers: {
+          crazy_mode: false,
+          jackpot: false
+        },
+        settings: {
+          special_spin: true,
+          fast_open: false,
+          private_mode: false,
+          borrow: borrowEnabled ? { percentage: 80 } : null
+        }
+      };
+
+      // 6. Post battle to RollBux
+      const createResp = await fetch("https://rollbux.com/_api/battles", {
+        method: 'POST',
+        headers: rollHeaders,
+        body: JSON.stringify(battleBody)
+      });
+
+      const createText = await createResp.text();
+      let createJson = null;
+      try { createJson = JSON.parse(createText); } catch (e) {}
+
+      if (!createResp.ok) {
+        let errMsg = createJson?.message || createJson?.error || createText || "Failed to create battle";
+        res.status(createResp.status).json({ success: false, error: errMsg });
+        return;
+      }
+
+      const battleResult = createJson?.data || createJson || {};
+
+      res.status(200).json({
+        success: true,
+        account: acc ? acc.name : (targetName || 'Account'),
+        battle_id: battleResult.battle_id || battleResult.id,
+        borrow: borrowEnabled,
+        totalCostBux: totalCostBux.toFixed(2),
+        accountBalanceBux: balanceBux.toFixed(2),
+        casesCount: selectedCases.length,
+        cases: selectedCases.map(c => ({ id: c.id, name: c.name, priceBux: (c.price / 1000000).toFixed(2) })),
+        result: battleResult
+      });
+      return;
+    } catch (e) {
+      console.error("[AutoBattle Error]", e);
+      res.status(500).json({ success: false, error: e.message });
+      return;
+    }
+  }
+
   // Standalone Inventory Sell All Endpoint
   if (pathname === '/api/inventory/sell' && req.method === 'POST') {
     try {
