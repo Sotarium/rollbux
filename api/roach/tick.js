@@ -237,8 +237,9 @@ export default async function handler(req, res) {
           joinStatus = "SUCCESS";
           isAccountJoined = true;
         } else {
-          log(`[${accName}] Join failed (HTTP ${joinRes.status}): ${JSON.stringify(joinRes.data)}`);
-          joinStatus = `FAILED_${joinRes.status}`;
+          const errDetail = (joinRes.data && (joinRes.data.message || joinRes.data.error)) || JSON.stringify(joinRes.data);
+          log(`[${accName}] Join failed (HTTP ${joinRes.status}): ${errDetail}`);
+          joinStatus = `FAILED_${joinRes.status} (${errDetail.slice(0, 30)})`;
         }
       }
 
