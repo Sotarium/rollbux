@@ -56,7 +56,7 @@
 </head>
 <body class="selection:bg-[#acff46] selection:text-black antialiased">
   <div class="flex w-full justify-center pb-[60px] pt-[30px]">
-    <div class="flex w-full max-w-[1020px] flex-col items-start gap-[22px] px-4 md:px-6">
+    <div class="flex w-full max-w-[1060px] flex-col items-start gap-[22px] px-4 md:px-6">
       
       <!-- Top Navigation & Controls Bar -->
       <div class="flex w-full flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.04] pb-4">
@@ -71,7 +71,6 @@
           </div>
           <div class="flex items-center gap-2.5 mt-1">
             <h1 class="whitespace-nowrap text-[24px] tracking-tight text-white font-black italic">Battles History</h1>
-            <span class="px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-[#a855f7] text-[10px] font-bold uppercase tracking-wider">Site Battles</span>
           </div>
         </div>
 
@@ -109,13 +108,14 @@
         <span id="battlesCountBadge" class="text-[12px] font-medium text-[#9aa3a8]">Loading...</span>
       </div>
 
-      <!-- Premium Battles History Table: Battle | Amount Paid | Amount Won | Date & Time -->
+      <!-- Premium Battles History Table: From | Battle | Amount Paid | Amount Won | Date & Time -->
       <div class="w-full flex flex-col items-center gap-[10px]">
         <div class="custom-scroll w-full max-w-full overflow-x-auto overflow-y-hidden rounded-[14px] border border-white/[0.06] bg-[#0e131f] shadow-2xl">
-          <div class="relative w-full min-w-[700px] overflow-hidden" style="min-height: 160px;">
+          <div class="relative w-full min-w-[760px] overflow-hidden" style="min-height: 160px;">
 
-            <!-- Table Header (Spaced evenly across full width: Battle | Amount Paid | Amount Won | Date & Time) -->
-            <div class="grid grid-cols-[1.8fr_1fr_1fr_1.3fr] items-center gap-4 px-7 py-3.5 text-[11px] font-bold uppercase tracking-wider text-[#9aa3a8] border-b border-white/[0.05] bg-[#121826]/70">
+            <!-- Table Header: From | Battle | Amount Paid | Amount Won | Date & Time -->
+            <div class="grid grid-cols-[140px_1.6fr_1fr_1fr_1.2fr] items-center gap-4 px-7 py-3.5 text-[11px] font-bold uppercase tracking-wider text-[#9aa3a8] border-b border-white/[0.05] bg-[#121826]/70">
+              <div>From</div>
               <div>Battle</div>
               <div class="text-right">Amount Paid</div>
               <div class="text-right">Amount Won</div>
@@ -231,12 +231,23 @@
         const wonColorClass = won ? 'text-[#acff46] font-bold' : 'text-gray-500 font-medium';
         const wonIconClass = won ? 'opacity-100' : 'opacity-30 grayscale';
         const battleIdShort = b.battle_id ? b.battle_id.slice(0, 8) : `#${idx + 1}`;
+        const fromAccount = b.from_account || 'Account';
 
         return `
-          <a href="${b.url}" target="_blank" rel="noopener noreferrer" class="grid grid-cols-[1.8fr_1fr_1fr_1.3fr] items-center gap-4 px-7 py-4 transition-all duration-150 hover:bg-white/[0.03] group cursor-pointer border-l-2 ${won ? 'border-l-[#acff46]' : 'border-l-transparent'}">
+          <a href="${b.url}" target="_blank" rel="noopener noreferrer" class="grid grid-cols-[140px_1.6fr_1fr_1fr_1.2fr] items-center gap-4 px-7 py-4 transition-all duration-150 hover:bg-white/[0.03] group cursor-pointer border-l-2 ${won ? 'border-l-[#acff46]' : 'border-l-transparent'}">
             
+            <!-- From Account Column -->
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="size-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[11px] font-bold text-white shrink-0">
+                ${fromAccount.charAt(0).toUpperCase()}
+              </span>
+              <span class="text-[12px] font-bold text-white group-hover:text-[#acff46] transition-colors truncate">
+                ${fromAccount}
+              </span>
+            </div>
+
             <!-- Battle Column -->
-            <div class="flex items-center gap-3.5 min-w-0">
+            <div class="flex items-center gap-3 min-w-0">
               <span class="size-8 rounded-lg ${b.crazy_mode ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-purple-500/10 border-purple-500/30 text-purple-400'} border flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 shadow-sm">
                 <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75l16.5 16.5m0-16.5L3.75 20.25" />
