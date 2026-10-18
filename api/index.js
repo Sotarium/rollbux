@@ -1681,10 +1681,11 @@ export default async function handler(req, res) {
         headers: { ...minesHeaders(sessionToken), 'Idempotency-Key': idKey },
         body: JSON.stringify({})
       });
-      const rbData = await rbRes.json();
+      const rbData = await rbRes.json().catch(() => ({}));
       if (!rbRes.ok) {
-        res.statusCode = 400;
-        res.end(JSON.stringify({ success: false, error: rbData?.message || rbData?.error || 'Cashout failed' }));
+        console.error('[API Mines Cashout Failed]', rbRes.status, rbData);
+        res.statusCode = rbRes.status || 400;
+        res.end(JSON.stringify({ success: false, status: rbRes.status, error: rbData?.message || rbData?.error || 'Cashout failed', details: rbData }));
         return;
       }
       // Extract payout in BUX

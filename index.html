@@ -2486,12 +2486,12 @@
           return;
         }
 
-        // 2. Cancel any stuck active round via our proxy (avoids CORS)
-        await fetch('/api/mines/cashout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: acc })
-        }).catch(() => {});
+        // 2. Pick 3 distinct random tiles across the 5x5 grid (indices 0..24)
+        const randomTiles = [];
+        while (randomTiles.length < 3) {
+          const r = Math.floor(Math.random() * 25);
+          if (!randomTiles.includes(r)) randomTiles.push(r);
+        }
 
         // 3. Start round: all-in, 1 mine
         setMinesFeedback(`${acc} : ${balanceBux.toFixed(2)} BUX`, '#acff46');
@@ -2502,28 +2502,31 @@
         });
         const startData = await startRes.json();
         if (!startRes.ok || !startData.success) {
+          console.warn('[AutoMines Start Error]', startData);
           setMinesFeedback(`${acc} : ${balanceBux.toFixed(2)} BUX Failed.`, '#ff6b6b');
           return;
         }
 
-        // 4. Reveal 3 tiles (indices 0, 1, 2)
-        for (let i = 0; i < 3; i++) {
-          await new Promise(r => setTimeout(r, 800));
+        // 4. Reveal the 3 randomized tiles
+        for (let i = 0; i < randomTiles.length; i++) {
+          const tileIdx = randomTiles[i];
+          await new Promise(r => setTimeout(r, 900));
           setMinesFeedback(`${acc} : tile ${i + 1}/3`, '#acff46');
           const revRes = await fetch('/api/mines/reveal', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: acc, tile_index: i })
+            body: JSON.stringify({ username: acc, tile_index: tileIdx })
           });
           const revData = await revRes.json();
           if (!revRes.ok || !revData.success) {
+            console.warn('[AutoMines Reveal Error]', revData);
             setMinesFeedback(`${acc} : ${balanceBux.toFixed(2)} BUX Failed.`, '#ff6b6b');
             return;
           }
         }
 
-        // 5. Cashout
-        await new Promise(r => setTimeout(r, 500));
+        // 5. Cashout after reveals complete
+        await new Promise(r => setTimeout(r, 1000));
         setMinesFeedback(`${acc} : cashing out...`, '#acff46');
         const cashRes = await fetch('/api/mines/cashout', {
           method: 'POST',
@@ -2532,6 +2535,7 @@
         });
         const cashData = await cashRes.json();
         if (!cashRes.ok || !cashData.success) {
+          console.warn('[AutoMines Cashout Error]', cashData);
           setMinesFeedback(`${acc} : ${balanceBux.toFixed(2)} BUX Failed.`, '#ff6b6b');
           return;
         }
