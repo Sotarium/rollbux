@@ -303,7 +303,7 @@
         let cartBadge = '';
         if (cart.count > 0) {
           cartBadge = `
-            <button type="button" onclick="openCartModal('${a.id}')" class="inline-flex items-center justify-center gap-1.5 h-[26px] px-2.5 rounded-[6px] text-[11px] font-semibold bg-[#acff46]/10 text-[#acff46] border border-[#acff46]/20 hover:bg-[#acff46]/20 transition active:scale-95 cursor-pointer whitespace-nowrap shadow-none" title="Click to view & sell ${cart.count} won item(s)">
+            <button type="button" onclick="openCartModal('${a.id}')" class="inline-flex items-center justify-center gap-1.5 w-[140px] h-[26px] px-2.5 rounded-[6px] text-[11px] font-semibold bg-[#acff46]/10 text-[#acff46] border border-[#acff46]/20 hover:bg-[#acff46]/20 transition active:scale-95 cursor-pointer whitespace-nowrap shadow-none" title="Click to view & sell ${cart.count} won item(s)">
               ${CART_SVG_ICON}
               <span>${cart.count} ${cart.count === 1 ? 'item' : 'items'}</span>
               <span class="text-[10px] text-[#acff46]/70 font-mono">(${formatNumber(cart.value)})</span>
@@ -311,11 +311,12 @@
           `;
         } else {
           cartBadge = `
-            <button type="button" onclick="openCartModal('${a.id}')" class="inline-flex items-center justify-center gap-1.5 h-[26px] px-2.5 rounded-[6px] text-[11px] font-medium bg-white/[0.02] text-[#606773] border border-white/[0.04] hover:text-gray-300 hover:bg-white/[0.04] transition active:scale-95 cursor-pointer whitespace-nowrap" title="View empty cart">
+            <button type="button" onclick="openCartModal('${a.id}')" class="inline-flex items-center justify-center gap-1.5 w-[140px] h-[26px] px-2.5 rounded-[6px] text-[11px] font-medium bg-white/[0.02] text-[#606773] border border-white/[0.04] hover:text-gray-300 hover:bg-white/[0.04] transition active:scale-95 cursor-pointer whitespace-nowrap" title="View empty cart">
               <svg class="size-3 opacity-40 shrink-0" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path fill-rule="evenodd" clip-rule="evenodd" d="M7.6714 10.2684H12.6584L14.0123 15.4299L14.0481 15.5517L17.5061 32.9179L17.549 33.1975L19.0494 40.7247V40.7354C19.2553 41.7474 19.8033 42.657 20.6008 43.3102C21.3982 43.9633 22.3961 44.32 23.4255 44.3198H45.1812C45.8918 44.3198 46.5733 44.0366 47.0758 43.5324C47.5782 43.0283 47.8605 42.3445 47.8605 41.6315C47.8605 40.9185 47.5782 40.2348 47.0758 39.7306C46.5733 39.2265 45.8918 38.9432 45.1812 38.9432H24.1579L23.2648 34.4628H48.257C48.3821 34.4628 48.7393 34.4735 49.068 34.4198C49.6572 34.3198 50.2124 34.0746 50.6838 33.7061C51.1552 33.3376 51.5279 32.8574 51.7687 32.3086C51.9616 31.8641 52.058 31.3014 52.0902 31.115L52.1009 31.0648L54.9266 17.222L54.9338 17.1862C55.0278 16.6705 55.008 16.1404 54.8757 15.6332C54.7434 15.1261 54.5018 14.6542 54.1679 14.2509C53.8341 13.8476 53.4162 13.5227 52.9436 13.2991C52.4711 13.0755 51.9553 12.9586 51.4329 12.9567H18.8993L17.7097 8.3866C17.4867 7.39414 16.9336 6.50741 16.1415 5.87225C15.3494 5.2371 14.3654 4.89134 13.3515 4.89185H7.6714C6.96081 4.89185 6.27933 5.17507 5.77687 5.67922C5.27441 6.18337 4.99213 6.86714 4.99213 7.58011C4.99213 8.29309 5.27441 8.97686 5.77687 9.48101C6.27933 9.98516 6.96081 10.2684 7.6714 10.2684ZM46.5387 50.7716C46.5387 49.6794 46.1063 48.6318 45.3365 47.8595C44.5667 47.0871 43.5227 46.6532 42.4341 46.6532C41.3455 46.6532 40.3014 47.0871 39.5317 47.8595C38.7619 48.6318 38.3294 49.6794 38.3294 50.7716C38.3609 51.8424 38.807 52.8587 39.573 53.6049C40.339 54.3512 41.3646 54.7686 42.4323 54.7686C43.4999 54.7686 44.5256 54.3512 45.2916 53.6049C46.0576 52.8587 46.5037 51.8424 46.5351 50.7716H46.5387ZM24.5687 46.6568C25.1177 46.6405 25.6643 46.735 26.1763 46.9345C26.6882 47.1341 27.155 47.4347 27.5491 47.8186C27.9431 48.2025 28.2564 48.6618 28.4703 49.1693C28.6842 49.6769 28.7944 50.2224 28.7944 50.7734C28.7944 51.3245 28.6842 51.8699 28.4703 52.3775C28.2564 52.885 27.9431 53.3444 27.5491 53.7282C27.155 54.1121 26.6882 54.4127 26.1763 54.6123C25.6643 54.8119 25.1177 54.9063 24.5687 54.8901C23.5015 54.8585 22.4886 54.4109 21.7448 53.6423C21.0011 52.8737 20.5851 51.8447 20.5851 50.7734C20.5851 49.7022 21.0011 48.6731 21.7448 47.9045C22.4886 47.136 23.5015 46.6884 24.5687 46.6568Z" fill="currentColor"/>
               </svg>
               <span>Empty</span>
+              <span class="text-[10px] text-[#606773] font-mono">(0.00)</span>
             </button>
           `;
         }
