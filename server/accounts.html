@@ -38,6 +38,14 @@
       background: linear-gradient(135deg, #b366f8 0%, #986ef7 100%);
       box-shadow: 0 6px 20px -2px rgba(168, 85, 247, 0.55);
     }
+    .custom-scroll::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #1c2538;
+      border-radius: 9999px;
+    }
   </style>
 </head>
 <body class="selection:bg-[#a855f7] selection:text-white">
@@ -64,25 +72,43 @@
       </div>
 
       <!-- Section Title & Counter -->
-      <div class="flex w-full items-center justify-between border-b border-white/[0.04] pb-4">
-        <div class="flex items-center gap-2.5">
-          <p class="whitespace-nowrap text-[18px] leading-[28px] text-white font-bold italic">Configured Accounts</p>
-        </div>
-        <span id="accountCountBadge" class="text-[12px] font-bold text-[#a855f7] bg-[#a855f7]/10 px-3 py-1 rounded-full border border-[#a855f7]/20">0 accounts</span>
+      <div class="flex w-full items-center justify-between">
+        <p class="whitespace-nowrap text-[20px] leading-[30px] text-white font-bold italic">Accounts</p>
+        <span id="accountCountBadge" class="text-[13px] text-[#9aa3a8]">0 accounts</span>
       </div>
 
-      <!-- Accounts Grid (Cards matching the authentic Overview cards) -->
-      <div id="accountsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[16px] w-full">
-        <!-- Rendered dynamically -->
-      </div>
+      <!-- Accounts Table (Exact RollBux Affiliates Table Format) -->
+      <div class="w-full flex flex-col items-center gap-[12px]">
+        <div class="custom-scroll w-full max-w-full overflow-x-auto overflow-y-hidden">
+          <div class="relative w-full min-w-[750px] shrink-0 rounded-[12px] border border-white/[0.03] overflow-hidden" style="min-height: 164px;">
+            <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
 
-      <!-- Empty State -->
-      <div id="emptyAccountsState" class="hidden w-full flex-col items-center justify-center py-20 text-center">
-        <div class="size-16 rounded-full bg-[#0e131f] border border-white/[0.06] flex items-center justify-center mb-4">
-          <svg class="size-8 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+            <!-- Table Column Headers: ID | User | Deposited | Wagered | Earned | Action -->
+            <div class="relative z-10 grid grid-cols-[140px_1.5fr_1fr_1fr_1fr_40px] items-center gap-[12px] px-[16px] py-[14px] text-[13px] font-semibold tracking-[0.28px] text-[#9aa3a8] border-b border-white/[0.04]">
+              <div>ID</div>
+              <div>User</div>
+              <div class="flex items-center gap-1.5 justify-start">
+                <span>Deposited</span>
+              </div>
+              <div class="flex items-center gap-1.5 justify-start">
+                <span>Wagered</span>
+              </div>
+              <div class="flex items-center gap-1.5 justify-start">
+                <span>Earned</span>
+              </div>
+              <div class="text-center"></div>
+            </div>
+
+            <!-- Table Rows Container -->
+            <div id="accountsList" class="relative z-10 flex flex-col divide-y divide-white/[0.02]">
+              <div id="loadingState" class="flex h-[120px] items-center justify-center px-[32px] text-center">
+                <p class="text-[13px] text-[#9aa3a8]">Loading accounts...</p>
+              </div>
+            </div>
+
+            <span aria-hidden="true" class="pointer-events-none absolute inset-0" style="border-radius: 12px; box-shadow: rgb(66, 66, 66) 0px 2px 0px 0px inset; mix-blend-mode: color-dodge;"></span>
+          </div>
         </div>
-        <p class="text-[16px] font-bold text-white mb-1">No Accounts Configured</p>
-        <p class="text-[13px] text-[#9aa3a8] max-w-sm mb-4">Click "Add Account" to configure your RollBux session tokens.</p>
       </div>
 
     </div>
@@ -123,6 +149,24 @@
     let liveStatusMap = {};
     let usersDataMap = {};
 
+    // Avatar ring color palette (matching RollBux avatar rings)
+    const ringColors = [
+      '#10b981', // emerald
+      '#f59e0b', // amber
+      '#ef4444', // red
+      '#3b82f6', // blue
+      '#8b5cf6', // purple
+      '#06b6d4', // cyan
+      '#acff46'  // lime
+    ];
+
+    function getAvatarRingColor(name) {
+      let hash = 0;
+      for (let i = 0; i < (name || '').length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      const idx = Math.abs(hash) % ringColors.length;
+      return ringColors[idx];
+    }
+
     async function fetchAll() {
       try {
         const [accRes, statusRes, usersRes] = await Promise.all([
@@ -155,80 +199,91 @@
       }
     }
 
+    function formatNumber(num) {
+      const val = parseFloat(num) || 0;
+      return val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+
     function renderAccounts() {
-      const grid = document.getElementById('accountsGrid');
-      const emptyState = document.getElementById('emptyAccountsState');
+      const list = document.getElementById('accountsList');
       const badge = document.getElementById('accountCountBadge');
 
       if (badge) badge.textContent = `${registeredAccounts.length} account${registeredAccounts.length === 1 ? '' : 's'}`;
 
       if (registeredAccounts.length === 0) {
-        grid.innerHTML = '';
-        emptyState.classList.remove('hidden');
-        emptyState.classList.add('flex');
+        list.innerHTML = `
+          <div class="flex h-[120px] items-center justify-center px-[32px] text-center">
+            <p class="text-[13px] leading-[20px] text-[#9aa3a8]">No accounts registered yet. Click <span class="text-[#a855f7] font-bold">+ Add Account</span> above to register an account.</p>
+          </div>
+        `;
         return;
       }
 
-      emptyState.classList.add('hidden');
-      emptyState.classList.remove('flex');
-
-      grid.innerHTML = registeredAccounts.map(a => {
+      list.innerHTML = registeredAccounts.map(a => {
         const nameLower = (a.name || '').toLowerCase();
-        const live = liveStatusMap[nameLower] || {};
         const userDb = usersDataMap[nameLower] || {};
-        const chatCount = live.chat_count !== undefined ? live.chat_count : 0;
-        const isJoined = live.joined === true;
-        const rainsJoined = userDb.rains_joined || 0;
-        const balance = (userDb.balance_bux || 0).toLocaleString();
+        const ringColor = getAvatarRingColor(a.name);
 
-        let statusText = 'Waiting';
-        let statusClass = 'text-gray-400 bg-white/5 border border-white/5';
-        if (isJoined) {
-          statusText = 'Joined';
-          statusClass = 'text-[#acff46] bg-[rgba(172,255,70,0.1)] border border-[#acff46]/20';
+        // Account ID (UUID style preview or acc_id)
+        let displayId = a.id || '';
+        if (displayId.length > 14) {
+          displayId = displayId.slice(0, 8) + '-' + displayId.slice(8, 12) + '...';
+        } else {
+          displayId = displayId + '...';
         }
 
+        // Stats: Deposited / Wagered / Earned
+        const deposited = userDb.deposited_bux || userDb.balance_bux || 0;
+        const wagered = userDb.wagered_bux || 0;
+        const earned = userDb.total_earnings_bux || 0;
+
         return `
-          <div class="relative flex w-full flex-col items-start gap-[10px] overflow-clip rounded-[12px] px-[20px] py-[16px] border border-white/[0.03] bg-[#0e131f] transition hover:border-[#a855f7]/30 hover:bg-[#111726] group">
-            <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
+          <div class="grid grid-cols-[140px_1.5fr_1fr_1fr_1fr_40px] items-center gap-[12px] relative min-h-[58px] px-[16px] py-[8px] transition-colors hover:bg-[rgba(255,255,255,0.02)] group" role="row">
+            
+            <!-- 1. ID Column -->
+            <span class="font-mono text-[13px] text-[#6d7680] truncate">
+              ${displayId}
+            </span>
 
-            <!-- Top row: User label & Status pill -->
-            <div class="relative z-10 flex w-full items-center justify-between">
-              <span class="text-[13px] font-medium leading-[20px] text-[#9aa3a8] group-hover:text-[#a855f7] transition-colors">User</span>
-              <div class="flex items-center gap-1.5">
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded-[5px] uppercase ${statusClass}">
-                  ${statusText}
-                </span>
-                <button onclick="deleteAccount('${a.id}', '${a.name}')" title="Remove account" class="text-gray-500 hover:text-red-400 transition p-0.5">
-                  <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <!-- Big Username -->
-            <a href="/user/${encodeURIComponent(a.name)}" class="relative z-10 w-full truncate text-[20px] font-bold leading-[30px] text-white hover:text-[#a855f7] transition-colors">
-              ${a.name}
+            <!-- 2. User Column: Avatar circle + username -->
+            <a href="/user/${encodeURIComponent(a.name)}" class="flex items-center gap-2.5 min-w-0 group/user">
+              <span class="size-[28px] rounded-full flex items-center justify-center shrink-0 border-2" style="border-color: ${ringColor}; background-color: #131a29;">
+                <svg class="size-3.5 text-white/70" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                </svg>
+              </span>
+              <span class="truncate text-[14px] font-bold text-white group-hover/user:text-[#a855f7] transition-colors">
+                ${a.name}
+              </span>
             </a>
 
-            <!-- Info Grid: Chat / Joined / Balance -->
-            <div class="relative z-10 grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.04] w-full text-[12px]">
-              <div>
-                <span class="text-[#6d7680] text-[11px] block">Chat Quota</span>
-                <span class="font-bold ${chatCount >= 3 ? 'text-[#acff46]' : 'text-white'}">${chatCount} / 3</span>
-              </div>
-              <div>
-                <span class="text-[#6d7680] text-[11px] block">Rains Won</span>
-                <span class="font-bold text-white">${rainsJoined}</span>
-              </div>
-              <div class="col-span-2 pt-1">
-                <span class="text-[#6d7680] text-[11px] block">Token Preview</span>
-                <span class="font-mono text-[11px] text-gray-400 truncate block">${a.token_preview || '••••••••'}</span>
-              </div>
+            <!-- 3. Deposited Column -->
+            <div class="flex items-center gap-1.5 justify-start">
+              <img src="https://rollbux.com/icons/token.png" alt="BUX" class="size-4 shrink-0">
+              <span class="text-[13px] font-semibold text-[#c2c6db]">${formatNumber(deposited)}</span>
             </div>
 
-            <span aria-hidden="true" class="pointer-events-none absolute inset-0" style="border-radius: 12px; box-shadow: rgba(114, 144, 231, 0.04) 0px 4px 0px 0px inset;"></span>
+            <!-- 4. Wagered Column -->
+            <div class="flex items-center gap-1.5 justify-start">
+              <img src="https://rollbux.com/icons/token.png" alt="BUX" class="size-4 shrink-0">
+              <span class="text-[13px] font-semibold text-[#c2c6db]">${formatNumber(wagered)}</span>
+            </div>
+
+            <!-- 5. Earned Column -->
+            <div class="flex items-center gap-1.5 justify-start">
+              <img src="https://rollbux.com/icons/token.png" alt="BUX" class="size-4 shrink-0">
+              <span class="text-[13px] font-semibold text-[#c2c6db]">${formatNumber(earned)}</span>
+            </div>
+
+            <!-- 6. Delete Action -->
+            <div class="flex items-center justify-center">
+              <button onclick="deleteAccount('${a.id}', '${a.name}')" title="Delete account" class="flex items-center justify-center size-[26px] rounded-[6px] text-gray-500 hover:text-[#ff4b4b] hover:bg-[#ff4b4b]/10 transition active:scale-90">
+                <svg class="size-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
           </div>
         `;
       }).join('');
