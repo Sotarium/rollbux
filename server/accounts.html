@@ -211,6 +211,7 @@
       list.innerHTML = registeredAccounts.map(a => {
         const nameLower = (a.name || '').toLowerCase();
         const live = liveStatusMap[nameLower] || {};
+        const userDb = usersDataMap[nameLower] || {};
         const ringColor = getAvatarRingColor(a.name);
         const isJoined = live.joined === true;
 
