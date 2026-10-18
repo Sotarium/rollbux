@@ -2487,42 +2487,45 @@
       if (minesManualPlayBtn) { minesManualPlayBtn.disabled = true; minesManualPlayBtn.classList.add('opacity-50'); }
 
       const acc = accountName || targetUsername;
-      setMinesFeedback(`[${acc}] Fetching balance...`, '#acff46');
+      setMinesFeedback(`${acc} : checking balance...`, '#acff46');
 
       try {
         // 1. Get balance for all-in bet
         const uRes = await fetch(`/api/user/${encodeURIComponent(acc)}`);
-        if (!uRes.ok) throw new Error('Could not fetch user balance');
+        if (!uRes.ok) throw new Error('balance fetch failed');
         const uData = await uRes.json();
-        const balanceMicro = Math.floor(((uData?.user?.balance_bux) || 0) * 1_000_000);
+        const balanceBux = (uData?.user?.balance_bux) || 0;
+        const balanceMicro = Math.floor(balanceBux * 1_000_000);
         const minBet = 50_000_000; // 50 BUX minimum
         if (balanceMicro < minBet) {
-          setMinesFeedback(`[${acc}] Balance too low (min 50 BUX)`, '#ff6b6b');
+          setMinesFeedback(`${acc} : balance too low (min 50 BUX)`, '#ff6b6b');
           return;
         }
 
-        // 2. Cancel any active round first
-        await fetch('https://rollbux.com/_api/games/mines/cashout', {
+        // 2. Cancel any stuck active round via our proxy (avoids CORS)
+        await fetch('/api/mines/cashout', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
-          body: JSON.stringify({}),
-          credentials: 'include'
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: acc })
         }).catch(() => {});
 
         // 3. Start round: all-in, 1 mine
-        setMinesFeedback(`[${acc}] Starting mines (${(balanceMicro/1_000_000).toFixed(2)} BUX)...`, '#acff46');
+        setMinesFeedback(`${acc} : ${balanceBux.toFixed(2)} BUX`, '#acff46');
         const startRes = await fetch('/api/mines/start', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: acc, amount_micro_tokens: balanceMicro, number_of_mines: 1 })
         });
         const startData = await startRes.json();
-        if (!startRes.ok || !startData.success) throw new Error(startData.error || 'Start failed');
+        if (!startRes.ok || !startData.success) {
+          const msg = typeof startData.error === 'object' ? JSON.stringify(startData.error) : (startData.error || 'start failed');
+          throw new Error(msg);
+        }
 
         // 4. Reveal 3 tiles (indices 0, 1, 2)
         for (let i = 0; i < 3; i++) {
           await new Promise(r => setTimeout(r, 800));
-          setMinesFeedback(`[${acc}] Revealing tile ${i + 1}/3...`, '#acff46');
+          setMinesFeedback(`${acc} : tile ${i + 1}/3`, '#acff46');
           const revRes = await fetch('/api/mines/reveal', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -2530,36 +2533,38 @@
           });
           const revData = await revRes.json();
           if (!revRes.ok || !revData.success) {
-            if (revData?.error?.includes('mine') || revData?.exploded) {
-              setMinesFeedback(`[${acc}] 💥 Hit a mine! Round lost.`, '#ff6b6b');
+            if (revData?.exploded) {
+              setMinesFeedback(`${acc} : 💥 mine hit`, '#ff6b6b');
               return;
             }
-            throw new Error(revData.error || 'Reveal failed');
+            const msg = typeof revData.error === 'object' ? JSON.stringify(revData.error) : (revData.error || 'reveal failed');
+            throw new Error(msg);
           }
         }
 
         // 5. Cashout
         await new Promise(r => setTimeout(r, 500));
-        setMinesFeedback(`[${acc}] Cashing out...`, '#acff46');
+        setMinesFeedback(`${acc} : cashing out...`, '#acff46');
         const cashRes = await fetch('/api/mines/cashout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: acc })
         });
         const cashData = await cashRes.json();
-        if (!cashRes.ok || !cashData.success) throw new Error(cashData.error || 'Cashout failed');
+        if (!cashRes.ok || !cashData.success) {
+          const msg = typeof cashData.error === 'object' ? JSON.stringify(cashData.error) : (cashData.error || 'cashout failed');
+          throw new Error(msg);
+        }
 
         const won = cashData.payout_bux || '?';
-        setMinesFeedback(`[${acc}] ✓ Cashed out! ${won} BUX`, '#acff46');
-        console.log(`[AutoMines][${acc}] Round complete. Payout:`, won);
+        setMinesFeedback(`${acc} : ✓ ${won} BUX`, '#acff46');
 
       } catch (e) {
-        setMinesFeedback(`[${acc}] Error: ${e.message}`, '#ff6b6b');
-        console.error(`[AutoMines][${acc}]`, e.message);
+        const msg = e instanceof Error ? e.message : JSON.stringify(e);
+        setMinesFeedback(`${acc} : ${msg}`, '#ff6b6b');
       } finally {
         isMinesExecuting = false;
         if (minesManualPlayBtn) { minesManualPlayBtn.disabled = false; minesManualPlayBtn.classList.remove('opacity-50'); }
-        // Schedule next round if auto is still on
         scheduleMinesLoop();
       }
     }
