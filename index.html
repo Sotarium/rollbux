@@ -421,7 +421,7 @@
 
                       <!-- Feedback + Manual Play Button -->
                       <div class="relative z-10 flex items-center gap-2 w-full">
-                        <span id="upgraderFeedback" class="text-xs text-[#9aa3a8] truncate flex-1">Ready to upgrade...</span>
+                        <span id="upgraderFeedback" class="text-xs text-[#9aa3a8] truncate flex-1">Ready</span>
                         <button id="upgraderManualPlayBtn" type="button" class="shrink-0 px-4 py-2 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white text-xs font-bold rounded-lg transition active:scale-95 shadow-sm">
                           Play
                         </button>
@@ -2029,8 +2029,8 @@
       const startOffset = upgraderAngle / 360;
 
       if (upgraderFeedback) {
-        upgraderFeedback.textContent = isAuto ? '⚡ Auto-Upgrading: Contacting RollBux...' : 'Sending Upgrade bet...';
-        upgraderFeedback.className = 'text-xs text-[#acff46] font-semibold truncate flex-1';
+        upgraderFeedback.textContent = 'Upgrading...';
+        upgraderFeedback.className = 'text-xs text-[#a78bfa] font-medium truncate flex-1';
       }
       if (upgraderManualPlayBtn) {
         upgraderManualPlayBtn.disabled = true;
@@ -2055,13 +2055,12 @@
         if (data.success) {
           const item = data.targetItem || {};
           const won = data.won;
-          const rollFormatted = Number(data.roll).toLocaleString('en-US');
           if (won) {
-            upgraderFeedback.innerHTML = `<span class="text-[#50f07b] font-bold">🎉 WON!</span> Won <strong class="text-white">${item.name || 'Item'}</strong> (${item.priceBux || '?'} BUX) | Roll: ${rollFormatted}`;
-            upgraderFeedback.className = 'text-xs text-[#50f07b] truncate flex-1';
+            upgraderFeedback.textContent = `Won ${item.name || 'Item'} !`;
+            upgraderFeedback.className = 'text-xs text-[#50f07b] font-bold truncate flex-1';
           } else {
-            upgraderFeedback.innerHTML = `<span class="text-[#ff6b6b] font-bold">❌ LOST</span> Staked ${data.stakeBux} BUX on ${mult}x | Roll: ${rollFormatted}`;
-            upgraderFeedback.className = 'text-xs text-[#ff6b6b] truncate flex-1';
+            upgraderFeedback.textContent = 'Lost.';
+            upgraderFeedback.className = 'text-xs text-[#ff6b6b] font-bold truncate flex-1';
           }
           // Refresh user data immediately to sync balance and inventory
           fetchUserData();
