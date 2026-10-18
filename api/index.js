@@ -1650,12 +1650,12 @@ export default async function handler(req, res) {
         headers: { ...minesHeaders(sessionToken), 'Idempotency-Key': idKey },
         body: JSON.stringify({ tile_index: payload.tile_index })
       });
-      const rbData = await rbRes.json();
-      // If we hit a mine the API still returns 200 but marks it
-      const exploded = rbData?.data?.exploded === true || rbData?.exploded === true;
+      const rbData = await rbRes.json().catch(() => ({}));
+      const exploded = rbData?.data?.exploded === true || rbData?.exploded === true || rbData?.data?.mine === true;
       if (!rbRes.ok) {
-        res.statusCode = 400;
-        res.end(JSON.stringify({ success: false, exploded, error: rbData?.message || rbData?.error || 'Reveal failed' }));
+        console.error('[API Mines Reveal Failed]', rbRes.status, rbData);
+        res.statusCode = rbRes.status || 400;
+        res.end(JSON.stringify({ success: false, exploded, error: rbData?.message || rbData?.error || 'Reveal failed', details: rbData }));
         return;
       }
       res.setHeader('Content-Type', 'application/json');
@@ -1685,11 +1685,12 @@ export default async function handler(req, res) {
       if (!rbRes.ok) {
         console.error('[API Mines Cashout Failed]', rbRes.status, rbData);
         res.statusCode = rbRes.status || 400;
-        res.end(JSON.stringify({ success: false, status: rbRes.status, error: rbData?.message || rbData?.error || 'Cashout failed', details: rbData }));
+        const errMessage = rbData?.message || (typeof rbData?.error === 'string' ? rbData.error : (rbData?.error?.message || 'Cashout failed'));
+        res.end(JSON.stringify({ success: false, status: rbRes.status, error: errMessage, details: rbData }));
         return;
       }
       // Extract payout in BUX
-      const payoutMicro = rbData?.data?.payout || rbData?.data?.amount || rbData?.payout || 0;
+      const payoutMicro = rbData?.data?.payout || rbData?.data?.amount || rbData?.payout || rbData?.amount || 0;
       const payoutBux = (payoutMicro / 1_000_000).toFixed(2);
       res.setHeader('Content-Type', 'application/json');
       res.statusCode = 200;
