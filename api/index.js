@@ -78,6 +78,56 @@ export default async function handler(req, res) {
     return;
   }
 
+  // Roach Config (Auto Messages on/off toggle)
+  if (pathname === '/api/roach/config') {
+    const url = process.env.UPSTASH_REDIS_REST_URL || "https://flowing-chigger-149490.upstash.io";
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    if (!token) {
+      res.status(200).json({ auto_messages: false, error: "Upstash token missing" });
+      return;
+    }
+
+    if (req.method === 'GET') {
+      try {
+        const resp = await fetch(`${url}/get/roach%3Aconfig`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await resp.json();
+        const conf = data.result ? JSON.parse(data.result) : { auto_messages: false };
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).json(conf);
+      } catch (err) {
+        res.status(500).json({ auto_messages: false, error: err.message });
+      }
+      return;
+    }
+
+    if (req.method === 'POST') {
+      if (!isAllowedIp(req)) {
+        res.statusCode = 403;
+        res.end('Forbidden');
+        return;
+      }
+      try {
+        const payload = req.body || await parseBody(req);
+        const autoMessagesVal = Boolean(payload.auto_messages);
+        const configObj = { auto_messages: autoMessagesVal, updated_at: new Date().toISOString() };
+        
+        await fetch(`${url}/pipeline`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify([["SET", "roach:config", JSON.stringify(configObj)]])
+        });
+
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).json({ success: true, config: configObj });
+      } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+      }
+      return;
+    }
+  }
+
   // Multi-Account Management Routes
   if (pathname === '/api/roach/accounts') {
     if (!isAllowedIp(req)) {

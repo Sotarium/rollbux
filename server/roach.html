@@ -21,9 +21,18 @@
           <p class="text-xs text-gray-400">Headless RollBux Rain Auto-Joiner • Always-On Cloud Serverless</p>
         </div>
       </div>
-      <div class="flex items-center space-x-2">
-        <span class="inline-block w-2.5 h-2.5 rounded-full bg-[#acff46] animate-pulse"></span>
-        <span id="botStatus" class="text-xs font-semibold text-[#acff46] uppercase">Cloud Active</span>
+      <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-2 bg-white/5 px-3 py-1.5 rounded-lg border border-white/10">
+          <span class="text-xs font-semibold text-gray-300">Auto Messages</span>
+          <label class="relative inline-flex items-center cursor-pointer select-none">
+            <input type="checkbox" id="roachAutoMessagesToggle" class="sr-only peer">
+            <div class="w-8 h-4.5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-[#acff46]"></div>
+          </label>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-[#acff46] animate-pulse"></span>
+          <span id="botStatus" class="text-xs font-semibold text-[#acff46] uppercase">Cloud Active</span>
+        </div>
       </div>
     </div>
 
@@ -283,6 +292,37 @@
       }
     });
 
+    // Auto Messages Toggle
+    const roachAutoMessagesToggle = document.getElementById('roachAutoMessagesToggle');
+    async function loadRoachConfig() {
+      try {
+        const res = await fetch('/api/roach/config');
+        if (res.ok) {
+          const cfg = await res.json();
+          if (roachAutoMessagesToggle) {
+            roachAutoMessagesToggle.checked = Boolean(cfg.auto_messages);
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    if (roachAutoMessagesToggle) {
+      roachAutoMessagesToggle.addEventListener('change', async () => {
+        try {
+          await fetch('/api/roach/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ auto_messages: roachAutoMessagesToggle.checked })
+          });
+        } catch (e) {
+          console.error(e);
+        }
+      });
+    }
+
+    loadRoachConfig();
     fetchAccounts();
     setInterval(updateStatus, 3000);
     updateStatus();

@@ -90,7 +90,12 @@ export default async function handler(req, res) {
 
     log(`Cycle: ${cycleId.slice(0, 8)} | Status: ${status} | Ends In: ${secondsRemaining}s | Pot: ${livePool}`);
 
-    // 2. Fetch all registered accounts from Upstash
+    // 2. Fetch config and all registered accounts from Upstash
+    let configRaw = await redis('get', 'roach:config');
+    let roachConfig = configRaw ? JSON.parse(configRaw) : { auto_messages: false };
+    const autoMessagesEnabled = Boolean(roachConfig.auto_messages);
+    log(`Auto Messages setting: ${autoMessagesEnabled ? 'ENABLED' : 'DISABLED'}`);
+
     let accountsRaw = await redis('get', 'roach:accounts');
     let accounts = accountsRaw ? JSON.parse(accountsRaw) : [];
 
@@ -167,50 +172,52 @@ export default async function handler(req, res) {
       } catch (e) {}
 
       // Synchronized Chat Schedule (3 messages evenly spaced):
-      // Message 1: at ~40 min left (secondsRemaining <= 2400)
-      // Message 2: at ~20 min left (secondsRemaining <= 1200)
-      // Message 3: at ~3.5 min left (secondsRemaining <= 220)
+      // Only active if autoMessagesEnabled is true
       const chatKey = `roach:chat_count:${cycleId}:${accId}`;
       let chatCount = parseInt((await redis('get', chatKey)) || '0', 10);
 
-      const targetCount = secondsRemaining <= 220 ? 3 : (secondsRemaining <= 1200 ? 2 : (secondsRemaining <= 2400 ? 1 : 0));
+      if (autoMessagesEnabled) {
+        const targetCount = secondsRemaining <= 220 ? 3 : (secondsRemaining <= 1200 ? 2 : (secondsRemaining <= 2400 ? 1 : 0));
 
-      if (chatCount < targetCount && secondsRemaining > 90) {
-        const uniqueMsg = pickUniqueMsgForAccount(i);
+        if (chatCount < targetCount && secondsRemaining > 90) {
+          const uniqueMsg = pickUniqueMsgForAccount(i);
 
-        const chatRes = await rollbuxFetch('/users/chat', token, {
-          method: 'POST',
-          headers: { "Content-Type": "application/json" },
-          body: { message: uniqueMsg }
-        });
-
-        if (chatRes.ok) {
-          chatCount += 1;
-          await redis('set', chatKey, chatCount);
-          log(`[${accName}] Synchronized chat sent: "${uniqueMsg}" (${chatCount}/3)`);
-        }
-      }
-
-      // Emergency Chat Catchup: If short on time (<= 90s) and missing messages, send them right before join
-      if (chatCount < 3 && secondsRemaining <= 90 && status === 'COLLECTING') {
-        const missing = 3 - chatCount;
-        log(`[${accName}] Late on messages (${chatCount}/3), bursting ${missing} message(s) before joining...`);
-        for (let j = 0; j < missing; j++) {
-          const m = pickUniqueMsgForAccount(i + j + 1);
-          const res = await rollbuxFetch('/users/chat', token, {
+          const chatRes = await rollbuxFetch('/users/chat', token, {
             method: 'POST',
             headers: { "Content-Type": "application/json" },
-            body: { message: m }
+            body: { message: uniqueMsg }
           });
-          if (res.ok) {
+
+          if (chatRes.ok) {
             chatCount += 1;
             await redis('set', chatKey, chatCount);
-            log(`[${accName}] Catchup message ${chatCount}/3 sent ("${m}")`);
-            // Pause 5 to 7 seconds between burst messages
-            const burstDelay = Math.floor(5000 + Math.random() * 2000);
-            await new Promise(r => setTimeout(r, burstDelay));
+            log(`[${accName}] Synchronized chat sent: "${uniqueMsg}" (${chatCount}/3)`);
           }
         }
+
+        // Emergency Chat Catchup: If short on time (<= 90s) and missing messages, send them right before join
+        if (chatCount < 3 && secondsRemaining <= 90 && status === 'COLLECTING') {
+          const missing = 3 - chatCount;
+          log(`[${accName}] Late on messages (${chatCount}/3), bursting ${missing} message(s) before joining...`);
+          for (let j = 0; j < missing; j++) {
+            const m = pickUniqueMsgForAccount(i + j + 1);
+            const res = await rollbuxFetch('/users/chat', token, {
+              method: 'POST',
+              headers: { "Content-Type": "application/json" },
+              body: { message: m }
+            });
+            if (res.ok) {
+              chatCount += 1;
+              await redis('set', chatKey, chatCount);
+              log(`[${accName}] Catchup message ${chatCount}/3 sent ("${m}")`);
+              // Pause 5 to 7 seconds between burst messages
+              const burstDelay = Math.floor(5000 + Math.random() * 2000);
+              await new Promise(r => setTimeout(r, burstDelay));
+            }
+          }
+        }
+      } else {
+        log(`[${accName}] Auto Messages disabled; skipping chat (chat count: ${chatCount}).`);
       }
 
       // Join Engine: Join when <= 60s and not joined

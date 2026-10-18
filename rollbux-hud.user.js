@@ -996,31 +996,42 @@
                 updateHUDTimer(`${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
 
                 // WHEN SITE TIMER HITS 1 MINUTE (<= 60s):
-                // Send 3 times '.' (1 dot 3 times), and click Join Rain immediately when done!
-                if (currentRemainingSeconds <= 60 && !sentDotsForCurrentRain && !isSendingDots) {
+                // 1. Join Rain directly if not joined yet!
+                if (currentRemainingSeconds <= 60 && !joinedForCurrentRain) {
+                    if (clickJoinRain()) {
+                        joinedForCurrentRain = true;
+                        console.log('[Rain HUD] Successfully clicked Join Rain at ' + currentRemainingSeconds + 's remaining!');
+                    }
+                }
+
+                // 2. Chat dots sequence (if auto-chat is desired)
+                const autoChatEnabled = localStorage.getItem('rollbux_auto_messages') === 'true';
+                if (autoChatEnabled && currentRemainingSeconds <= 60 && !sentDotsForCurrentRain && !isSendingDots) {
                     sentDotsForCurrentRain = true;
                     isSendingDots = true;
 
                     (async () => {
                         try {
-                            console.log('[Rain HUD] 1 minute reached! Sending 3 dots (".") and joining rain...');
+                            console.log('[Rain HUD] 1 minute reached! Sending 3 dots (".") for eligibility...');
                             for (let i = 1; i <= 3; i++) {
                                 await sendChatDot(i);
                                 console.log(`[Rain HUD] Sent dot #${i}`);
                                 if (i < 3) await new Promise(r => setTimeout(r, 3800));
                             }
-                            // Right after sending 3 dots, click Join Rain immediately!
-                            await new Promise(r => setTimeout(r, 600));
-                            for (let j = 0; j < 5; j++) {
-                                if (clickJoinRain()) {
-                                    joinedForCurrentRain = true;
-                                    console.log('[Rain HUD] Successfully clicked Join Rain after 3 dots!');
-                                    break;
+                            // Re-attempt join if not joined yet
+                            if (!joinedForCurrentRain) {
+                                await new Promise(r => setTimeout(r, 600));
+                                for (let j = 0; j < 5; j++) {
+                                    if (clickJoinRain()) {
+                                        joinedForCurrentRain = true;
+                                        console.log('[Rain HUD] Successfully clicked Join Rain after chat dots!');
+                                        break;
+                                    }
+                                    await new Promise(r => setTimeout(r, 800));
                                 }
-                                await new Promise(r => setTimeout(r, 800));
                             }
                         } catch (err) {
-                            console.error('[Rain HUD] Error during chat/join sequence:', err);
+                            console.error('[Rain HUD] Error during chat sequence:', err);
                         } finally {
                             isSendingDots = false;
                         }

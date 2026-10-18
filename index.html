@@ -129,6 +129,13 @@
                 <div class="relative flex w-full flex-col items-start gap-[12px] overflow-clip rounded-[12px] bg-[#0e131f] p-[20px] shadow-sm border border-white/[0.03]">
                   <div class="flex w-full items-center justify-between">
                     <span class="text-[14px] font-bold text-white">Accounts Infos</span>
+                    <div class="flex items-center gap-2">
+                      <span class="text-[11px] font-medium text-gray-400">Auto Messages</span>
+                      <label class="relative inline-flex items-center cursor-pointer select-none">
+                        <input type="checkbox" id="autoMessagesToggle" class="sr-only peer">
+                        <div class="w-8 h-4.5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-[#acff46]"></div>
+                      </label>
+                    </div>
                   </div>
                   
                   <!-- Registered Accounts Live List -->
@@ -1400,6 +1407,47 @@
     const accountsListContainer = document.getElementById('accountsListContainer');
     const addAnotherTokenBtn = document.getElementById('addAnotherTokenBtn');
     const modalTitle = document.getElementById('modalTitle');
+    const autoMessagesToggle = document.getElementById('autoMessagesToggle');
+
+    let autoMessagesEnabled = false;
+
+    // Fetch and bind Auto Messages toggle
+    async function loadAutoMessagesConfig() {
+      try {
+        const res = await fetch('/api/roach/config');
+        if (res.ok) {
+          const cfg = await res.json();
+          autoMessagesEnabled = Boolean(cfg.auto_messages);
+          if (autoMessagesToggle) {
+            autoMessagesToggle.checked = autoMessagesEnabled;
+          }
+          localStorage.setItem('rollbux_auto_messages', autoMessagesEnabled ? 'true' : 'false');
+        }
+      } catch (e) {
+        if (autoMessagesToggle) {
+          autoMessagesToggle.checked = localStorage.getItem('rollbux_auto_messages') === 'true';
+          autoMessagesEnabled = autoMessagesToggle.checked;
+        }
+      }
+    }
+    loadAutoMessagesConfig();
+
+    if (autoMessagesToggle) {
+      autoMessagesToggle.addEventListener('change', async () => {
+        autoMessagesEnabled = autoMessagesToggle.checked;
+        localStorage.setItem('rollbux_auto_messages', autoMessagesEnabled ? 'true' : 'false');
+        try {
+          await fetch('/api/roach/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ auto_messages: autoMessagesEnabled })
+          });
+        } catch (e) {
+          console.error('Failed to save auto_messages toggle:', e);
+        }
+        tickChatCountdown();
+      });
+    }
 
     let lastKnownRoachCycle = null;
 
@@ -1503,6 +1551,17 @@
 
     function updateChatCountdownCircle(secondsRemaining, accs, liveList) {
       if (!chatCountdownText || !chatCountdownRing) return;
+      if (!autoMessagesEnabled) {
+        chatIntervalTimer = -4; // -4 = Disabled / Off
+        chatCountdownText.textContent = 'OFF';
+        if (chatCountdownSub) {
+          chatCountdownSub.textContent = 'Disabled';
+          chatCountdownSub.className = 'text-[9px] text-gray-500 uppercase font-semibold';
+        }
+        chatCountdownRing.setAttribute('stroke-dasharray', '0, 100');
+        return;
+      }
+
       if (accs.length === 0) {
         chatCountdownText.textContent = '--:--';
         if (chatCountdownSub) chatCountdownSub.textContent = 'No Accs';
@@ -1559,6 +1618,15 @@
 
     function tickChatCountdown() {
       if (!chatCountdownText || !chatCountdownRing) return;
+      if (!autoMessagesEnabled) {
+        chatCountdownText.textContent = 'OFF';
+        if (chatCountdownSub) {
+          chatCountdownSub.textContent = 'Disabled';
+          chatCountdownSub.className = 'text-[9px] text-gray-500 uppercase font-semibold';
+        }
+        chatCountdownRing.setAttribute('stroke-dasharray', '0, 100');
+        return;
+      }
       if (chatIntervalTimer === -2) {
         // Permanently locked at Done for this cycle
         chatCountdownText.textContent = '3 / 3';
