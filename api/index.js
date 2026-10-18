@@ -877,23 +877,28 @@ export default async function handler(req, res) {
       const totalCostBux = currentCostMicro / 1000000;
 
       // 5. Construct battle payload matching RollBux format
+      // In battles, cases array specifies distinct case IDs and rounds array specifies the case order for each round
+      const caseIds = selectedCases.map(c => c.id);
+      const isCrazy = payload.crazy_mode !== undefined ? Boolean(payload.crazy_mode) : (Math.random() < 0.5);
+
       const battleBody = {
         game_mode: {
-          type: "standard",
-          mode: "1v1"
+          type: "team",
+          mode: "3v3"
         },
-        player_count: 2,
-        team_size: 1,
-        cases: selectedCases.map(c => c.id),
+        player_count: 6,
+        team_size: 3,
+        cases: caseIds,
+        rounds: caseIds,
         modifiers: {
-          crazy_mode: false,
+          crazy_mode: isCrazy,
           jackpot: false
         },
         settings: {
           special_spin: true,
           fast_open: false,
           private_mode: false,
-          borrow: borrowEnabled ? { percentage: 80 } : null
+          borrow: borrowEnabled ? { percentage: 80 } : undefined
         }
       };
 
@@ -909,7 +914,22 @@ export default async function handler(req, res) {
       try { createJson = JSON.parse(createText); } catch (e) {}
 
       if (!createResp.ok) {
-        let errMsg = createJson?.message || createJson?.error || createText || "Failed to create battle";
+        let errMsg = "Failed to create battle";
+        if (createJson?.error) {
+          if (typeof createJson.error === 'string') {
+            errMsg = createJson.error;
+          } else if (createJson.error.message) {
+            errMsg = createJson.error.message;
+            if (createJson.error.details) errMsg += ': ' + JSON.stringify(createJson.error.details);
+          } else {
+            errMsg = JSON.stringify(createJson.error);
+          }
+        } else if (createJson?.message) {
+          errMsg = typeof createJson.message === 'string' ? createJson.message : JSON.stringify(createJson.message);
+        } else if (createText) {
+          errMsg = createText.slice(0, 200);
+        }
+        console.error(`[AutoBattle Error ${createResp.status}]:`, errMsg);
         res.status(createResp.status).json({ success: false, error: errMsg });
         return;
       }

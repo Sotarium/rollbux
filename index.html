@@ -467,37 +467,29 @@
                         </label>
                       </div>
 
-                      <!-- Filter: Price 0 - 5,000 BUX badge -->
-                      <div class="relative z-10 flex items-center justify-between p-2 rounded-lg bg-[#131a29] border border-white/5 w-full">
-                        <div class="flex items-center gap-1.5">
-                          <span class="text-[11px] font-semibold text-[#9aa3a8]">Price Filter:</span>
-                        </div>
-                        <div class="flex items-center gap-1 px-2 py-0.5 rounded bg-white/5 border border-white/5 text-[11px] font-bold text-white">
-                          <img src="https://rollbux.com/icons/token.png" alt="" class="size-3.5">
-                          <span>0 - 5,000 BUX</span>
-                        </div>
+                      <!-- Crazy Mode 50/50 Chance Toggle -->
+                      <div class="relative z-10 w-full">
+                        <label for="battleCrazyModeToggle" class="transition-all hover:bg-neutral-800/60 px-3 py-2.5 rounded-lg flex items-center justify-between gap-2 bg-[#131a29] border border-white/[0.06] shadow-sm cursor-pointer select-none">
+                          <span class="flex items-center space-x-2">
+                            <!-- Crazy Mode Vortex SVG Icon -->
+                            <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg" class="size-5 text-[#8b5cf6] shrink-0">
+                              <path d="M27.9008 31.6231L17.3403 43.451C16.9427 43.8963 16.246 43.8963 15.8484 43.451L5.28781 31.6231C4.71244 30.9787 5.16985 29.9571 6.03375 29.9571H8.94142C9.49371 29.9571 9.93803 29.5096 9.98256 28.9591C10.4323 23.3987 14.5962 15.933 23.759 12.5572C30.1536 10.2013 35.6029 12.5258 38.5717 14.7543C39.2441 15.2591 38.885 16.2423 38.0545 16.373C28.647 17.8535 24.3435 24.5623 23.0383 28.7787C22.8517 29.3815 23.3242 29.9571 23.9552 29.9571H27.1549C28.0188 29.9571 28.4762 30.9787 27.9008 31.6231Z" fill="currentColor"></path>
+                              <path d="M31.8995 28.8029L42.46 16.9751C42.8576 16.5298 43.5543 16.5298 43.9519 16.9751L54.5125 28.8029C55.0879 29.4473 54.6304 30.4689 53.7665 30.4689L50.8589 30.4689C50.3066 30.4689 49.8623 30.9164 49.8177 31.4669C49.368 37.0273 45.2041 44.493 36.0413 47.8688C29.6467 50.2247 24.1974 47.9002 21.2286 45.6717C20.5562 45.167 20.9153 44.1837 21.7458 44.053C31.1533 42.5725 35.4568 35.8637 36.7619 31.6473C36.9485 31.0445 36.4761 30.4689 35.845 30.4689L32.6454 30.4689C31.7815 30.4689 31.3241 29.4473 31.8995 28.8029Z" fill="currentColor"></path>
+                            </svg>
+                            <span class="font-semibold text-xs text-white">50/50 Crazy Mode</span>
+                          </span>
+                          <!-- Switch Input -->
+                          <div class="relative inline-flex items-center">
+                            <input type="checkbox" id="battleCrazyModeToggle" checked class="sr-only peer">
+                            <div class="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#8b5cf6]"></div>
+                          </div>
+                        </label>
                       </div>
 
-                      <!-- Filter: Sort By Rarity (Low to High) -->
+                      <!-- 3v3 Mode Badge -->
                       <div class="relative z-10 flex items-center justify-between p-2 rounded-lg bg-[#131a29] border border-white/5 w-full">
-                        <div class="flex items-center gap-1.5">
-                          <span class="text-[11px] font-semibold text-[#9aa3a8]">Sort By:</span>
-                        </div>
-                        <div class="flex items-center gap-1 px-2 py-0.5 rounded bg-white/5 border border-white/5 text-[11px] font-bold text-[#acff46]">
-                          <span>Rarity (Low to High)</span>
-                        </div>
-                      </div>
-
-                      <!-- Total Cost Indicator (Closest to Account Balance) -->
-                      <div class="relative z-10 flex items-center justify-between p-2.5 rounded-lg bg-[#131a29] border border-[#acff46]/20 w-full">
-                        <div class="flex flex-col">
-                          <span class="text-[10px] font-bold uppercase tracking-wider text-[#9aa3a8]">Target Battle Cost</span>
-                          <span class="text-[9px] text-[#acff46]">Closest to Account Balance</span>
-                        </div>
-                        <div class="flex items-center gap-1.5">
-                          <img src="https://rollbux.com/icons/token.png" alt="Coin" class="size-4 shrink-0">
-                          <span id="battleTotalCostPreview" class="text-sm font-bold text-white font-mono">Auto (Balance)</span>
-                        </div>
+                        <span class="text-[11px] font-semibold text-[#9aa3a8]">Game Mode</span>
+                        <span class="px-2 py-0.5 rounded bg-[#acff46]/10 border border-[#acff46]/20 text-[11px] font-extrabold text-[#acff46] tracking-wider">3v3</span>
                       </div>
 
                       <!-- Action Feedback & Manual Battle Create Button -->
@@ -2311,9 +2303,12 @@
 
       const currentAccount = accountName || targetUsername;
       const borrowMode = battleBorrowToggle ? battleBorrowToggle.checked : true;
+      const crazyModeChecked = battleCrazyModeToggle ? battleCrazyModeToggle.checked : true;
+      // If 50/50 toggle is on, 50% chance of true; otherwise false
+      const isCrazyMode = crazyModeChecked ? (Math.random() < 0.5) : false;
 
       if (battleFeedback) {
-        battleFeedback.textContent = `[${currentAccount}] Creating battle...`;
+        battleFeedback.textContent = `[${currentAccount}] Creating 3v3 battle (Crazy: ${isCrazyMode ? 'Yes' : 'No'})...`;
         battleFeedback.className = 'text-xs text-[#acff46] font-medium truncate flex-1';
       }
       if (battleManualCreateBtn) {
@@ -2327,14 +2322,16 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             username: currentAccount,
-            borrow: borrowMode
+            borrow: borrowMode,
+            crazy_mode: isCrazyMode,
+            mode: "3v3"
           })
         });
 
         const data = await res.json();
 
         if (!res.ok || !data.success) {
-          const errText = data?.error || 'Failed to create battle';
+          const errText = typeof data?.error === 'object' ? JSON.stringify(data.error) : (data?.error || 'Failed to create battle');
           if (battleFeedback) {
             battleFeedback.textContent = `[${currentAccount}] ${errText}`;
             battleFeedback.className = 'text-xs text-red-400 truncate flex-1';
