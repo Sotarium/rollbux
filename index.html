@@ -2176,7 +2176,7 @@
         if (key === targetUsername.toLowerCase()) {
           balance = (liveUserData && liveUserData.user && liveUserData.user.balance_bux) || (userData && userData.user && userData.user.balance_bux) || 0;
         } else {
-          // Check cached DB user balance or fetch
+          // Check cached DB user balance
           try {
             const uRes = await fetch(`/api/user/${encodeURIComponent(accName)}`);
             if (uRes.ok) {
@@ -2191,8 +2191,6 @@
           console.log(`[AutoUpgrader][${accName}] Active! Balance is ${balance.toFixed(2)} BUX (>= ${minRequired} BUX). Executing automatic upgrade...`);
           await executeUpgraderPlay(true, accName);
           break; // Process one account per cycle to avoid concurrency conflicts
-        } else {
-          console.log(`[AutoUpgrader][${accName}] Waiting... Balance is ${balance.toFixed(2)} BUX (need >= ${minRequired} BUX).`);
         }
       }
     }

@@ -441,12 +441,12 @@ export default async function handler(req, res) {
         startOffset = Math.random();
       }
 
+      // RollBux calculates win width as (end >= start ? end - start : end - start + 1.0)
+      // Must equal exactChance (rounded to 6 decimal places / micro precision)
       const startClamped = Number(startOffset.toFixed(6));
-      const startInt = Math.round(startClamped * Vt);
-      const chanceInt = Math.round(exactChance * Vt);
-      const rawEnd = Math.max(1, startInt) + chanceInt - 1;
-      const endNormalized = (rawEnd > Vt ? rawEnd % Vt : rawEnd) / Vt;
-      const calculatedRange = [startClamped >= 1 ? 0.999999 : startClamped, endNormalized];
+      const endOffset = (startClamped + exactChance) % 1.0;
+      const endClamped = Number(endOffset.toFixed(6));
+      const calculatedRange = [startClamped, endClamped];
 
       // 7. Execute upgrade play on RollBux
       const idempotencyKey = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `upg_${Date.now()}_${Math.random().toString(36).substring(2)}`;
