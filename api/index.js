@@ -535,6 +535,7 @@ export default async function handler(req, res) {
 
       res.status(200).json({
         success: true,
+        account: acc ? acc.name : (targetName || 'Account'),
         won,
         autoSold,
         newBalanceBux: postBalanceBux,
@@ -761,6 +762,11 @@ export default async function handler(req, res) {
             const balData = await balResp.json();
             if (balData?.data?.token_balance !== undefined) {
               const liveBalBux = parseFloat((balData.data.token_balance / 1000000).toFixed(2));
+              handleAction({
+                action: 'balance_update',
+                username: accName,
+                balance: liveBalBux
+              });
               if (accName.toLowerCase() === username.toLowerCase()) {
                 handleAction({
                   action: 'balance_update',

@@ -2038,10 +2038,11 @@
     }
 
     // Play Execution logic
-    async function executeUpgraderPlay(isAuto = false) {
+    async function executeUpgraderPlay(isAuto = false, accountName = null) {
       if (isUpgraderExecuting) return;
       isUpgraderExecuting = true;
 
+      const currentAccount = accountName || targetUsername;
       const mult = parseFloat(upgraderMultiplierInput?.value || '2.0');
       const isRandom = Boolean(upgraderRandomPosCheck?.checked);
 
@@ -2049,7 +2050,7 @@
       const startOffset = upgraderAngle / 360;
 
       if (upgraderFeedback) {
-        upgraderFeedback.textContent = 'Upgrading...';
+        upgraderFeedback.textContent = `[${currentAccount}] Upgrading...`;
         upgraderFeedback.className = 'text-xs text-[#a78bfa] font-medium truncate flex-1';
       }
       if (upgraderManualPlayBtn) {
@@ -2064,7 +2065,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            username: targetUsername,
+            username: currentAccount,
             multiplier: mult,
             betAmount: currentBetSetting,
             autoSell: isAutoSell,
@@ -2077,28 +2078,29 @@
         if (data.success) {
           const item = data.targetItem || {};
           const won = data.won;
+          const accLabel = data.account || currentAccount;
           if (won) {
             const soldSuffix = data.autoSold ? ' (Sold)' : '';
-            upgraderFeedback.textContent = `Won ${item.name || 'Item'}${soldSuffix} !`;
+            upgraderFeedback.textContent = `[${accLabel}] Won ${item.name || 'Item'}${soldSuffix} !`;
             upgraderFeedback.className = 'text-xs text-[#50f07b] font-bold truncate flex-1';
           } else {
-            upgraderFeedback.textContent = 'Lost.';
+            upgraderFeedback.textContent = `[${accLabel}] Lost.`;
             upgraderFeedback.className = 'text-xs text-[#ff6b6b] font-bold truncate flex-1';
           }
           // Refresh user data immediately to sync balance and inventory
           fetchUserData();
         } else {
           const errDetail = typeof data.error === 'object' ? JSON.stringify(data.error) : String(data.error || 'Unknown error');
-          upgraderFeedback.textContent = 'Upgrade failed: ' + errDetail;
+          upgraderFeedback.textContent = `[${currentAccount}] Upgrade failed: ` + errDetail;
           upgraderFeedback.className = 'text-xs text-[#ff6b6b] truncate flex-1';
-          console.error('[AutoUpgrader] Play API error:', errDetail);
+          console.error(`[AutoUpgrader][${currentAccount}] Play API error:`, errDetail);
         }
       } catch (e) {
         if (upgraderFeedback) {
-          upgraderFeedback.textContent = 'Network error: ' + e.message;
+          upgraderFeedback.textContent = `[${currentAccount}] Network error: ` + e.message;
           upgraderFeedback.className = 'text-xs text-red-400 truncate flex-1';
         }
-        console.error('[AutoUpgrader] Error:', e.message);
+        console.error(`[AutoUpgrader][${currentAccount}] Error:`, e.message);
       } finally {
         isUpgraderExecuting = false;
         if (upgraderManualPlayBtn) {
@@ -2121,19 +2123,36 @@
       });
     }
 
-    // Auto-trigger condition evaluator
-    let lastUpgraderPlayTime = 0;
-    function checkAutoUpgraderConditions(userData) {
+    // Auto-trigger condition evaluator across ALL registered accounts
+    const lastUpgraderAccountPlayTimes = {};
+    let cachedRegisteredAccounts = [];
+    let lastAccountsFetchTime = 0;
+
+    async function getRegisteredAccountsList() {
+      const now = Date.now();
+      if (cachedRegisteredAccounts.length > 0 && now - lastAccountsFetchTime < 30000) {
+        return cachedRegisteredAccounts;
+      }
+      try {
+        const res = await fetch('/api/roach/accounts');
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.accounts) && data.accounts.length > 0) {
+            cachedRegisteredAccounts = data.accounts;
+            lastAccountsFetchTime = now;
+            return cachedRegisteredAccounts;
+          }
+        }
+      } catch (e) {}
+      return [{ name: targetUsername }];
+    }
+
+    async function checkAutoUpgraderConditions(userData) {
       if (!upgraderMasterToggle || !upgraderMasterToggle.checked) return;
-      if (!userData || !userData.user) return;
       if (isUpgraderExecuting) return;
 
-      // Use the freshest balance available:
-      const balance = (liveUserData && liveUserData.user && liveUserData.user.balance_bux) || userData.user.balance_bux || 0;
+      const accounts = await getRegisteredAccountsList();
       const now = Date.now();
-
-      // Ensure at least 30s cooldown between automated bets to prevent spamming
-      if (now - lastUpgraderPlayTime < 30000) return;
 
       // Minimum required based on chosen bet amount
       let minRequired = 50;
@@ -2143,12 +2162,38 @@
         if (!isNaN(parsed) && parsed >= 50) minRequired = parsed;
       }
 
-      if (balance >= minRequired) {
-        lastUpgraderPlayTime = now;
-        console.log(`[AutoUpgrader] Active! Balance is ${balance.toFixed(2)} BUX (>= ${minRequired} BUX). Executing automatic upgrade...`);
-        executeUpgraderPlay(true);
-      } else {
-        console.log(`[AutoUpgrader] Waiting... Balance is ${balance.toFixed(2)} BUX (need >= ${minRequired} BUX).`);
+      // Check each registered account for eligibility
+      for (const acc of accounts) {
+        const accName = acc.name || 'Account';
+        const key = accName.toLowerCase().trim();
+
+        // 30s cooldown per individual account to prevent spamming
+        const lastPlay = lastUpgraderAccountPlayTimes[key] || 0;
+        if (now - lastPlay < 30000) continue;
+
+        // Determine account balance
+        let balance = 0;
+        if (key === targetUsername.toLowerCase()) {
+          balance = (liveUserData && liveUserData.user && liveUserData.user.balance_bux) || (userData && userData.user && userData.user.balance_bux) || 0;
+        } else {
+          // Check cached DB user balance or fetch
+          try {
+            const uRes = await fetch(`/api/user/${encodeURIComponent(accName)}`);
+            if (uRes.ok) {
+              const uData = await uRes.json();
+              balance = (uData && uData.user && uData.user.balance_bux) || 0;
+            }
+          } catch (e) {}
+        }
+
+        if (balance >= minRequired) {
+          lastUpgraderAccountPlayTimes[key] = now;
+          console.log(`[AutoUpgrader][${accName}] Active! Balance is ${balance.toFixed(2)} BUX (>= ${minRequired} BUX). Executing automatic upgrade...`);
+          await executeUpgraderPlay(true, accName);
+          break; // Process one account per cycle to avoid concurrency conflicts
+        } else {
+          console.log(`[AutoUpgrader][${accName}] Waiting... Balance is ${balance.toFixed(2)} BUX (need >= ${minRequired} BUX).`);
+        }
       }
     }
 

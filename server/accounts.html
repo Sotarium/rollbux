@@ -81,9 +81,11 @@
           <div class="relative w-full shrink-0 rounded-[12px] border border-white/[0.03] overflow-hidden" style="min-height: 164px;">
             <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
 
-            <!-- Table Column Headers: User | Rain Status | Action -->
-            <div class="relative z-10 grid grid-cols-[1fr_120px_40px] items-center gap-[12px] px-[16px] py-[14px] text-[13px] font-semibold tracking-[0.28px] text-[#9aa3a8] border-b border-white/[0.04]">
+            <!-- Table Column Headers: User | Balance | Messages | Rain Status | Action -->
+            <div class="relative z-10 grid grid-cols-[1fr_100px_100px_110px_40px] items-center gap-[12px] px-[16px] py-[14px] text-[13px] font-semibold tracking-[0.28px] text-[#9aa3a8] border-b border-white/[0.04]">
               <div>User</div>
+              <div class="text-right">Balance</div>
+              <div class="text-center">Messages</div>
               <div class="text-center">Rain Status</div>
               <div class="text-center"></div>
             </div>
@@ -214,16 +216,22 @@
         const userDb = usersDataMap[nameLower] || {};
         const ringColor = getAvatarRingColor(a.name);
         const isJoined = live.joined === true;
+        const chatCount = live.chat_count !== undefined ? live.chat_count : 0;
+        const balanceBux = userDb.balance_bux !== undefined ? userDb.balance_bux : 0;
 
         let statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-white/5 text-gray-400 border border-white/5">Waiting</span>';
         if (isJoined) {
           statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-green-950/80 text-[#acff46] border border-[#acff46]/30">Joined 🎉</span>';
         } else if (live.join_status && live.join_status.startsWith('FAILED')) {
-          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-red-950/60 text-red-400 border border-red-500/30">${live.join_status}</span>`;
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-red-950/60 text-red-400 border border-red-500/30 font-mono">${live.join_status.split(' ')[0]}</span>`;
+        } else if (chatCount >= 3) {
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#8b5cf6]/20 text-[#a78bfa] border border-[#8b5cf6]/30">Ready (< 60s)</span>';
         }
 
+        const chatBadge = `<span class="text-[12px] font-black tracking-tight ${chatCount >= 3 ? 'text-[#acff46]' : 'text-gray-300'}">${chatCount} / 3</span>`;
+
         return `
-          <div class="grid grid-cols-[1fr_120px_40px] items-center gap-[12px] relative min-h-[58px] px-[16px] py-[8px] transition-colors hover:bg-[rgba(255,255,255,0.02)] group" role="row">
+          <div class="grid grid-cols-[1fr_100px_100px_110px_40px] items-center gap-[12px] relative min-h-[58px] px-[16px] py-[8px] transition-colors hover:bg-[rgba(255,255,255,0.02)] group" role="row">
             
             <!-- User Column: Avatar ring + username -->
             <a href="/user/${encodeURIComponent(a.name)}" class="flex items-center gap-2.5 min-w-0 group/user">
@@ -234,6 +242,17 @@
                 ${a.name}
               </span>
             </a>
+
+            <!-- Balance Column -->
+            <div class="text-right">
+              <span class="text-[13px] font-bold text-white font-mono">${formatNumber(balanceBux)}</span>
+              <span class="text-[10px] text-[#9aa3a8] ml-0.5">BUX</span>
+            </div>
+
+            <!-- Messages Column -->
+            <div class="flex items-center justify-center">
+              ${chatBadge}
+            </div>
 
             <!-- Rain Status Column -->
             <div class="flex items-center justify-center">
