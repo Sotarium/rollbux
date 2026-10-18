@@ -399,20 +399,21 @@ export default async function handler(req, res) {
       const configData = await configResp.json();
       const rtpBP = configData?.data?.rtpBP || 9000; // default 90% RTP (9000 BP)
 
-      // 4. Fetch available target items
-      const targetGoalMicroTokens = Math.floor(stakeMicroTokens * targetMultiplier);
-      const targetsResp = await fetch("https://rollbux.com/_api/upgrader/targets?price=all&sortField=price&sortOrder=asc&limit=100", { headers: rollHeaders });
+      // 4. Fetch available target items starting at >= 1.1x stake
+      const minRequiredItemPrice = Math.ceil(stakeMicroTokens * 1.10);
+      const targetGoalMicroTokens = Math.max(minRequiredItemPrice, Math.floor(stakeMicroTokens * targetMultiplier));
+      const targetsResp = await fetch(`https://rollbux.com/_api/upgrader/targets?minPriceMicroTokens=${minRequiredItemPrice}&sortField=price&sortOrder=asc&limit=100`, { headers: rollHeaders });
       const targetsData = await targetsResp.json();
       const items = targetsData?.data?.items || [];
       if (items.length === 0) {
-        res.status(500).json({ success: false, error: "Could not fetch upgrader items catalog" });
+        res.status(400).json({ success: false, error: "No eligible upgrade items found worth at least 1.1x your stake" });
         return;
       }
 
-      // Find item closest to targetGoalMicroTokens (must be > stakeMicroTokens)
-      const eligibleItems = items.filter(it => it.priceMicroTokens > stakeMicroTokens);
+      // Filter to ensure every eligible item strictly satisfies the 1.1x rule:
+      const eligibleItems = items.filter(it => it.priceMicroTokens >= minRequiredItemPrice);
       if (eligibleItems.length === 0) {
-        res.status(400).json({ success: false, error: "No eligible upgrade items found above current stake" });
+        res.status(400).json({ success: false, error: "No eligible upgrade items found worth at least 1.1x your stake" });
         return;
       }
 
