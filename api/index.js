@@ -928,7 +928,7 @@ export default async function handler(req, res) {
         game_mode: "3v3",
         modifiers: {
           crazy_mode: isCrazy,
-          jackpot: false
+          jackpot: true
         },
         settings: {
           special_spin: true,
