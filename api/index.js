@@ -624,22 +624,20 @@ export default async function handler(req, res) {
           }
         } catch (e) {}
 
-        // Live Avatar (for main account)
-        if (accName.toLowerCase() === username.toLowerCase()) {
-          try {
-            const meResp = await fetch("https://rollbux.com/_api/users/me", { headers: rollHeaders });
-            if (meResp.ok) {
-              const meData = await meResp.json();
-              if (meData?.data?.user?.avatar_url) {
-                handleAction({
-                  action: 'rain_tick',
-                  username,
-                  avatar: meData.data.user.avatar_url
-                });
-              }
+        // Live Avatar for each account (so if player changes it, it updates immediately)
+        try {
+          const meResp = await fetch("https://rollbux.com/_api/users/me", { headers: rollHeaders });
+          if (meResp.ok) {
+            const meData = await meResp.json();
+            if (meData?.data?.user?.avatar_url) {
+              handleAction({
+                action: 'rain_tick',
+                username: accName,
+                avatar: meData.data.user.avatar_url
+              });
             }
-          } catch (e) {}
-        }
+          }
+        } catch (e) {}
 
         // Live Rain Transactions for this specific account
         try {
