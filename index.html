@@ -334,7 +334,10 @@
                   <!-- Right: Clean Auto Upgrader GUI -->
                   <div id="autoUpgraderSection" class="flex w-full flex-col items-start gap-[16px]">
                     <div class="flex w-full shrink-0 items-center justify-between">
-                      <p class="whitespace-nowrap text-[20px] leading-[30px] text-white font-bold italic">Auto Upgrader</p>
+                      <div class="flex items-center gap-2">
+                        <p class="whitespace-nowrap text-[20px] leading-[30px] text-white font-bold italic">Auto Upgrader</p>
+                        <span id="upgraderStatusBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-500/10 border border-red-500/20 text-red-400">Disabled</span>
+                      </div>
                       <!-- Master On/Off Switch -->
                       <label class="relative inline-flex items-center cursor-pointer select-none">
                         <input type="checkbox" id="upgraderMasterToggle" class="sr-only peer">
@@ -362,24 +365,16 @@
                             <circle cx="100" cy="100" r="70" fill="none" stroke="#121622" stroke-width="1.5" />
                             <circle cx="100" cy="100" r="86" fill="none" stroke="#242b3d" stroke-width="1.5" />
 
-                            <!-- Active Clean Purple Arc (No Glow) -->
+                            <!-- Active Clean Purple Arc (Smooth transition, shows exact play position on wheel) -->
                             <circle id="upgraderArc" cx="100" cy="100" r="78" fill="none" stroke="#8b5cf6" stroke-width="15"
                               stroke-dasharray="220.5 490.09" stroke-dashoffset="0"
-                              transform="rotate(-90 100 100)" />
-
-                            <!-- Ghost/Dashed Next Random Position Arc (shown when Auto Random ON) -->
-                            <circle id="upgraderNextArc" cx="100" cy="100" r="78" fill="none" stroke="#ffffff" stroke-width="15"
-                              stroke-dasharray="0 490.09" stroke-dashoffset="0" opacity="0"
-                              transform="rotate(-90 100 100)" stroke-linecap="butt" style="stroke-dashoffset:0;" />
+                              transform="rotate(-90 100 100)" style="transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), stroke-dasharray 0.2s ease;" />
 
                             <!-- End-Point 1 White Dot Knob (Start) -->
-                            <circle id="upgraderKnobStart" cx="100" cy="22" r="6.5" fill="#ffffff" stroke="#8b5cf6" stroke-width="2" class="filter drop-shadow" />
+                            <circle id="upgraderKnobStart" cx="100" cy="22" r="6.5" fill="#ffffff" stroke="#8b5cf6" stroke-width="2" class="filter drop-shadow" style="transition: cx 0.35s cubic-bezier(0.4, 0, 0.2, 1), cy 0.35s cubic-bezier(0.4, 0, 0.2, 1);" />
                             
                             <!-- End-Point 2 White Dot Knob (End) -->
-                            <circle id="upgraderKnobEnd" cx="100" cy="22" r="6.5" fill="#ffffff" stroke="#8b5cf6" stroke-width="2" class="filter drop-shadow" />
-
-                            <!-- Next random knob (ghost dot, shown when Auto Random ON) -->
-                            <circle id="upgraderNextKnob" cx="100" cy="22" r="5" fill="#ffffff" stroke="#a78bfa" stroke-width="1.5" opacity="0" />
+                            <circle id="upgraderKnobEnd" cx="100" cy="22" r="6.5" fill="#ffffff" stroke="#8b5cf6" stroke-width="2" class="filter drop-shadow" style="transition: cx 0.35s cubic-bezier(0.4, 0, 0.2, 1), cy 0.35s cubic-bezier(0.4, 0, 0.2, 1);" />
                           </svg>
 
                           <!-- Center Info: Big Bold Percentage -->
@@ -412,10 +407,12 @@
                         </label>
                       </div>
 
-                      <!-- Next spin position preview (only shows when Auto Random is ON) -->
-                      <div id="upgraderNextPosRow" class="hidden relative z-10 flex items-center justify-between px-2.5 py-2 rounded-lg bg-[#0c1018] border border-[#a78bfa]/20 w-full">
-                        <span class="text-[11px] font-semibold text-[#a78bfa] uppercase tracking-wider">Next spin position</span>
-                        <span id="upgraderNextPosLabel" class="text-[11px] font-mono font-bold text-white">— °</span>
+                      <!-- Feedback + Manual Play Button -->
+                      <div class="relative z-10 flex items-center gap-2 w-full">
+                        <span id="upgraderFeedback" class="text-xs text-[#9aa3a8] truncate flex-1">Ready to upgrade...</span>
+                        <button id="upgraderManualPlayBtn" type="button" class="shrink-0 px-4 py-2 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white text-xs font-bold rounded-lg transition active:scale-95 shadow-sm">
+                          Play
+                        </button>
                       </div>
 
                     </div>
@@ -1798,10 +1795,6 @@
     const upgraderFeedback = document.getElementById('upgraderFeedback');
     const upgraderWheelContainer = document.getElementById('upgraderWheelContainer');
     const upgraderArc = document.getElementById('upgraderArc');
-    const upgraderNextArc = document.getElementById('upgraderNextArc');
-    const upgraderNextKnob = document.getElementById('upgraderNextKnob');
-    const upgraderNextPosRow = document.getElementById('upgraderNextPosRow');
-    const upgraderNextPosLabel = document.getElementById('upgraderNextPosLabel');
     const upgraderKnobStart = document.getElementById('upgraderKnobStart');
     const upgraderKnobEnd = document.getElementById('upgraderKnobEnd');
     const upgraderChanceDisplay = document.getElementById('upgraderChanceDisplay');
@@ -1812,11 +1805,9 @@
     const UPGRADER_RADIUS = 78;
     const UPGRADER_CIRCUMFERENCE = 2 * Math.PI * UPGRADER_RADIUS; // 490.09
     let upgraderAngle = parseFloat(localStorage.getItem('rollbux_upgrader_angle') || '0'); // degrees 0-360
-    let nextRandomAngle = parseFloat(localStorage.getItem('rollbux_upgrader_next_angle') || (Math.random() * 360).toFixed(2)); // pre-rolled next random angle
     let isDraggingKnob = false;
     let isUpgraderExecuting = false;
     let lastUpgraderTxCount = -1;
-
 
     // Load saved settings
     if (localStorage.getItem('rollbux_upgrader_active') === 'true' && upgraderMasterToggle) {
@@ -1824,6 +1815,11 @@
     }
     if (localStorage.getItem('rollbux_upgrader_random') === 'true' && upgraderRandomPosCheck) {
       upgraderRandomPosCheck.checked = true;
+      // If random is on, ensure we have an active position on the wheel
+      if (!localStorage.getItem('rollbux_upgrader_angle')) {
+        upgraderAngle = Math.floor(Math.random() * 360);
+        localStorage.setItem('rollbux_upgrader_angle', upgraderAngle.toFixed(2));
+      }
     }
     const savedMult = localStorage.getItem('rollbux_upgrader_multiplier');
     if (savedMult && upgraderMultiplierInput) {
@@ -1858,10 +1854,10 @@
       return chance;
     }
 
+    // Displays the EXACT play position directly on the wheel arc and knobs
     function updateUpgraderWheelUI() {
       const mult = parseFloat(upgraderMultiplierInput?.value || '2.0');
       const chance = calculateUpgraderChance(mult);
-      const isRandom = upgraderRandomPosCheck?.checked;
 
       if (upgraderMultiplierLabel) {
         upgraderMultiplierLabel.textContent = `${mult.toFixed(2)}x`;
@@ -1871,12 +1867,12 @@
       const arcLen = (chance / 100) * UPGRADER_CIRCUMFERENCE;
       if (upgraderArc) {
         upgraderArc.setAttribute('stroke-dasharray', `${arcLen.toFixed(2)} ${UPGRADER_CIRCUMFERENCE.toFixed(2)}`);
-        // Starts at angle (upgraderAngle - 90deg)
+        // The arc sits exactly at the play position
         upgraderArc.setAttribute('transform', `rotate(${(upgraderAngle - 90).toFixed(2)} 100 100)`);
-        upgraderArc.style.opacity = isRandom ? '0.18' : '1';
+        upgraderArc.style.opacity = '1';
       }
 
-      // Compute exact positions of start and end white knobs
+      // Compute exact positions of start and end white knobs on the circle
       const startRad = (upgraderAngle - 90) * (Math.PI / 180);
       const startX = 100 + UPGRADER_RADIUS * Math.cos(startRad);
       const startY = 100 + UPGRADER_RADIUS * Math.sin(startRad);
@@ -1889,49 +1885,20 @@
       if (upgraderKnobStart) {
         upgraderKnobStart.setAttribute('cx', startX.toFixed(2));
         upgraderKnobStart.setAttribute('cy', startY.toFixed(2));
-        upgraderKnobStart.style.opacity = isRandom ? '0.15' : '1';
+        upgraderKnobStart.style.opacity = '1';
       }
       if (upgraderKnobEnd) {
         upgraderKnobEnd.setAttribute('cx', endX.toFixed(2));
         upgraderKnobEnd.setAttribute('cy', endY.toFixed(2));
-        upgraderKnobEnd.style.opacity = isRandom ? '0.15' : '1';
+        upgraderKnobEnd.style.opacity = '1';
       }
 
       if (upgraderChanceDisplay) {
         upgraderChanceDisplay.textContent = `${chance.toFixed(2)}%`;
       }
-
-      // === Ghost arc + next position preview (Auto Random ON) ===
-      if (isRandom) {
-        // Show ghost arc at the pre-rolled nextRandomAngle
-        if (upgraderNextArc) {
-          upgraderNextArc.setAttribute('stroke-dasharray', `${arcLen.toFixed(2)} ${UPGRADER_CIRCUMFERENCE.toFixed(2)}`);
-          upgraderNextArc.setAttribute('transform', `rotate(${(nextRandomAngle - 90).toFixed(2)} 100 100)`);
-          upgraderNextArc.style.opacity = '0.28';
-          upgraderNextArc.setAttribute('stroke', '#a78bfa');
-        }
-        // Ghost knob at next random start position
-        if (upgraderNextKnob) {
-          const nRad = (nextRandomAngle - 90) * (Math.PI / 180);
-          const nX = 100 + UPGRADER_RADIUS * Math.cos(nRad);
-          const nY = 100 + UPGRADER_RADIUS * Math.sin(nRad);
-          upgraderNextKnob.setAttribute('cx', nX.toFixed(2));
-          upgraderNextKnob.setAttribute('cy', nY.toFixed(2));
-          upgraderNextKnob.style.opacity = '0.7';
-        }
-        // Show the next position label row
-        if (upgraderNextPosRow) upgraderNextPosRow.classList.remove('hidden');
-        if (upgraderNextPosLabel) upgraderNextPosLabel.textContent = `${nextRandomAngle.toFixed(1)}°`;
-      } else {
-        // Hide ghost elements when random is OFF
-        if (upgraderNextArc) upgraderNextArc.style.opacity = '0';
-        if (upgraderNextKnob) upgraderNextKnob.style.opacity = '0';
-        if (upgraderNextPosRow) upgraderNextPosRow.classList.add('hidden');
-      }
     }
 
-
-    // Drag / Spin interaction for Wheel
+    // Drag / Spin interaction for Wheel (only active in manual mode)
     function handleWheelPointerEvent(e) {
       if (upgraderRandomPosCheck?.checked) return;
       if (!upgraderWheelContainer) return;
@@ -1999,7 +1966,13 @@
 
     if (upgraderRandomPosCheck) {
       upgraderRandomPosCheck.addEventListener('change', () => {
-        localStorage.setItem('rollbux_upgrader_random', upgraderRandomPosCheck.checked ? 'true' : 'false');
+        const isRandom = upgraderRandomPosCheck.checked;
+        localStorage.setItem('rollbux_upgrader_random', isRandom ? 'true' : 'false');
+        if (isRandom) {
+          // Immediately pick a random position and move the wheel arc there to show the next spin location
+          upgraderAngle = Math.floor(Math.random() * 360);
+          localStorage.setItem('rollbux_upgrader_angle', upgraderAngle.toFixed(2));
+        }
         updateUpgraderWheelUI();
       });
     }
@@ -2023,10 +1996,8 @@
       const mult = parseFloat(upgraderMultiplierInput?.value || '2.0');
       const isRandom = Boolean(upgraderRandomPosCheck?.checked);
 
-      // When random mode is ON, use the pre-rolled nextRandomAngle as start offset
-      // When manual, use the wheel's current upgraderAngle
-      const angleToUse = isRandom ? nextRandomAngle : upgraderAngle;
-      const startOffset = angleToUse / 360;
+      // Play at the exact position shown on the wheel arc
+      const startOffset = upgraderAngle / 360;
 
       if (upgraderFeedback) {
         upgraderFeedback.textContent = isAuto ? '⚡ Auto-Upgrading: Contacting RollBux...' : 'Sending Upgrade bet...';
@@ -2061,26 +2032,31 @@
             upgraderFeedback.innerHTML = `<span class="text-[#ff6b6b] font-bold">❌ LOST</span> Staked ${data.stakeBux} BUX on ${mult}x | Roll: ${rollFormatted}`;
             upgraderFeedback.className = 'text-xs text-[#ff6b6b] truncate flex-1';
           }
-          // Pre-roll a new random angle for next spin and update the ghost arc preview
-          if (isRandom) {
-            nextRandomAngle = parseFloat((Math.random() * 360).toFixed(2));
-            localStorage.setItem('rollbux_upgrader_next_angle', nextRandomAngle.toFixed(2));
-            updateUpgraderWheelUI(); // refresh ghost arc to show new next position
-          }
           // Refresh user data immediately to sync balance and inventory
           fetchUserData();
         } else {
           upgraderFeedback.textContent = 'Upgrade failed: ' + (data.error || 'Unknown error');
           upgraderFeedback.className = 'text-xs text-[#ff6b6b] truncate flex-1';
+          console.error('[AutoUpgrader] Play API error:', data.error);
         }
       } catch (e) {
-        upgraderFeedback.textContent = 'Network error: ' + e.message;
-        upgraderFeedback.className = 'text-xs text-red-400 truncate flex-1';
+        if (upgraderFeedback) {
+          upgraderFeedback.textContent = 'Network error: ' + e.message;
+          upgraderFeedback.className = 'text-xs text-red-400 truncate flex-1';
+        }
+        console.error('[AutoUpgrader] Error:', e.message);
       } finally {
         isUpgraderExecuting = false;
         if (upgraderManualPlayBtn) {
           upgraderManualPlayBtn.disabled = false;
           upgraderManualPlayBtn.classList.remove('opacity-50');
+        }
+
+        // Once the round is finished, immediately update the wheel to the next spin position!
+        if (isRandom) {
+          upgraderAngle = Math.floor(Math.random() * 360);
+          localStorage.setItem('rollbux_upgrader_angle', upgraderAngle.toFixed(2));
+          updateUpgraderWheelUI();
         }
       }
     }

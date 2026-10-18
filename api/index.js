@@ -309,10 +309,17 @@ export default async function handler(req, res) {
       });
       const accData = await accResp.json();
       let accounts = accData.result ? JSON.parse(accData.result) : [];
+      // Case-insensitive, trimmed match
       let acc = accounts.find(a => (a.name || '').toLowerCase().trim() === targetName);
-      let sessionToken = acc ? acc.token : process.env.ROLLBUX_SESSION_TOKEN;
+      if (!acc && accounts.length === 1) acc = accounts[0];
+      if (!acc && accounts.length > 0 && (!targetName || targetName === 'sotarium')) acc = accounts[0];
+      let sessionToken = acc ? acc.token : (payload.token || process.env.ROLLBUX_SESSION_TOKEN);
       if (!sessionToken) {
-        res.status(400).json({ success: false, error: "No account session token configured for " + targetName });
+        const availableNames = accounts.map(a => a.name).join(', ');
+        res.status(400).json({
+          success: false,
+          error: `No session token for "${targetName}". Available accounts: [${availableNames}]. Check your Redis store.`
+        });
         return;
       }
 
@@ -384,12 +391,13 @@ export default async function handler(req, res) {
       const exactChance = Math.min(0.818181, Math.max(0.0001, (stakeMicroTokens * (rtpBP / 10000)) / bestItem.priceMicroTokens));
 
       // 6. Compute range [start, end]
+      // Respect the exact position sent from the wheel UI
       const Vt = 1000000;
       let startOffset = 0;
-      if (isRandomPosition) {
-        startOffset = Math.random();
-      } else if (Array.isArray(payload.range) && typeof payload.range[0] === 'number') {
+      if (Array.isArray(payload.range) && typeof payload.range[0] === 'number') {
         startOffset = Math.max(0, Math.min(0.999999, payload.range[0]));
+      } else if (isRandomPosition) {
+        startOffset = Math.random();
       }
 
       const startClamped = Number(startOffset.toFixed(6));
