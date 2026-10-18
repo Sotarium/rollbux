@@ -427,13 +427,29 @@ export default async function handler(req, res) {
         }
       }
 
-      // 5. Calculate true provably fair chance
-      // formula: chance = (stakeMicroTokens * (rtpBP / 10000)) / bestItem.priceMicroTokens
-      const exactChance = Math.min(0.818181, Math.max(0.0001, (stakeMicroTokens * (rtpBP / 10000)) / bestItem.priceMicroTokens));
+      // 5. Calculate true provably fair chance matching RollBux client exactly:
+      // Dn formula: chancePPM = (stakeBI * rtpBI * 1000000n) / (targetBI * 10000n)
+      const stakeBI = BigInt(stakeMicroTokens);
+      const targetBI = BigInt(bestItem.priceMicroTokens);
+      const rtpBI = BigInt(rtpBP || 9000);
+      const chancePPM_BI = (stakeBI * rtpBI * 1000000n) / (targetBI * 10000n);
+      const chancePercent = Number(chancePPM_BI) / 10000;
+      const chance = chancePercent / 100;
 
-      // 6. Compute range [start, end]
-      // Respect the exact position sent from the wheel UI
+      // 6. Compute range [start, end] using RollBux's exact Wt / Ht / Ut formulas:
       const Vt = 1000000;
+      function Ht(e) {
+        let t = Number(e.toFixed(6));
+        return t >= 1 ? 0.999999 : t;
+      }
+      function Ut(e) {
+        return (e > 1000000 ? e % Vt : e) / Vt;
+      }
+      function Wt(c, t) {
+        let n = Ht(c);
+        return [n, Ut(Math.max(1, Math.round(n * Vt)) + Math.round(t * Vt) - 1)];
+      }
+
       let startOffset = 0;
       if (Array.isArray(payload.range) && typeof payload.range[0] === 'number') {
         startOffset = Math.max(0, Math.min(0.999999, payload.range[0]));
@@ -441,12 +457,7 @@ export default async function handler(req, res) {
         startOffset = Math.random();
       }
 
-      // RollBux calculates win width as (end >= start ? end - start : end - start + 1.0)
-      // Must equal exactChance (rounded to 6 decimal places / micro precision)
-      const startClamped = Number(startOffset.toFixed(6));
-      const endOffset = (startClamped + exactChance) % 1.0;
-      const endClamped = Number(endOffset.toFixed(6));
-      const calculatedRange = [startClamped, endClamped];
+      const calculatedRange = Wt(startOffset, chance);
 
       // 7. Execute upgrade play on RollBux
       const idempotencyKey = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `upg_${Date.now()}_${Math.random().toString(36).substring(2)}`;
