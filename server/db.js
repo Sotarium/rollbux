@@ -411,6 +411,7 @@ export function handleAction(payload) {
             : 'X';
 
           user.transactions.unshift({
+            account: tx.account || username || 'Main',
             amount_bux: amt,
             rain_total: rainTotalDisplay,
             status: 'Completed',
