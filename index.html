@@ -419,6 +419,17 @@
                         </label>
                       </div>
 
+                      <!-- Auto Sell with Turn On/Off Switch -->
+                      <div class="relative z-10 flex items-center justify-between p-2.5 rounded-lg bg-[#131a29] border border-white/5 w-full">
+                        <div class="flex items-center gap-2">
+                          <span class="text-xs font-semibold text-white">Auto Sell</span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer select-none">
+                          <input type="checkbox" id="upgraderAutoSellCheck" class="sr-only peer">
+                          <div class="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#8b5cf6]"></div>
+                        </label>
+                      </div>
+
                       <!-- Feedback + Manual Play Button -->
                       <div class="relative z-10 flex items-center gap-2 w-full">
                         <span id="upgraderFeedback" class="text-xs text-[#9aa3a8] truncate flex-1">Ready</span>
@@ -1805,6 +1816,7 @@
     const upgraderAllInBtn = document.getElementById('upgraderAllInBtn');
     const upgraderAllInCheck = document.getElementById('upgraderAllInCheck');
     const upgraderRandomPosCheck = document.getElementById('upgraderRandomPosCheck');
+    const upgraderAutoSellCheck = document.getElementById('upgraderAutoSellCheck');
     const upgraderManualPlayBtn = document.getElementById('upgraderManualPlayBtn');
     const upgraderFeedback = document.getElementById('upgraderFeedback');
     const upgraderWheelContainer = document.getElementById('upgraderWheelContainer');
@@ -1834,6 +1846,14 @@
         upgraderAngle = Math.floor(Math.random() * 360);
         localStorage.setItem('rollbux_upgrader_angle', upgraderAngle.toFixed(2));
       }
+    }
+    // Auto Sell defaults to true
+    if (upgraderAutoSellCheck) {
+      const savedAutoSell = localStorage.getItem('rollbux_upgrader_autosell');
+      upgraderAutoSellCheck.checked = savedAutoSell === null ? true : (savedAutoSell === 'true');
+      upgraderAutoSellCheck.addEventListener('change', () => {
+        localStorage.setItem('rollbux_upgrader_autosell', upgraderAutoSellCheck.checked ? 'true' : 'false');
+      });
     }
     const savedMult = localStorage.getItem('rollbux_upgrader_multiplier');
     if (savedMult && upgraderMultiplierInput) {
@@ -2039,6 +2059,7 @@
 
       try {
         const currentBetSetting = upgraderBetAmountInput ? upgraderBetAmountInput.value.trim() : 'All In';
+        const isAutoSell = upgraderAutoSellCheck ? upgraderAutoSellCheck.checked : true;
         const res = await fetch('/api/upgrader/play', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -2046,6 +2067,7 @@
             username: targetUsername,
             multiplier: mult,
             betAmount: currentBetSetting,
+            autoSell: isAutoSell,
             range: [startOffset],
             randomPosition: isRandom
           })
@@ -2056,7 +2078,8 @@
           const item = data.targetItem || {};
           const won = data.won;
           if (won) {
-            upgraderFeedback.textContent = `Won ${item.name || 'Item'} !`;
+            const soldSuffix = data.autoSold ? ' (Sold)' : '';
+            upgraderFeedback.textContent = `Won ${item.name || 'Item'}${soldSuffix} !`;
             upgraderFeedback.className = 'text-xs text-[#50f07b] font-bold truncate flex-1';
           } else {
             upgraderFeedback.textContent = 'Lost.';

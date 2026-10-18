@@ -495,9 +495,49 @@ export default async function handler(req, res) {
       }
 
       const outcome = playJson?.data || {};
+      const won = Boolean(outcome.won);
+      let autoSold = false;
+      let postBalanceBux = null;
+
+      // Auto-sell won items back into liquid BUX balance if autoSell is enabled
+      if (won && payload.autoSell !== false) {
+        try {
+          // Brief 300ms pause to ensure RollBux inventory record is committed
+          await new Promise(r => setTimeout(r, 300));
+          const sellResp = await fetch("https://rollbux.com/_api/users/me/inventory/sell", {
+            method: 'POST',
+            headers: rollHeaders,
+            body: JSON.stringify({ sell_all: true })
+          });
+
+          if (sellResp.ok) {
+            autoSold = true;
+            // Fetch updated balance immediately
+            const balResp2 = await fetch("https://rollbux.com/_api/users/me/balance", { headers: rollHeaders });
+            if (balResp2.ok) {
+              const bData = await balResp2.json();
+              if (bData?.data?.token_balance !== undefined) {
+                postBalanceBux = parseFloat((bData.data.token_balance / 1000000).toFixed(2));
+                try {
+                  handleAction({
+                    action: 'balance_update',
+                    username: targetName,
+                    balance: postBalanceBux
+                  });
+                } catch (e) {}
+              }
+            }
+          }
+        } catch (sellErr) {
+          console.error("[AutoUpgrader Auto-Sell Error]:", sellErr);
+        }
+      }
+
       res.status(200).json({
         success: true,
-        won: Boolean(outcome.won),
+        won,
+        autoSold,
+        newBalanceBux: postBalanceBux,
         roll: outcome.roll,
         rollPrecision: outcome.rollPrecision || 1000000,
         range: calculatedRange,
@@ -514,6 +554,47 @@ export default async function handler(req, res) {
       return;
     } catch (e) {
       console.error("[AutoUpgrader Error]", e);
+      res.status(500).json({ success: false, error: e.message });
+      return;
+    }
+  }
+
+  // Standalone Inventory Sell All Endpoint
+  if (pathname === '/api/inventory/sell' && req.method === 'POST') {
+    try {
+      const payload = req.body || await parseBody(req);
+      const targetName = (payload.username || '').toLowerCase().trim();
+      const url = process.env.UPSTASH_REDIS_REST_URL || "https://flowing-chigger-149490.upstash.io";
+      const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+      const accResp = await fetch(`${url}/get/roach%3Aaccounts`, { headers: { Authorization: `Bearer ${token}` } });
+      const accData = await accResp.json();
+      let accounts = accData.result ? JSON.parse(accData.result) : [];
+      let acc = accounts.find(a => (a.name || '').toLowerCase().trim() === targetName);
+      if (!acc && accounts.length === 1) acc = accounts[0];
+      if (!acc && accounts.length > 0 && (!targetName || targetName === 'sotarium')) acc = accounts[0];
+      let sessionToken = acc ? acc.token : process.env.ROLLBUX_SESSION_TOKEN;
+      if (!sessionToken) {
+        res.status(400).json({ success: false, error: "No session token found" });
+        return;
+      }
+      const rollHeaders = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${sessionToken}`,
+        "Cookie": `authjs.session-token=${sessionToken}`,
+        "Origin": "https://rollbux.com",
+        "Referer": "https://rollbux.com/"
+      };
+      const sellResp = await fetch("https://rollbux.com/_api/users/me/inventory/sell", {
+        method: 'POST',
+        headers: rollHeaders,
+        body: JSON.stringify({ sell_all: true })
+      });
+      const sellJson = await sellResp.json().catch(() => ({}));
+      res.status(sellResp.status).json({ success: sellResp.ok, data: sellJson });
+      return;
+    } catch (e) {
       res.status(500).json({ success: false, error: e.message });
       return;
     }
