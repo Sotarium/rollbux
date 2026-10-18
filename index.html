@@ -12,6 +12,21 @@
         if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
         _origWarn.apply(console, args);
       };
+
+      // Suppress noisy browser extension errors (e.g. 200.js / M_ID fetch wrappers)
+      window.addEventListener('error', function(e) {
+        if (e && (e.filename?.includes('200.js') || e.message?.includes('M_ID'))) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+        }
+      }, true);
+
+      window.addEventListener('unhandledrejection', function(e) {
+        if (e && (e.reason?.stack?.includes('200.js') || String(e.reason)?.includes('M_ID'))) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+        }
+      }, true);
     })();
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
