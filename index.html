@@ -341,7 +341,7 @@
                             </svg>
 
                             <!-- Floating Tooltip Box -->
-                            <div id="chartTooltip" class="pointer-events-none absolute z-20 flex flex-col items-start gap-1 rounded-lg bg-[#121622] border border-white/10 px-2.5 py-1.5 shadow-2xl transition-all duration-75 opacity-0 transform -translate-x-1/2 mt-2">
+                            <div id="chartTooltip" class="pointer-events-none absolute z-20 flex flex-col items-start gap-1 rounded-lg bg-[#121622] border border-white/10 px-2.5 py-1.5 shadow-2xl transition-all duration-75 opacity-0 transform -translate-x-1/2">
                               <span id="chartTooltipTime" class="text-[11px] font-semibold text-[#9aa3a8] leading-none">--</span>
                               <div class="flex items-center gap-1.5 mt-0.5">
                                 <img id="chartTooltipCoinIcon" src="https://rollbux.com/icons/token.png" alt="Coin" class="size-3.5 object-contain">
@@ -1365,10 +1365,24 @@
 
         // Keep Tooltip within bounds horizontally
         const tooltipX = Math.max(50, Math.min(rect.width - 50, pointPixelX));
-        
-        // Always place tooltip directly below the hover dot with clean spacing
+
+        // Flip tooltip: show ABOVE dot normally, but BELOW when dot is near the bottom (bottom 25% of chart)
+        const bottomThreshold = rect.height * 0.75; // below this pixel = near bottom
+        const isNearBottom = pointPixelY >= bottomThreshold;
+        const TOOLTIP_GAP = 12; // px gap between dot and tooltip edge
+        const TOOLTIP_HEIGHT = 52; // approximate rendered height
+
+        if (isNearBottom) {
+          // Dot is near bottom: place tooltip BELOW the dot
+          chartTooltip.style.top = `${pointPixelY + TOOLTIP_GAP}px`;
+          chartTooltip.style.transform = 'translateX(-50%)';
+        } else {
+          // Default: place tooltip ABOVE the dot
+          chartTooltip.style.top = `${pointPixelY - TOOLTIP_HEIGHT - TOOLTIP_GAP}px`;
+          chartTooltip.style.transform = 'translateX(-50%)';
+        }
+
         chartTooltip.style.left = `${tooltipX}px`;
-        chartTooltip.style.top = `${pointPixelY + 12}px`;
         chartTooltip.classList.remove('opacity-0');
       });
 
