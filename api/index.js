@@ -333,14 +333,39 @@ export default async function handler(req, res) {
         "Referer": "https://rollbux.com/games/upgrader"
       };
 
-      // 2. Fetch live user balance
-      const meResp = await fetch("https://rollbux.com/_api/users/me", { headers: rollHeaders });
-      if (!meResp.ok) {
-        res.status(meResp.status).json({ success: false, error: "Failed to fetch user profile from RollBux" });
-        return;
+      // 2. Fetch live user balance from the dedicated RollBux balance endpoint
+      let tokenBalanceMicro = 0;
+      try {
+        const balResp = await fetch("https://rollbux.com/_api/users/me/balance", { headers: rollHeaders });
+        if (balResp.ok) {
+          const balData = await balResp.json();
+          if (balData?.data?.token_balance !== undefined) {
+            tokenBalanceMicro = balData.data.token_balance;
+          }
+        }
+      } catch (e) {
+        console.error("[AutoUpgrader] Failed to fetch /users/me/balance:", e);
       }
-      const meData = await meResp.json();
-      const tokenBalanceMicro = meData?.data?.user?.token_balance || 0;
+
+      // Fallback 1: check profile endpoint
+      if (!tokenBalanceMicro) {
+        try {
+          const meResp = await fetch("https://rollbux.com/_api/users/me", { headers: rollHeaders });
+          if (meResp.ok) {
+            const meData = await meResp.json();
+            tokenBalanceMicro = meData?.data?.user?.token_balance || meData?.data?.token_balance || 0;
+          }
+        } catch (e) {}
+      }
+
+      // Fallback 2: check local cached store balance
+      if (!tokenBalanceMicro) {
+        const localUser = getUser(targetName);
+        if (localUser && localUser.balance_bux) {
+          tokenBalanceMicro = Math.floor(localUser.balance_bux * 1000000);
+        }
+      }
+
       const balanceBux = tokenBalanceMicro / 1000000;
 
       if (balanceBux < 50) {
