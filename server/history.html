@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rollbux - Battles History</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,600;1,700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #0b0e14;
+      color: #ffffff;
+      font-family: 'Inter', sans-serif;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="selection:bg-[#acff46] selection:text-black">
+  <div class="flex w-full justify-center pb-[50px] pt-[30px]">
+    <div class="flex w-full max-w-[960px] flex-col items-start gap-[20px] px-4 md:px-6">
+      
+      <!-- Top Navigation Bar -->
+      <div class="flex w-full items-start justify-between">
+        <div class="flex flex-col items-start gap-1">
+          <div class="flex items-center gap-2">
+            <a href="/" class="px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/5 text-[#9aa3a8] hover:text-white rounded-lg text-xs font-semibold transition active:scale-95 shadow-sm">
+              Dashboard
+            </a>
+            <a href="/accounts" class="px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/5 text-[#9aa3a8] hover:text-white rounded-lg text-xs font-semibold transition active:scale-95 shadow-sm">
+              Accounts
+            </a>
+          </div>
+          <h1 class="whitespace-nowrap text-[22px] tracking-[0.5px] text-white font-bold italic mt-0.5">Battles History</h1>
+        </div>
+
+        <!-- Refresh Button -->
+        <button id="refreshBattlesBtn" type="button" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-[8px] bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-xs tracking-wide transition active:scale-95 cursor-pointer mt-1">
+          <svg class="size-3.5 text-[#acff46]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+          </svg>
+          <span>Refresh</span>
+        </button>
+      </div>
+
+      <!-- Section Title & Counter -->
+      <div class="flex w-full items-center justify-between">
+        <p class="whitespace-nowrap text-[17px] leading-[26px] text-white font-bold italic">Recent Battles</p>
+        <span id="battlesCountBadge" class="text-[12px] text-[#9aa3a8]">Loading...</span>
+      </div>
+
+      <!-- Battles History Table: Game | Amount Paid | Amount Won | Date -->
+      <div class="w-full flex flex-col items-center gap-[10px]">
+        <div class="custom-scroll w-full max-w-full overflow-x-auto overflow-y-hidden">
+          <div class="relative w-full shrink-0 rounded-[12px] border border-white/[0.04] overflow-hidden" style="min-height: 140px;">
+            <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
+
+            <!-- Column Headers matching RollBux Bets table: Game | Amount Paid | Amount Won | Date -->
+            <div class="relative z-10 grid grid-cols-[1.5fr_1fr_1fr_1.2fr] items-center gap-[12px] px-[20px] py-[13px] text-[12px] font-semibold tracking-[0.25px] text-[#9aa3a8] border-b border-white/[0.04]">
+              <div>Game</div>
+              <div>Amount Paid</div>
+              <div>Amount Won</div>
+              <div class="text-right">Date</div>
+            </div>
+
+            <!-- Table Rows Container -->
+            <div id="battlesList" class="relative z-10 flex flex-col divide-y divide-white/[0.02]">
+              <div id="loadingState" class="flex h-[140px] items-center justify-center px-[32px] text-center">
+                <p class="text-[13px] text-[#9aa3a8]">Loading battle history from RollBux...</p>
+              </div>
+            </div>
+
+            <span aria-hidden="true" class="pointer-events-none absolute inset-0" style="border-radius: 12px; box-shadow: rgb(66, 66, 66) 0px 2px 0px 0px inset; mix-blend-mode: color-dodge;"></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let battlesData = [];
+
+    function formatNumber(num) {
+      const val = parseFloat(num) || 0;
+      return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function formatDate(timestamp) {
+      if (!timestamp) return '--';
+      const d = new Date(timestamp);
+      const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const day = d.getDate();
+      const month = months[d.getMonth()];
+      let hours = d.getHours();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      const mins = String(d.getMinutes()).padStart(2, '0');
+      return `${day} ${month}, ${hours}:${mins} ${ampm}`;
+    }
+
+    async function fetchBattles() {
+      const list = document.getElementById('battlesList');
+      const badge = document.getElementById('battlesCountBadge');
+      
+      try {
+        const res = await fetch('/api/battles/history');
+        if (!res.ok) {
+          list.innerHTML = `
+            <div class="flex h-[120px] items-center justify-center px-[32px] text-center">
+              <p class="text-[13px] text-red-400">Failed to load battles history.</p>
+            </div>
+          `;
+          return;
+        }
+
+        const data = await res.json();
+        battlesData = data.battles || [];
+
+        if (badge) {
+          badge.textContent = `${battlesData.length} battle${battlesData.length === 1 ? '' : 's'}`;
+        }
+
+        if (battlesData.length === 0) {
+          list.innerHTML = `
+            <div class="flex h-[120px] items-center justify-center px-[32px] text-center">
+              <p class="text-[13px] text-[#9aa3a8]">No battles recorded yet.</p>
+            </div>
+          `;
+          return;
+        }
+
+        list.innerHTML = battlesData.map(b => {
+          const won = b.won || parseFloat(b.amount_won_bux) > 0;
+          const wonTextClass = won ? 'text-[#acff46]' : 'text-gray-400';
+          const wonIconClass = won ? 'opacity-100' : 'opacity-40';
+          const modeLabel = `${b.game_mode} Case Battle${b.crazy_mode ? ' (Crazy)' : ''}`;
+
+          return `
+            <a href="${b.url}" target="_blank" rel="noopener noreferrer" class="grid grid-cols-[1.5fr_1fr_1fr_1.2fr] items-center gap-[12px] relative min-h-[52px] px-[20px] py-[10px] transition-colors hover:bg-[rgba(255,255,255,0.02)] group cursor-pointer" title="Click to view live battle replay on RollBux">
+              
+              <!-- Game Column (Swords Icon + Battle Name + Mode) -->
+              <div class="flex items-center gap-2.5 min-w-0">
+                <span class="size-6 rounded-md bg-[#8b5cf6]/10 border border-[#8b5cf6]/30 flex items-center justify-center text-[#8b5cf6] shrink-0">
+                  <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75l16.5 16.5m0-16.5L3.75 20.25" />
+                  </svg>
+                </span>
+                <div class="min-w-0">
+                  <span class="text-[13px] font-bold text-white group-hover:text-[#acff46] transition-colors truncate block">
+                    ${modeLabel}
+                  </span>
+                  ${b.borrow ? '<span class="text-[9px] uppercase px-1 py-0.2 rounded bg-red-500/10 text-red-400 font-bold">Borrow 80%</span>' : ''}
+                </div>
+              </div>
+
+              <!-- Amount Paid -->
+              <div class="flex items-center gap-1.5">
+                <img src="https://rollbux.com/icons/token.png" alt="" class="size-4 shrink-0">
+                <span class="text-[13px] font-bold text-white font-mono">${formatNumber(b.amount_paid_bux)}</span>
+              </div>
+
+              <!-- Amount Won -->
+              <div class="flex items-center gap-1.5">
+                <img src="https://rollbux.com/icons/token.png" alt="" class="size-4 shrink-0 ${wonIconClass}">
+                <span class="text-[13px] font-bold ${wonTextClass} font-mono">${formatNumber(b.amount_won_bux)}</span>
+              </div>
+
+              <!-- Date -->
+              <div class="text-right">
+                <span class="text-[12px] font-medium text-[#9aa3a8]">${formatDate(b.created_at)}</span>
+              </div>
+
+            </a>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error('Error fetching battles:', err);
+      }
+    }
+
+    document.getElementById('refreshBattlesBtn')?.addEventListener('click', fetchBattles);
+    fetchBattles();
+    setInterval(fetchBattles, 10000);
+  </script>
+</body>
+</html>
