@@ -1702,21 +1702,26 @@ export default async function handler(req, res) {
       const targetName = (payload.username || '').toLowerCase().trim();
       const sessionToken = await getMinesSessionToken(targetName);
       const idKey = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+      const hdrs = minesHeaders(sessionToken);
+      delete hdrs['Content-Type']; // some APIs reject cashout if Content-Type is set with empty body
       const rbRes = await fetch('https://rollbux.com/_api/games/mines/cashout', {
         method: 'POST',
-        headers: { ...minesHeaders(sessionToken), 'Idempotency-Key': idKey },
-        body: JSON.stringify({})
+        headers: { ...hdrs, 'Idempotency-Key': idKey }
+        // intentionally no body — Rollbux cashout takes no request body
       });
-      const rbData = await rbRes.json().catch(() => ({}));
+      const rbText = await rbRes.text();
+      let rbData = {};
+      try { rbData = JSON.parse(rbText); } catch {}
+      console.log('[API Mines Cashout]', rbRes.status, rbText.slice(0, 500));
       if (!rbRes.ok) {
         console.error('[API Mines Cashout Failed]', rbRes.status, rbData);
         res.statusCode = rbRes.status || 400;
-        const errMessage = rbData?.message || (typeof rbData?.error === 'string' ? rbData.error : (rbData?.error?.message || 'Cashout failed'));
+        const errMessage = rbData?.message || (typeof rbData?.error === 'string' ? rbData.error : (rbData?.error?.message || rbText.slice(0, 200) || 'Cashout failed'));
         res.end(JSON.stringify({ success: false, status: rbRes.status, error: errMessage, details: rbData }));
         return;
       }
       // Extract payout in BUX
-      const payoutMicro = rbData?.data?.payout || rbData?.data?.amount || rbData?.payout || rbData?.amount || 0;
+      const payoutMicro = rbData?.data?.payout || rbData?.data?.amount || rbData?.data?.token_amount || rbData?.payout || rbData?.amount || 0;
       const payoutBux = (payoutMicro / 1_000_000).toFixed(2);
       res.setHeader('Content-Type', 'application/json');
       res.statusCode = 200;
