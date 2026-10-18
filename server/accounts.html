@@ -1,106 +1,118 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Accounts • RainRoach</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rollbux - Player Accounts</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,600;1,700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
   <style>
-    body { background-color: #0b0e14; color: #d1d5db; font-family: ui-sans-serif, system-ui, sans-serif; }
-    .glass-card { background: rgba(14, 19, 31, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+    body {
+      background-color: #121418;
+      background-image: linear-gradient(180deg, #15171d 0%, #101115 100%);
+      background-attachment: fixed;
+      color: #ffffff;
+      min-height: 100vh;
+      font-family: 'Inter', sans-serif;
+    }
     .purple-btn {
       background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
-      color: #ffffff;
-      box-shadow: 0 4px 14px 0 rgba(139, 92, 246, 0.25);
+      box-shadow: 0 4px 16px -2px rgba(168, 85, 247, 0.4);
     }
     .purple-btn:hover {
-      background: linear-gradient(135deg, #b469f8 0%, #986df7 100%);
-      box-shadow: 0 6px 20px 0 rgba(139, 92, 246, 0.35);
+      background: linear-gradient(135deg, #b366f8 0%, #986ef7 100%);
+      box-shadow: 0 6px 20px -2px rgba(168, 85, 247, 0.55);
     }
   </style>
 </head>
-<body class="min-h-screen p-4 md:p-8 flex flex-col items-center">
-  <div class="w-full max-w-4xl space-y-6">
-    <!-- Header -->
-    <div class="flex items-center justify-between border-b border-white/10 pb-4">
-      <div class="flex items-center space-x-3">
-        <a href="/" class="text-xs font-semibold text-gray-400 hover:text-white transition flex items-center gap-1.5 bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg border border-white/5">
-          <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+<body class="selection:bg-[#a855f7] selection:text-white">
+  <div class="flex w-full justify-center pb-[50px] pt-[35px]">
+    <div class="flex w-full max-w-[1536px] flex-col items-start gap-[28px] px-4 md:px-8">
+      
+      <!-- Top Bar: Back Link + Heading + Add Account Button -->
+      <div class="flex w-full items-center justify-between">
+        <div class="flex items-center gap-3">
+          <a href="/" class="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/5 text-[#9aa3a8] hover:text-white rounded-lg text-xs font-semibold transition active:scale-95 shadow-sm">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Dashboard
+          </a>
+          <h1 class="whitespace-nowrap text-[25px] tracking-[0.5px] text-white font-bold italic">Player Accounts</h1>
+        </div>
+
+        <!-- Clean Purple Add Account Button -->
+        <button id="openAddModalBtn" type="button" class="purple-btn flex items-center gap-2 px-5 py-2.5 rounded-[10px] text-white font-bold text-xs tracking-wide transition active:scale-95 cursor-pointer">
+          <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
-          Dashboard
-        </a>
-        <div>
-          <h1 class="text-2xl font-black text-white tracking-wide">Player Accounts</h1>
-          <p class="text-xs text-gray-400">Manage all registered farming accounts and session tokens</p>
-        </div>
-      </div>
-      <!-- Add Account Button in Clean Purple -->
-      <button id="openAddModalBtn" type="button" class="purple-btn flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition active:scale-95 cursor-pointer">
-        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
-        <span>Add Account</span>
-      </button>
-    </div>
-
-    <!-- Accounts Card -->
-    <div class="glass-card rounded-2xl p-6 space-y-4">
-      <div class="flex items-center justify-between border-b border-white/5 pb-3">
-        <div>
-          <h2 class="text-sm font-bold text-white uppercase tracking-wider">Registered Accounts</h2>
-          <p class="text-xs text-gray-400 mt-0.5">All accounts listed here are automatically checked, farmed, and joined in every rain cycle.</p>
-        </div>
-        <span id="accountCountBadge" class="text-xs font-mono font-semibold text-[#a855f7] bg-[#a855f7]/10 px-2.5 py-1 rounded-full border border-[#a855f7]/20">0 accounts</span>
+          <span>Add Account</span>
+        </button>
       </div>
 
-      <!-- Accounts Table -->
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
-          <thead class="text-gray-500 uppercase border-b border-white/5 text-[10px]">
-            <tr>
-              <th class="pb-3 font-semibold">Account Name</th>
-              <th class="pb-3 font-semibold">Session Token</th>
-              <th class="pb-3 font-semibold">Eligibility Chat</th>
-              <th class="pb-3 font-semibold">Rain Status</th>
-              <th class="pb-3 font-semibold text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="accountsTableBody" class="divide-y divide-white/5">
-            <tr>
-              <td colspan="5" class="py-8 text-center text-gray-500">Loading accounts...</td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- Section Title & Counter -->
+      <div class="flex w-full items-center justify-between border-b border-white/[0.04] pb-4">
+        <div class="flex items-center gap-2.5">
+          <p class="whitespace-nowrap text-[18px] leading-[28px] text-white font-bold italic">Configured Accounts</p>
+        </div>
+        <span id="accountCountBadge" class="text-[12px] font-bold text-[#a855f7] bg-[#a855f7]/10 px-3 py-1 rounded-full border border-[#a855f7]/20">0 accounts</span>
       </div>
+
+      <!-- Accounts Grid (Cards matching the authentic Overview cards) -->
+      <div id="accountsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[16px] w-full">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Empty State -->
+      <div id="emptyAccountsState" class="hidden w-full flex-col items-center justify-center py-20 text-center">
+        <div class="size-16 rounded-full bg-[#0e131f] border border-white/[0.06] flex items-center justify-center mb-4">
+          <svg class="size-8 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+        </div>
+        <p class="text-[16px] font-bold text-white mb-1">No Accounts Configured</p>
+        <p class="text-[13px] text-[#9aa3a8] max-w-sm mb-4">Click "Add Account" to configure your RollBux session tokens.</p>
+      </div>
+
     </div>
   </div>
 
   <!-- Add Account Modal -->
-  <div id="addModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-    <div class="glass-card w-full max-w-md rounded-2xl p-6 bg-[#0e131f] border border-white/10 space-y-4 shadow-2xl">
-      <div class="flex items-center justify-between border-b border-white/10 pb-3">
-        <h3 class="text-base font-bold text-white">Add Player Account</h3>
+  <div id="addModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div class="w-full max-w-md rounded-[16px] bg-[#0e131f] border border-white/[0.08] p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-white/[0.06] pb-3">
+        <h3 class="text-base font-bold text-white italic">Add Player Account</h3>
         <button id="closeAddModalBtn" class="text-gray-400 hover:text-white text-lg font-bold">&times;</button>
       </div>
 
-      <p class="text-xs text-gray-400 leading-relaxed">
-        Paste the RollBux account nickname and its <code class="text-white bg-white/10 px-1 py-0.5 rounded">authjs.session-token</code> cookie or JWT.
+      <p class="text-xs text-[#9aa3a8] leading-relaxed">
+        Paste the RollBux account nickname and its <code class="text-white bg-white/10 px-1 py-0.5 rounded font-mono">authjs.session-token</code> cookie or JWT.
       </p>
 
       <form id="addAccountForm" class="space-y-4">
         <div>
           <label class="block text-[11px] font-semibold text-gray-400 uppercase mb-1">Account Nickname</label>
-          <input type="text" id="accNameInput" placeholder="e.g. Dracko" required class="w-full bg-[#131a29] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#a855f7]">
+          <input type="text" id="accNameInput" placeholder="e.g. Dracko" required class="w-full bg-[#131a29] border border-white/10 rounded-[8px] px-3 py-2 text-xs text-white focus:outline-none focus:border-[#a855f7]">
         </div>
         <div>
           <label class="block text-[11px] font-semibold text-gray-400 uppercase mb-1">Session Token (Cookie or JWT)</label>
-          <input type="password" id="accTokenInput" placeholder="eyJhbGciOiJIUzI1Ni..." required class="w-full bg-[#131a29] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#a855f7] font-mono">
+          <input type="password" id="accTokenInput" placeholder="eyJhbGciOiJIUzI1Ni..." required class="w-full bg-[#131a29] border border-white/10 rounded-[8px] px-3 py-2 text-xs text-white focus:outline-none focus:border-[#a855f7] font-mono">
         </div>
 
-        <div class="flex justify-end gap-2 pt-2 border-t border-white/10">
+        <div class="flex justify-end gap-2 pt-2 border-t border-white/[0.06]">
           <button type="button" id="cancelAddModalBtn" class="px-4 py-2 text-xs font-semibold text-gray-400 hover:text-white transition">Cancel</button>
-          <button type="submit" id="saveAccountBtn" class="purple-btn px-5 py-2 font-bold text-xs rounded-lg transition active:scale-95">Save Account</button>
+          <button type="submit" id="saveAccountBtn" class="purple-btn px-5 py-2 font-bold text-xs rounded-[8px] transition active:scale-95 text-white">Save Account</button>
         </div>
       </form>
     </div>
@@ -109,12 +121,14 @@
   <script>
     let registeredAccounts = [];
     let liveStatusMap = {};
+    let usersDataMap = {};
 
-    async function fetchAccounts() {
+    async function fetchAll() {
       try {
-        const [accRes, statusRes] = await Promise.all([
+        const [accRes, statusRes, usersRes] = await Promise.all([
           fetch('/api/roach/accounts'),
-          fetch('/api/roach/status')
+          fetch('/api/roach/status'),
+          fetch('/api/users')
         ]);
 
         if (accRes.ok) {
@@ -130,58 +144,92 @@
           });
         }
 
-        renderAccountsTable();
+        if (usersRes.ok) {
+          const uData = await usersRes.json();
+          usersDataMap = uData.users || {};
+        }
+
+        renderAccounts();
       } catch (err) {
         console.error('Error fetching accounts:', err);
       }
     }
 
-    function renderAccountsTable() {
-      const tbody = document.getElementById('accountsTableBody');
+    function renderAccounts() {
+      const grid = document.getElementById('accountsGrid');
+      const emptyState = document.getElementById('emptyAccountsState');
       const badge = document.getElementById('accountCountBadge');
+
       if (badge) badge.textContent = `${registeredAccounts.length} account${registeredAccounts.length === 1 ? '' : 's'}`;
 
       if (registeredAccounts.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="5" class="py-8 text-center text-gray-500">
-              No accounts registered yet. Click <span class="text-[#a855f7] font-bold">+ Add Account</span> above.
-            </td>
-          </tr>
-        `;
+        grid.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        emptyState.classList.add('flex');
         return;
       }
 
-      tbody.innerHTML = registeredAccounts.map(a => {
+      emptyState.classList.add('hidden');
+      emptyState.classList.remove('flex');
+
+      grid.innerHTML = registeredAccounts.map(a => {
         const nameLower = (a.name || '').toLowerCase();
         const live = liveStatusMap[nameLower] || {};
-        const chatCount = live.chat_count !== undefined ? live.chat_count : '-';
+        const userDb = usersDataMap[nameLower] || {};
+        const chatCount = live.chat_count !== undefined ? live.chat_count : 0;
         const isJoined = live.joined === true;
+        const rainsJoined = userDb.rains_joined || 0;
+        const balance = (userDb.balance_bux || 0).toLocaleString();
 
-        let statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-gray-800 text-gray-400">Waiting</span>';
+        let statusText = 'Waiting';
+        let statusClass = 'text-gray-400 bg-white/5 border border-white/5';
         if (isJoined) {
-          statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-green-950 text-[#acff46] border border-[#acff46]/30">Joined 🎉</span>';
-        } else if (live.join_status && live.join_status.startsWith('FAILED')) {
-          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-red-950 text-red-400 border border-red-500/30">${live.join_status}</span>`;
+          statusText = 'Joined';
+          statusClass = 'text-[#acff46] bg-[rgba(172,255,70,0.1)] border border-[#acff46]/20';
         }
 
         return `
-          <tr class="hover:bg-white/[0.02] transition">
-            <td class="py-3.5 pr-4 font-bold text-white flex items-center gap-2">
-              <span class="size-2 rounded-full ${isJoined ? 'bg-[#acff46]' : 'bg-gray-500'}"></span>
-              <span>${a.name}</span>
-            </td>
-            <td class="py-3.5 pr-4 font-mono text-gray-400 text-[11px]">${a.token_preview || '••••••••'}</td>
-            <td class="py-3.5 pr-4">
-              <span class="font-bold ${chatCount >= 3 ? 'text-[#acff46]' : 'text-gray-300'}">${chatCount} / 3</span>
-            </td>
-            <td class="py-3.5 pr-4">${statusBadge}</td>
-            <td class="py-3.5 text-right">
-              <button onclick="deleteAccount('${a.id}', '${a.name}')" class="px-2.5 py-1 text-[11px] font-semibold text-red-400 hover:text-white hover:bg-red-500/20 rounded transition">
-                Remove
-              </button>
-            </td>
-          </tr>
+          <div class="relative flex w-full flex-col items-start gap-[10px] overflow-clip rounded-[12px] px-[20px] py-[16px] border border-white/[0.03] bg-[#0e131f] transition hover:border-[#a855f7]/30 hover:bg-[#111726] group">
+            <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
+
+            <!-- Top row: User label & Status pill -->
+            <div class="relative z-10 flex w-full items-center justify-between">
+              <span class="text-[13px] font-medium leading-[20px] text-[#9aa3a8] group-hover:text-[#a855f7] transition-colors">User</span>
+              <div class="flex items-center gap-1.5">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-[5px] uppercase ${statusClass}">
+                  ${statusText}
+                </span>
+                <button onclick="deleteAccount('${a.id}', '${a.name}')" title="Remove account" class="text-gray-500 hover:text-red-400 transition p-0.5">
+                  <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Big Username -->
+            <a href="/user/${encodeURIComponent(a.name)}" class="relative z-10 w-full truncate text-[20px] font-bold leading-[30px] text-white hover:text-[#a855f7] transition-colors">
+              ${a.name}
+            </a>
+
+            <!-- Info Grid: Chat / Joined / Balance -->
+            <div class="relative z-10 grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.04] w-full text-[12px]">
+              <div>
+                <span class="text-[#6d7680] text-[11px] block">Chat Quota</span>
+                <span class="font-bold ${chatCount >= 3 ? 'text-[#acff46]' : 'text-white'}">${chatCount} / 3</span>
+              </div>
+              <div>
+                <span class="text-[#6d7680] text-[11px] block">Rains Won</span>
+                <span class="font-bold text-white">${rainsJoined}</span>
+              </div>
+              <div class="col-span-2 pt-1">
+                <span class="text-[#6d7680] text-[11px] block">Token Preview</span>
+                <span class="font-mono text-[11px] text-gray-400 truncate block">${a.token_preview || '••••••••'}</span>
+              </div>
+            </div>
+
+            <span aria-hidden="true" class="pointer-events-none absolute inset-0" style="border-radius: 12px; box-shadow: rgba(114, 144, 231, 0.04) 0px 4px 0px 0px inset;"></span>
+          </div>
         `;
       }).join('');
     }
@@ -195,7 +243,7 @@
           body: JSON.stringify({ id })
         });
         if (res.ok) {
-          await fetchAccounts();
+          await fetchAll();
         } else {
           alert('Failed to remove account.');
         }
@@ -204,7 +252,7 @@
       }
     }
 
-    // Modal logic
+    // Modal controls
     const modal = document.getElementById('addModal');
     const openBtn = document.getElementById('openAddModalBtn');
     const closeBtn = document.getElementById('closeAddModalBtn');
@@ -245,7 +293,7 @@
         if (res.ok) {
           modal.classList.add('hidden');
           form.reset();
-          await fetchAccounts();
+          await fetchAll();
         } else {
           const errData = await res.json();
           alert('Error: ' + (errData.error || 'Failed to save account'));
@@ -258,8 +306,8 @@
       }
     });
 
-    fetchAccounts();
-    setInterval(fetchAccounts, 4000);
+    fetchAll();
+    setInterval(fetchAll, 3000);
   </script>
 </body>
 </html>
