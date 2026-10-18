@@ -6,11 +6,13 @@
   <title>Rollbux - Battles History</title>
   <!-- Suppress cdn.tailwindcss.com console warning -->
   <script>
-    const _origWarn = console.warn;
-    console.warn = function(...args) {
-      if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
-      _origWarn.apply(console, args);
-    };
+    (function(){
+      const _origWarn = console.warn;
+      console.warn = function(...args) {
+        if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
+        _origWarn.apply(console, args);
+      };
+    })();
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -101,53 +103,23 @@
         </div>
       </div>
 
-      <!-- Quick Summary Stats Bar -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
-        <div class="relative flex flex-col p-3.5 rounded-[12px] bg-[#0e131f] border border-white/[0.04]">
-          <span class="text-[11px] font-semibold text-[#9aa3a8] uppercase tracking-wider">Total Battles</span>
-          <span id="statTotalBattles" class="text-xl font-bold font-mono text-white mt-1">0</span>
-        </div>
-        <div class="relative flex flex-col p-3.5 rounded-[12px] bg-[#0e131f] border border-white/[0.04]">
-          <span class="text-[11px] font-semibold text-[#9aa3a8] uppercase tracking-wider">Total Staked</span>
-          <div class="flex items-center gap-1.5 mt-1">
-            <img id="summaryStakeCoinIcon" src="https://rollbux.com/icons/token.png" alt="" class="size-4 shrink-0">
-            <span id="statTotalPaid" class="text-xl font-bold font-mono text-white">0.00</span>
-          </div>
-        </div>
-        <div class="relative flex flex-col p-3.5 rounded-[12px] bg-[#0e131f] border border-white/[0.04]">
-          <span class="text-[11px] font-semibold text-[#acff46] uppercase tracking-wider">Total Winnings</span>
-          <div class="flex items-center gap-1.5 mt-1">
-            <img id="summaryWinCoinIcon" src="https://rollbux.com/icons/token.png" alt="" class="size-4 shrink-0">
-            <span id="statTotalWon" class="text-xl font-bold font-mono text-[#acff46]">0.00</span>
-          </div>
-        </div>
-        <div class="relative flex flex-col p-3.5 rounded-[12px] bg-[#0e131f] border border-white/[0.04]">
-          <span class="text-[11px] font-semibold text-[#9aa3a8] uppercase tracking-wider">Win Rate</span>
-          <span id="statWinRate" class="text-xl font-bold font-mono text-purple-400 mt-1">0%</span>
-        </div>
-      </div>
-
       <!-- Section Title & Counter -->
       <div class="flex w-full items-center justify-between mt-1">
-        <div class="flex items-center gap-2">
-          <p class="whitespace-nowrap text-[16px] text-white font-bold tracking-tight">Battles Activity</p>
-          <span class="size-1.5 rounded-full bg-[#acff46] animate-pulse"></span>
-        </div>
+        <p class="whitespace-nowrap text-[16px] text-white font-bold tracking-tight">Battles Activity</p>
         <span id="battlesCountBadge" class="text-[12px] font-medium text-[#9aa3a8]">Loading...</span>
       </div>
 
-      <!-- Premium Battles History Table -->
+      <!-- Premium Battles History Table: Battle | Amount Paid | Amount Won | Date & Time -->
       <div class="w-full flex flex-col items-center gap-[10px]">
         <div class="custom-scroll w-full max-w-full overflow-x-auto overflow-y-hidden rounded-[14px] border border-white/[0.06] bg-[#0e131f] shadow-2xl">
-          <div class="relative w-full min-w-[760px] overflow-hidden" style="min-height: 160px;">
+          <div class="relative w-full min-w-[700px] overflow-hidden" style="min-height: 160px;">
 
-            <!-- Table Header -->
-            <div class="grid grid-cols-[2fr_1.1fr_1.1fr_1.2fr_44px] items-center gap-3 px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-[#9aa3a8] border-b border-white/[0.05] bg-[#121826]/70">
-              <div>Game / Battle</div>
+            <!-- Table Header (Spaced evenly across full width: Battle | Amount Paid | Amount Won | Date & Time) -->
+            <div class="grid grid-cols-[1.8fr_1fr_1fr_1.3fr] items-center gap-4 px-7 py-3.5 text-[11px] font-bold uppercase tracking-wider text-[#9aa3a8] border-b border-white/[0.05] bg-[#121826]/70">
+              <div>Battle</div>
               <div class="text-right">Amount Paid</div>
               <div class="text-right">Amount Won</div>
               <div class="text-right">Date & Time</div>
-              <div class="text-center">Replay</div>
             </div>
 
             <!-- Table Rows Container -->
@@ -207,12 +179,7 @@
       const activeBtn = unit === 'BUX' ? unitBuxBtn : (unit === 'USD' ? unitUsdBtn : unitSolBtn);
       activeBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] text-xs font-bold bg-[#acff46] text-[#121418] transition shadow-sm active:scale-95';
 
-      const coinIcon = getCoinIcon();
-      document.getElementById('summaryStakeCoinIcon').src = coinIcon;
-      document.getElementById('summaryWinCoinIcon').src = coinIcon;
-
       renderBattles();
-      updateSummaryStats();
     }
 
     unitBuxBtn.addEventListener('click', () => setUnit('BUX'));
@@ -231,40 +198,6 @@
       hours = hours ? hours : 12;
       const mins = String(d.getMinutes()).padStart(2, '0');
       return `${day} ${month}, ${hours}:${mins} ${ampm}`;
-    }
-
-    function updateSummaryStats() {
-      const statTotalBattles = document.getElementById('statTotalBattles');
-      const statTotalPaid = document.getElementById('statTotalPaid');
-      const statTotalWon = document.getElementById('statTotalWon');
-      const statWinRate = document.getElementById('statWinRate');
-
-      if (!battlesData || battlesData.length === 0) {
-        if (statTotalBattles) statTotalBattles.textContent = '0';
-        if (statTotalPaid) statTotalPaid.textContent = '0.00';
-        if (statTotalWon) statTotalWon.textContent = '0.00';
-        if (statWinRate) statWinRate.textContent = '0%';
-        return;
-      }
-
-      let totalPaidBux = 0;
-      let totalWonBux = 0;
-      let winsCount = 0;
-
-      battlesData.forEach(b => {
-        totalPaidBux += parseFloat(b.amount_paid_bux || 0);
-        const won = parseFloat(b.amount_won_bux || 0);
-        totalWonBux += won;
-        if (b.won || won > 0) winsCount++;
-      });
-
-      if (statTotalBattles) statTotalBattles.textContent = battlesData.length;
-      if (statTotalPaid) statTotalPaid.textContent = formatCurrency(totalPaidBux);
-      if (statTotalWon) statTotalWon.textContent = formatCurrency(totalWonBux);
-      if (statWinRate) {
-        const rate = Math.round((winsCount / battlesData.length) * 100);
-        statWinRate.textContent = `${rate}%`;
-      }
     }
 
     function renderBattles() {
@@ -295,16 +228,15 @@
 
       list.innerHTML = battlesData.map((b, idx) => {
         const won = b.won || parseFloat(b.amount_won_bux) > 0;
-        const wonAmount = parseFloat(b.amount_won_bux || 0);
         const wonColorClass = won ? 'text-[#acff46] font-bold' : 'text-gray-500 font-medium';
         const wonIconClass = won ? 'opacity-100' : 'opacity-30 grayscale';
         const battleIdShort = b.battle_id ? b.battle_id.slice(0, 8) : `#${idx + 1}`;
 
         return `
-          <a href="${b.url}" target="_blank" rel="noopener noreferrer" class="grid grid-cols-[2fr_1.1fr_1.1fr_1.2fr_44px] items-center gap-3 px-6 py-3.5 transition-all duration-150 hover:bg-white/[0.03] group cursor-pointer border-l-2 ${won ? 'border-l-[#acff46]' : 'border-l-transparent'}">
+          <a href="${b.url}" target="_blank" rel="noopener noreferrer" class="grid grid-cols-[1.8fr_1fr_1fr_1.3fr] items-center gap-4 px-7 py-4 transition-all duration-150 hover:bg-white/[0.03] group cursor-pointer border-l-2 ${won ? 'border-l-[#acff46]' : 'border-l-transparent'}">
             
-            <!-- Game / Battle Column -->
-            <div class="flex items-center gap-3 min-w-0">
+            <!-- Battle Column -->
+            <div class="flex items-center gap-3.5 min-w-0">
               <span class="size-8 rounded-lg ${b.crazy_mode ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-purple-500/10 border-purple-500/30 text-purple-400'} border flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 shadow-sm">
                 <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75l16.5 16.5m0-16.5L3.75 20.25" />
@@ -339,15 +271,6 @@
               <span class="text-[12px] font-medium text-[#9aa3a8]">${formatDate(b.created_at)}</span>
             </div>
 
-            <!-- Replay Arrow Icon -->
-            <div class="flex items-center justify-center">
-              <span class="size-7 rounded-lg bg-white/[0.03] group-hover:bg-[#acff46] group-hover:text-black text-gray-400 flex items-center justify-center transition-all duration-150">
-                <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                </svg>
-              </span>
-            </div>
-
           </a>
         `;
       }).join('');
@@ -374,7 +297,6 @@
           const data = await battlesRes.json();
           battlesData = data.battles || [];
           renderBattles();
-          updateSummaryStats();
         }
       } catch (err) {
         console.error('Error fetching battles:', err);
