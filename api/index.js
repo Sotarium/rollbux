@@ -1576,6 +1576,130 @@ export default async function handler(req, res) {
     return;
   }
 
+  // ── Mines API Helpers ──────────────────────────────────────────────────────
+  async function getMinesSessionToken(targetName) {
+    const url = process.env.UPSTASH_REDIS_REST_URL || "https://flowing-chigger-149490.upstash.io";
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    if (!token) throw new Error("Upstash token missing");
+    const accResp = await fetch(`${url}/get/roach%3Aaccounts`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const accData = await accResp.json();
+    let accounts = accData.result ? JSON.parse(accData.result) : [];
+    let acc = accounts.find(a => (a.name || '').toLowerCase().trim() === (targetName || '').toLowerCase().trim());
+    if (!acc && accounts.length > 0) acc = accounts[0];
+    const sessionToken = acc ? acc.token : null;
+    if (!sessionToken) throw new Error(`No session token for "${targetName}"`);
+    return sessionToken;
+  }
+
+  function minesHeaders(sessionToken) {
+    return {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+      "Accept": "application/json, text/plain, */*",
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${sessionToken}`,
+      "Cookie": `authjs.session-token=${sessionToken}`,
+      "Origin": "https://rollbux.com",
+      "Referer": "https://rollbux.com/games/mines"
+    };
+  }
+
+  // POST /api/mines/start
+  if (pathname === '/api/mines/start' && req.method === 'POST') {
+    if (!isAllowedIp(req)) { res.statusCode = 403; res.end('Forbidden'); return; }
+    try {
+      const payload = req.body || await parseBody(req);
+      const targetName = (payload.username || '').toLowerCase().trim();
+      const sessionToken = await getMinesSessionToken(targetName);
+      const idKey = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+      const rbRes = await fetch('https://rollbux.com/_api/games/mines/start', {
+        method: 'POST',
+        headers: { ...minesHeaders(sessionToken), 'Idempotency-Key': idKey },
+        body: JSON.stringify({
+          amount_micro_tokens: payload.amount_micro_tokens,
+          number_of_mines: payload.number_of_mines || 1
+        })
+      });
+      const rbData = await rbRes.json();
+      if (!rbRes.ok) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ success: false, error: rbData?.message || rbData?.error || 'Start failed' }));
+        return;
+      }
+      res.setHeader('Content-Type', 'application/json');
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, data: rbData }));
+    } catch (e) {
+      res.statusCode = 500;
+      res.end(JSON.stringify({ success: false, error: e.message }));
+    }
+    return;
+  }
+
+  // POST /api/mines/reveal
+  if (pathname === '/api/mines/reveal' && req.method === 'POST') {
+    if (!isAllowedIp(req)) { res.statusCode = 403; res.end('Forbidden'); return; }
+    try {
+      const payload = req.body || await parseBody(req);
+      const targetName = (payload.username || '').toLowerCase().trim();
+      const sessionToken = await getMinesSessionToken(targetName);
+      const idKey = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+      const rbRes = await fetch('https://rollbux.com/_api/games/mines/reveal', {
+        method: 'POST',
+        headers: { ...minesHeaders(sessionToken), 'Idempotency-Key': idKey },
+        body: JSON.stringify({ tile_index: payload.tile_index })
+      });
+      const rbData = await rbRes.json();
+      // If we hit a mine the API still returns 200 but marks it
+      const exploded = rbData?.data?.exploded === true || rbData?.exploded === true;
+      if (!rbRes.ok) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ success: false, exploded, error: rbData?.message || rbData?.error || 'Reveal failed' }));
+        return;
+      }
+      res.setHeader('Content-Type', 'application/json');
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: !exploded, exploded, data: rbData }));
+    } catch (e) {
+      res.statusCode = 500;
+      res.end(JSON.stringify({ success: false, error: e.message }));
+    }
+    return;
+  }
+
+  // POST /api/mines/cashout
+  if (pathname === '/api/mines/cashout' && req.method === 'POST') {
+    if (!isAllowedIp(req)) { res.statusCode = 403; res.end('Forbidden'); return; }
+    try {
+      const payload = req.body || await parseBody(req);
+      const targetName = (payload.username || '').toLowerCase().trim();
+      const sessionToken = await getMinesSessionToken(targetName);
+      const idKey = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+      const rbRes = await fetch('https://rollbux.com/_api/games/mines/cashout', {
+        method: 'POST',
+        headers: { ...minesHeaders(sessionToken), 'Idempotency-Key': idKey },
+        body: JSON.stringify({})
+      });
+      const rbData = await rbRes.json();
+      if (!rbRes.ok) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ success: false, error: rbData?.message || rbData?.error || 'Cashout failed' }));
+        return;
+      }
+      // Extract payout in BUX
+      const payoutMicro = rbData?.data?.payout || rbData?.data?.amount || rbData?.payout || 0;
+      const payoutBux = (payoutMicro / 1_000_000).toFixed(2);
+      res.setHeader('Content-Type', 'application/json');
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, payout_bux: payoutBux, data: rbData }));
+    } catch (e) {
+      res.statusCode = 500;
+      res.end(JSON.stringify({ success: false, error: e.message }));
+    }
+    return;
+  }
+
   res.statusCode = 404;
   res.end(JSON.stringify({ error: 'Not found' }));
 }
