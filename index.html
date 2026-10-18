@@ -446,7 +446,7 @@
                       <!-- Target Account Selector Button -->
                       <div class="relative z-10 flex items-center justify-between p-2 rounded-lg bg-[#131a29] border border-white/5 w-full">
                         <span class="text-[11px] font-semibold text-[#9aa3a8]">Account</span>
-                        <button type="button" id="upgraderAccountBtn" class="flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-xs font-black tracking-tight transition active:scale-95 shadow-md shadow-[#7c3aed]/25">
+                        <button type="button" id="upgraderAccountBtn" onclick="openAccountSelectorModal('upgrader')" class="flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-xs font-black tracking-tight transition active:scale-95 shadow-md shadow-[#7c3aed]/25 cursor-pointer">
                           <span id="upgraderAccountLabel" class="truncate">Select Acc</span>
                         </button>
                       </div>
@@ -530,7 +530,7 @@
                       <!-- Target Account Selector Button -->
                       <div class="relative z-10 flex items-center justify-between p-2 rounded-lg bg-[#131a29] border border-white/5 w-full">
                         <span class="text-[11px] font-semibold text-[#9aa3a8]">Account</span>
-                        <button type="button" id="battleAccountBtn" class="flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-xs font-black tracking-tight transition active:scale-95 shadow-md shadow-[#7c3aed]/25">
+                        <button type="button" id="battleAccountBtn" onclick="openAccountSelectorModal('battle')" class="flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-xs font-black tracking-tight transition active:scale-95 shadow-md shadow-[#7c3aed]/25 cursor-pointer">
                           <span id="battleAccountLabel" class="truncate">Select Acc</span>
                         </button>
                       </div>
@@ -561,7 +561,7 @@
                       <!-- Target Account Selector Button -->
                       <div class="relative z-10 flex items-center justify-between p-2 rounded-lg bg-[#131a29] border border-white/5 w-full">
                         <span class="text-[11px] font-semibold text-[#9aa3a8]">Account</span>
-                        <button type="button" id="minesAccountBtn" class="flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-xs font-black tracking-tight transition active:scale-95 shadow-md shadow-[#7c3aed]/25">
+                        <button type="button" id="minesAccountBtn" onclick="openAccountSelectorModal('mines')" class="flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-xs font-black tracking-tight transition active:scale-95 shadow-md shadow-[#7c3aed]/25 cursor-pointer">
                           <span id="minesAccountLabel" class="truncate">Select Acc</span>
                         </button>
                       </div>
@@ -657,6 +657,7 @@
           <button type="submit" id="saveFarmerTokenBtn" class="px-5 py-2 bg-[#acff46] text-[#121418] font-bold text-xs rounded-lg hover:bg-[#96e036] transition shadow-md shadow-[#acff46]/10">Save & Start Farming</button>
         </div>
       </form>
+    </div>
   </div>
 
   <!-- Account Selector Overlay Modal -->
@@ -2336,7 +2337,7 @@
       });
     }
 
-    async function openAccountSelectorModal(mode) {
+    window.openAccountSelectorModal = async function(mode) {
       currentAccountSelectorMode = mode;
       const cfg = accountSettings[mode];
       if (accountSelectorModeLabel) {
@@ -2350,11 +2351,11 @@
 
       const accounts = await getRegisteredAccountsList();
       renderAccountSelectorList(accounts);
-    }
+    };
 
-    function closeAccountSelectorModal() {
+    window.closeAccountSelectorModal = function() {
       if (accountSelectorModal) accountSelectorModal.classList.add('hidden');
-    }
+    };
 
     if (closeAccountSelectorModalBtn) closeAccountSelectorModalBtn.addEventListener('click', closeAccountSelectorModal);
     if (closeAccountSelectorModalBtn2) closeAccountSelectorModalBtn2.addEventListener('click', closeAccountSelectorModal);
