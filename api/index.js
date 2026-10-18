@@ -1621,10 +1621,12 @@ export default async function handler(req, res) {
           number_of_mines: payload.number_of_mines || 1
         })
       });
-      const rbData = await rbRes.json();
+      const rbData = await rbRes.json().catch(() => ({}));
       if (!rbRes.ok) {
-        res.statusCode = 400;
-        res.end(JSON.stringify({ success: false, error: rbData?.message || rbData?.error || 'Start failed' }));
+        console.error('[API Mines Start Failed]', rbRes.status, rbData);
+        res.statusCode = rbRes.status || 400;
+        const errMessage = rbData?.message || (typeof rbData?.error === 'string' ? rbData.error : (rbData?.error?.message || JSON.stringify(rbData?.error || 'Start failed')));
+        res.end(JSON.stringify({ success: false, status: rbRes.status, error: errMessage, details: rbData }));
         return;
       }
       res.setHeader('Content-Type', 'application/json');

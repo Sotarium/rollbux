@@ -2729,10 +2729,11 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: acc, amount_micro_tokens: balanceMicro, number_of_mines: 1 })
         });
-        const startData = await startRes.json();
+        const startData = await startRes.json().catch(() => ({}));
         if (!startRes.ok || !startData.success) {
           console.warn('[AutoMines Start Error]', startData);
-          setMinesFeedback(`${acc} : ${balanceBux.toFixed(2)} BUX Failed.`, '#ff6b6b');
+          const errDetail = typeof startData?.error === 'string' ? startData.error : (startData?.error?.message || 'Start failed');
+          setMinesFeedback(`${acc} : ${errDetail}`, '#ff6b6b');
           return;
         }
 
