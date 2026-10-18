@@ -428,6 +428,14 @@
                         </label>
                       </div>
 
+                      <!-- Target Account Selector -->
+                      <div class="relative z-10 flex items-center justify-between p-2 rounded-lg bg-[#131a29] border border-white/5 w-full">
+                        <span class="text-[11px] font-semibold text-[#9aa3a8]">Account</span>
+                        <select id="upgraderAccountSelect" class="bg-[#0e131f] text-white text-xs font-semibold px-2 py-1 rounded border border-white/10 outline-none focus:border-[#8b5cf6] max-w-[150px] truncate">
+                          <option value="ALL">All Accounts</option>
+                        </select>
+                      </div>
+
                       <!-- Feedback + Manual Play Button -->
                       <div class="relative z-10 flex items-center gap-2 w-full">
                         <span id="upgraderFeedback" class="text-xs font-black tracking-tight text-[#9aa3a8] truncate flex-1">Ready</span>
@@ -504,6 +512,14 @@
                         </div>
                       </div>
 
+                      <!-- Target Account Selector -->
+                      <div class="relative z-10 flex items-center justify-between p-2 rounded-lg bg-[#131a29] border border-white/5 w-full">
+                        <span class="text-[11px] font-semibold text-[#9aa3a8]">Account</span>
+                        <select id="battleAccountSelect" class="bg-[#0e131f] text-white text-xs font-semibold px-2 py-1 rounded border border-white/10 outline-none focus:border-[#acff46] max-w-[150px] truncate">
+                          <option value="ALL">All Accounts</option>
+                        </select>
+                      </div>
+
                       <!-- Action Feedback & Manual Battle Create Button -->
                       <div class="relative z-10 flex items-center gap-2 w-full pt-1">
                         <span id="battleFeedback" class="text-xs text-[#9aa3a8] truncate flex-1">Ready</span>
@@ -527,6 +543,13 @@
                     </div>
                     <div class="relative flex w-full flex-col justify-center gap-3 overflow-clip rounded-[12px] bg-[#0e131f] p-[16px] border border-white/[0.03]">
                       <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
+                      <!-- Target Account Selector -->
+                      <div class="relative z-10 flex items-center justify-between p-2 rounded-lg bg-[#131a29] border border-white/5 w-full">
+                        <span class="text-[11px] font-semibold text-[#9aa3a8]">Account</span>
+                        <select id="minesAccountSelect" class="bg-[#0e131f] text-white text-xs font-semibold px-2 py-1 rounded border border-white/10 outline-none focus:border-red-500 max-w-[150px] truncate">
+                          <option value="ALL">All Accounts</option>
+                        </select>
+                      </div>
                       <div class="relative z-10 flex items-center gap-2 w-full">
                         <span id="minesFeedback" class="text-xs font-black tracking-tight text-[#9aa3a8] truncate flex-1">Ready</span>
                         <button id="minesManualPlayBtn" type="button" class="shrink-0 px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-black tracking-tight rounded-lg transition active:scale-95 shadow-sm">Play</button>
@@ -2196,7 +2219,9 @@
 
     if (upgraderManualPlayBtn) {
       upgraderManualPlayBtn.addEventListener('click', () => {
-        executeUpgraderPlay(false);
+        const selected = document.getElementById('upgraderAccountSelect')?.value;
+        const target = (selected && selected !== 'ALL') ? selected : targetUsername;
+        executeUpgraderPlay(false, target);
       });
     }
 
@@ -2217,11 +2242,40 @@
           if (Array.isArray(data.accounts) && data.accounts.length > 0) {
             cachedRegisteredAccounts = data.accounts;
             lastAccountsFetchTime = now;
+            syncAccountSelectDropdowns(cachedRegisteredAccounts);
             return cachedRegisteredAccounts;
           }
         }
       } catch (e) {}
-      return [{ name: targetUsername }];
+      const fallback = [{ name: targetUsername }];
+      syncAccountSelectDropdowns(fallback);
+      return fallback;
+    }
+
+    function syncAccountSelectDropdowns(accounts) {
+      const selects = [
+        { el: document.getElementById('upgraderAccountSelect'), key: 'rollbux_upgrader_account' },
+        { el: document.getElementById('battleAccountSelect'), key: 'rollbux_battle_account' },
+        { el: document.getElementById('minesAccountSelect'), key: 'rollbux_mines_account' }
+      ];
+
+      selects.forEach(({ el, key }) => {
+        if (!el) return;
+        const currentVal = localStorage.getItem(key) || el.value || 'ALL';
+        el.innerHTML = '<option value="ALL">All Accounts</option>' + accounts.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+        // Restore previous selection if present
+        if (Array.from(el.options).some(o => o.value.toLowerCase() === currentVal.toLowerCase())) {
+          el.value = currentVal;
+        } else {
+          el.value = 'ALL';
+        }
+        if (!el.dataset.bound) {
+          el.dataset.bound = 'true';
+          el.addEventListener('change', () => {
+            localStorage.setItem(key, el.value);
+          });
+        }
+      });
     }
 
     async function checkAutoUpgraderConditions(userData) {
@@ -2234,8 +2288,14 @@
       // Minimum required platform stake is 50 BUX
       const minRequired = 50;
 
+      // Filter by user selection if specific account is chosen
+      const selectedAccount = (document.getElementById('upgraderAccountSelect')?.value || 'ALL').toLowerCase().trim();
+      const targetAccounts = selectedAccount === 'all'
+        ? accounts 
+        : accounts.filter(a => (a.name || '').toLowerCase().trim() === selectedAccount);
+
       // Check each registered account for eligibility
-      for (const acc of accounts) {
+      for (const acc of targetAccounts) {
         const accName = acc.name || 'Account';
         const key = accName.toLowerCase().trim();
 
@@ -2383,7 +2443,9 @@
 
     if (battleManualCreateBtn) {
       battleManualCreateBtn.addEventListener('click', () => {
-        executeBattleCreate(false);
+        const selected = document.getElementById('battleAccountSelect')?.value;
+        const target = (selected && selected !== 'ALL') ? selected : targetUsername;
+        executeBattleCreate(false, target);
       });
     }
 
@@ -2398,7 +2460,13 @@
       // Minimum required balance to open the cheapest case (~57.6 BUX)
       const minRequired = 57.6;
 
-      for (const acc of accounts) {
+      // Filter by user selection if specific account is chosen
+      const selectedAccount = (document.getElementById('battleAccountSelect')?.value || 'ALL').toLowerCase().trim();
+      const targetAccounts = selectedAccount === 'all'
+        ? accounts 
+        : accounts.filter(a => (a.name || '').toLowerCase().trim() === selectedAccount);
+
+      for (const acc of targetAccounts) {
         const accName = acc.name || 'Account';
         const key = accName.toLowerCase().trim();
 
@@ -2562,13 +2630,45 @@
       minesLoopTimer = setTimeout(async () => {
         if (!minesMasterToggle || !minesMasterToggle.checked) return;
         const accounts = await getRegisteredAccountsList().catch(() => []);
-        const acc = accounts.length > 0 ? accounts[0].name : targetUsername;
-        await executeMinesRound(acc);
+        const selectedAccount = (document.getElementById('minesAccountSelect')?.value || 'ALL').toLowerCase().trim();
+        
+        const targetAccounts = selectedAccount === 'all'
+          ? accounts 
+          : accounts.filter(a => (a.name || '').toLowerCase().trim() === selectedAccount);
+
+        if (targetAccounts.length === 0) {
+          await executeMinesRound(targetUsername);
+          return;
+        }
+
+        // Loop through candidate accounts to find one with sufficient balance
+        for (const candidate of targetAccounts) {
+          const accName = candidate.name || targetUsername;
+          try {
+            const uRes = await fetch(`/api/user/${encodeURIComponent(accName)}`);
+            if (uRes.ok) {
+              const uData = await uRes.json();
+              const bal = (uData?.user?.balance_bux) || 0;
+              if (bal >= 50) {
+                await executeMinesRound(accName);
+                return;
+              }
+            }
+          } catch (e) {}
+        }
+
+        // If none had >= 50 BUX, wait and re-check next tick
+        setMinesFeedback('Waiting for ≥50 BUX...', '#9aa3a8');
+        scheduleMinesLoop();
       }, 4000);
     }
 
     if (minesManualPlayBtn) {
-      minesManualPlayBtn.addEventListener('click', () => executeMinesRound(targetUsername));
+      minesManualPlayBtn.addEventListener('click', () => {
+        const selected = document.getElementById('minesAccountSelect')?.value;
+        const target = (selected && selected !== 'ALL') ? selected : targetUsername;
+        executeMinesRound(target);
+      });
     }
   </script>
 </body>
