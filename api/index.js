@@ -837,34 +837,70 @@ export default async function handler(req, res) {
       const cheapestCase = validCases[0];
       const minNeededBux = cheapestCase.price / 1000000;
       if (balanceBux < minNeededBux) {
+      // Check if user already has an active battle to avoid "You have too many active battles" error
+      try {
+        const checkActiveResp = await fetch("https://rollbux.com/_api/battles", { headers: rollHeaders });
+        if (checkActiveResp.ok) {
+          const checkData = await checkActiveResp.json();
+          const activeList = (checkData.data?.battles || []).filter(b => 
+            (b.creator_id === acc?.token || b.players?.some(p => (p.username || '').toLowerCase() === targetName)) &&
+            (b.status === 'waiting' || b.status === 'in_progress')
+          );
+          if (activeList.length > 0) {
+            res.status(400).json({
+              success: false,
+              error: `You already have ${activeList.length} active battle in progress. Waiting for it to complete.`
+            });
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 4. Select cases starting from lowest to higher until cost is as close to balance as possible
+      // In RollBux Borrow Mode (80% borrow), the user only pays 20% of the battle cost (Cost * 0.20 <= Balance).
+      // That means allowed battle prize pool capacity is Balance / 0.20 = Balance * 5!
+      const userEffectiveBorrowCostMultiplier = borrowEnabled ? 0.20 : 1.0;
+      const cheapestCase = validCases[0];
+      const cheapestUserCostBux = (cheapestCase.price / 1000000) * userEffectiveBorrowCostMultiplier;
+
+      if (balanceBux < cheapestUserCostBux) {
         res.status(400).json({
           success: false,
-          error: `Balance is ${balanceBux.toFixed(2)} BUX. Cheapest case "${cheapestCase.name}" costs ${minNeededBux.toFixed(2)} BUX.`
+          error: `Balance is ${balanceBux.toFixed(2)} BUX. Cheapest case "${cheapestCase.name}" costs ${cheapestUserCostBux.toFixed(2)} BUX.`
         });
         return;
       }
 
-      // Greedily pick cases to get total cost closest to total balance without exceeding it
+      // Max total nominal battle cost that the user's balance can fund
+      const maxBattleNominalCostMicro = Math.floor(tokenBalanceMicro / userEffectiveBorrowCostMultiplier);
+
+      // Start by picking the lowest priced cases and gradually add higher cases until the amount is too close to add another
       const selectedCases = [];
       let currentCostMicro = 0;
-      const targetMicro = tokenBalanceMicro;
 
-      let added = true;
-      while (added) {
-        added = false;
-        const remainingMicro = targetMicro - currentCostMicro;
-        let bestFit = null;
-        for (let i = validCases.length - 1; i >= 0; i--) {
+      // Iteratively pick cases from lowest upwards
+      let canAddMore = true;
+      while (canAddMore) {
+        canAddMore = false;
+        const remainingMicro = maxBattleNominalCostMicro - currentCostMicro;
+        
+        // Find best case that fits within remaining limit:
+        // Prioritize starting from lowest prices upwards
+        let chosenCase = null;
+        for (let i = 0; i < validCases.length; i++) {
           if (validCases[i].price <= remainingMicro) {
-            bestFit = validCases[i];
+            chosenCase = validCases[i];
+          } else {
+            // Once we encounter a case that doesn't fit, stop checking higher priced ones
             break;
           }
         }
 
-        if (bestFit) {
-          selectedCases.push(bestFit);
-          currentCostMicro += bestFit.price;
-          added = true;
+        if (chosenCase) {
+          selectedCases.push(chosenCase);
+          currentCostMicro += chosenCase.price;
+          canAddMore = true;
+          // RollBux cap: up to 30 cases per battle
           if (selectedCases.length >= 30) break;
         }
       }
@@ -875,6 +911,7 @@ export default async function handler(req, res) {
       }
 
       const totalCostBux = currentCostMicro / 1000000;
+      const actualPaidBux = totalCostBux * userEffectiveBorrowCostMultiplier;
 
       // 5. Construct battle payload matching RollBux format
       const caseIds = selectedCases.map(c => c.id);
@@ -928,13 +965,33 @@ export default async function handler(req, res) {
       }
 
       const battleResult = createJson?.data || createJson || {};
+      const createdBattleId = battleResult.battle_id || battleResult.id;
+
+      // 7. Auto-call bots to fill remaining slots (3v3 has slots 1 to 5)
+      if (createdBattleId) {
+        (async () => {
+          for (let slot = 1; slot <= 5; slot++) {
+            try {
+              await new Promise(r => setTimeout(r, 400));
+              await fetch(`https://rollbux.com/_api/battles/${createdBattleId}/bot`, {
+                method: 'POST',
+                headers: rollHeaders,
+                body: JSON.stringify({ slot })
+              });
+            } catch (botErr) {
+              // Ignore bot call error if slot fills or completes
+            }
+          }
+        })().catch(() => {});
+      }
 
       res.status(200).json({
         success: true,
         account: acc ? acc.name : (targetName || 'Account'),
-        battle_id: battleResult.battle_id || battleResult.id,
+        battle_id: createdBattleId,
         borrow: borrowEnabled,
         totalCostBux: totalCostBux.toFixed(2),
+        actualPaidBux: actualPaidBux.toFixed(2),
         accountBalanceBux: balanceBux.toFixed(2),
         casesCount: selectedCases.length,
         cases: selectedCases.map(c => ({ id: c.id, name: c.name, priceBux: (c.price / 1000000).toFixed(2) })),
@@ -943,6 +1000,95 @@ export default async function handler(req, res) {
       return;
     } catch (e) {
       console.error("[AutoBattle Error]", e);
+      res.status(500).json({ success: false, error: e.message });
+      return;
+    }
+  }
+
+  // Battle History API endpoint
+  if (pathname === '/api/battles/history' && req.method === 'GET') {
+    if (!isAllowedIp(req)) {
+      res.statusCode = 403;
+      res.end('Forbidden');
+      return;
+    }
+
+    try {
+      const targetName = (url.searchParams.get('username') || 'sotarium').toLowerCase().trim();
+      const redisUrl = process.env.UPSTASH_REDIS_REST_URL || "https://flowing-chigger-149490.upstash.io";
+      const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+      
+      let sessionToken = process.env.ROLLBUX_SESSION_TOKEN;
+      if (redisToken) {
+        const accResp = await fetch(`${redisUrl}/get/roach%3Aaccounts`, { headers: { Authorization: `Bearer ${redisToken}` } });
+        const accData = await accResp.json();
+        const accounts = accData.result ? JSON.parse(accData.result) : [];
+        const acc = accounts.find(a => (a.name || '').toLowerCase().trim() === targetName) || accounts[0];
+        if (acc) sessionToken = acc.token;
+      }
+
+      const rollHeaders = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Authorization": `Bearer ${sessionToken}`,
+        "Cookie": `authjs.session-token=${sessionToken}`
+      };
+
+      const histResp = await fetch("https://rollbux.com/_api/battles/history?limit=50", { headers: rollHeaders });
+      if (!histResp.ok) {
+        res.status(histResp.status).json({ success: false, error: "Failed to fetch battles history" });
+        return;
+      }
+
+      const histData = await histResp.json();
+      const rawBattles = histData?.data?.items || [];
+
+      // Filter and enrich battles for the target user
+      const userBattles = [];
+      for (const b of rawBattles) {
+        // Check if user participated in this battle (or if creator/winner)
+        const isUserInBattle = (b.winners || []).some(w => (w.username || '').toLowerCase() === targetName) ||
+                               (b.players || []).some(p => (p.username || '').toLowerCase() === targetName);
+        
+        // Also fetch individual battle details if needed to get exact payout and cases
+        let amountPaidBux = 0;
+        let amountWonBux = 0;
+        let didWin = false;
+
+        const isWinner = (b.winners || []).some(w => (w.username || '').toLowerCase() === targetName);
+        if (isWinner) {
+          didWin = true;
+        }
+
+        // Nominal battle cost or prize pool
+        const prizePoolBux = (b.prize_pool || b.cost || 0) / 1000000;
+        // If borrow 80%, user paid 20%
+        const isBorrow = Boolean(b.borrow || b.settings?.borrow);
+        amountPaidBux = isBorrow ? (prizePoolBux * 0.20) : prizePoolBux;
+
+        userBattles.push({
+          battle_id: b.battle_id,
+          game_mode: b.game_mode?.mode || '3v3',
+          crazy_mode: Boolean(b.modifiers?.crazy_mode),
+          borrow: isBorrow,
+          prize_pool_bux: prizePoolBux.toFixed(2),
+          amount_paid_bux: amountPaidBux.toFixed(2),
+          amount_won_bux: didWin ? (prizePoolBux * (isBorrow ? 0.20 : 1.0)).toFixed(2) : "0.00",
+          won: didWin,
+          created_at: b.created_at ? (b.created_at * 1000) : Date.now(),
+          completed_at: b.completed_at ? (b.completed_at * 1000) : null,
+          winners: b.winners || [],
+          url: `https://rollbux.com/games/battles/${b.battle_id}`
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        battles: userBattles
+      });
+      return;
+    } catch (e) {
+      console.error("[Battles History Error]", e);
       res.status(500).json({ success: false, error: e.message });
       return;
     }
@@ -1289,6 +1435,44 @@ export default async function handler(req, res) {
       if (!html) {
         res.statusCode = 404;
         res.end('Accounts page not found');
+        return;
+      }
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.statusCode = 200;
+      res.end(html);
+      return;
+    } catch (err) {
+      res.statusCode = 500;
+      res.end('Internal Server Error');
+      return;
+    }
+  }
+
+  const isHistoryPage = matchedPath === '/history' || matchedPath === '/history.html' || pathname === '/history' || pathname === '/history.html';
+
+  // Serve the Battles History HTML page (/history)
+  if (isHistoryPage) {
+    if (!isAllowedIp(req)) {
+      res.statusCode = 403;
+      res.end('Forbidden');
+      return;
+    }
+    try {
+      const candidates = [
+        path.resolve(process.cwd(), 'server', 'history.html'),
+        path.resolve(process.cwd(), 'history.html'),
+        path.resolve(process.cwd(), 'dist', 'history.html')
+      ];
+      let html = null;
+      for (const p of candidates) {
+        if (fs.existsSync(p)) {
+          html = fs.readFileSync(p, 'utf-8');
+          break;
+        }
+      }
+      if (!html) {
+        res.statusCode = 404;
+        res.end('History page not found');
         return;
       }
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
