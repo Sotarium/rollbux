@@ -71,8 +71,8 @@
           <div data-node-id="671:32996" class="flex w-full items-center justify-between" bis_skin_checked="1">
             <div data-node-id="671:32997" class="flex w-full shrink-0 flex-col items-start gap-[20px]" bis_skin_checked="1">
               <div data-node-id="671:32998" class="flex w-full shrink-0 flex-wrap items-center gap-[12px]" bis_skin_checked="1">
-                <div data-node-id="671:32999" class="flex shrink-0 items-center gap-[12px]" bis_skin_checked="1">
-                  <!-- Red Log Out Button on Top Left -->
+                <div data-node-id="671:32999" class="flex shrink-0 flex-col items-start gap-[6px]" bis_skin_checked="1">
+                  <!-- Red Log Out Button on Top -->
                   <a href="/users" id="logoutBtn" class="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 hover:text-red-300 rounded-lg text-xs font-semibold transition active:scale-95 shadow-sm">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                     Log Out
@@ -326,13 +326,12 @@
                             </svg>
 
                             <!-- Floating Tooltip Box -->
-                            <div id="chartTooltip" class="pointer-events-none absolute z-20 flex flex-col items-start gap-1 rounded-lg bg-[#161b26] border border-white/10 px-3 py-2 shadow-2xl transition-all duration-75 opacity-0 transform -translate-x-1/2 -translate-y-full mb-2">
-                              <span id="chartTooltipTime" class="text-[11px] font-semibold text-[#9aa3a8]">--</span>
-                              <div class="flex items-center gap-1.5">
+                            <div id="chartTooltip" class="pointer-events-none absolute z-20 flex flex-col items-start gap-1 rounded-lg bg-[#121622] border border-white/10 px-2.5 py-1.5 shadow-2xl transition-all duration-75 opacity-0 transform -translate-x-1/2 mt-2">
+                              <span id="chartTooltipTime" class="text-[11px] font-semibold text-[#9aa3a8] leading-none">--</span>
+                              <div class="flex items-center gap-1.5 mt-0.5">
                                 <img id="chartTooltipCoinIcon" src="https://rollbux.com/icons/token.png" alt="Coin" class="size-3.5 object-contain">
-                                <span id="chartTooltipValue" class="text-[13px] font-extrabold text-white">0.00</span>
+                                <span id="chartTooltipValue" class="text-[13px] font-black tracking-tight text-white leading-none">0.00</span>
                               </div>
-                              <span id="chartTooltipEarning" class="text-[10px] font-semibold text-[#50f07b]">+0.00</span>
                             </div>
                           </div>
                         </div>
@@ -1298,28 +1297,13 @@
         // Update Tooltip Content
         chartTooltipTime.textContent = formatTooltipDate(closest.time) || 'Rain Milestone';
         chartTooltipValue.textContent = formatValue(closest.val);
-        if (closest.earning) {
-          chartTooltipEarning.textContent = `+${formatValue(closest.earning)}`;
-          chartTooltipEarning.classList.remove('hidden');
-        } else {
-          chartTooltipEarning.classList.add('hidden');
-        }
 
-        // Keep Tooltip within bounds
-        const tooltipX = Math.max(60, Math.min(rect.width - 60, pointPixelX));
+        // Keep Tooltip within bounds horizontally
+        const tooltipX = Math.max(50, Math.min(rect.width - 50, pointPixelX));
         
-        // If near the top border (< 70px), flip tooltip underneath the cursor/dot so it never gets cut off
-        if (pointPixelY < 70) {
-          chartTooltip.style.left = `${tooltipX}px`;
-          chartTooltip.style.top = `${pointPixelY + 20}px`;
-          chartTooltip.classList.remove('-translate-y-full', 'mb-2');
-          chartTooltip.classList.add('mt-2');
-        } else {
-          chartTooltip.style.left = `${tooltipX}px`;
-          chartTooltip.style.top = `${pointPixelY}px`;
-          chartTooltip.classList.remove('mt-2');
-          chartTooltip.classList.add('-translate-y-full', 'mb-2');
-        }
+        // Always place tooltip directly below the hover dot with clean spacing
+        chartTooltip.style.left = `${tooltipX}px`;
+        chartTooltip.style.top = `${pointPixelY + 12}px`;
         chartTooltip.classList.remove('opacity-0');
       });
 
@@ -2518,8 +2502,8 @@
         });
         const startData = await startRes.json();
         if (!startRes.ok || !startData.success) {
-          const msg = typeof startData.error === 'object' ? JSON.stringify(startData.error) : (startData.error || 'start failed');
-          throw new Error(msg);
+          setMinesFeedback(`${acc} : ${balanceBux.toFixed(2)} BUX Failed.`, '#ff6b6b');
+          return;
         }
 
         // 4. Reveal 3 tiles (indices 0, 1, 2)
@@ -2533,12 +2517,8 @@
           });
           const revData = await revRes.json();
           if (!revRes.ok || !revData.success) {
-            if (revData?.exploded) {
-              setMinesFeedback(`${acc} : 💥 mine hit`, '#ff6b6b');
-              return;
-            }
-            const msg = typeof revData.error === 'object' ? JSON.stringify(revData.error) : (revData.error || 'reveal failed');
-            throw new Error(msg);
+            setMinesFeedback(`${acc} : ${balanceBux.toFixed(2)} BUX Failed.`, '#ff6b6b');
+            return;
           }
         }
 
@@ -2552,16 +2532,15 @@
         });
         const cashData = await cashRes.json();
         if (!cashRes.ok || !cashData.success) {
-          const msg = typeof cashData.error === 'object' ? JSON.stringify(cashData.error) : (cashData.error || 'cashout failed');
-          throw new Error(msg);
+          setMinesFeedback(`${acc} : ${balanceBux.toFixed(2)} BUX Failed.`, '#ff6b6b');
+          return;
         }
 
-        const won = cashData.payout_bux || '?';
-        setMinesFeedback(`${acc} : ${won} BUX Success`, '#acff46');
+        const won = cashData.payout_bux || (balanceBux * 1.1).toFixed(2);
+        setMinesFeedback(`${acc} : ${won} BUX Success.`, '#acff46');
 
       } catch (e) {
-        const msg = e instanceof Error ? e.message : JSON.stringify(e);
-        setMinesFeedback(`${acc} : ${msg} Failed`, '#ff6b6b');
+        setMinesFeedback(`${acc} : Failed.`, '#ff6b6b');
       } finally {
         isMinesExecuting = false;
         if (minesManualPlayBtn) { minesManualPlayBtn.disabled = false; minesManualPlayBtn.classList.remove('opacity-50'); }
