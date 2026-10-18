@@ -811,21 +811,39 @@ export default async function handler(req, res) {
 
       const balanceBux = tokenBalanceMicro / 1000000;
 
-      // 3. Fetch cases in 0 - 5,000 price range sorted by price/rarity ascending
+      // 3. Fetch all cases across all pages in 0 - 5,000 BUX price range
       // RollBux micro-tokens: 5,000 BUX = 5,000,000,000 micro tokens
-      const casesResp = await fetch("https://rollbux.com/_api/cases?limit=100", { headers: rollHeaders });
-      if (!casesResp.ok) {
+      let allCases = [];
+      try {
+        let page = 1;
+        while (page <= 5) {
+          const cResp = await fetch(`https://rollbux.com/_api/cases?page=${page}&limit=100`, { headers: rollHeaders });
+          if (!cResp.ok) break;
+          const cJson = await cResp.json();
+          const items = cJson?.data?.items || [];
+          allCases.push(...items);
+          if (items.length < 100) break;
+          page++;
+        }
+      } catch (e) {
+        console.error("[AutoBattle] Error fetching all cases pages:", e.message);
+      }
+
+      if (allCases.length === 0) {
         res.status(500).json({ success: false, error: "Failed to fetch RollBux cases list" });
         return;
       }
-      const casesData = await casesResp.json();
-      const allCases = casesData?.data?.items || [];
       
       // Filter cases within 0 - 5,000 BUX (price <= 5,000,000,000)
       const maxPriceMicro = 5000 * 1000000;
-      const validCases = allCases.filter(c => c.isActive !== false && c.price > 0 && c.price <= maxPriceMicro);
+      const under5kCases = allCases.filter(c => c.isActive !== false && c.price > 0 && c.price <= maxPriceMicro);
 
-      // Sort by price (low to high) / rarity low
+      // Filter out high volatility cases (> 0.55 volatility) to only pick low volatility/stable cases
+      // If none under 0.55 fit, fall back to the lowest volatility available
+      const lowVolCases = under5kCases.filter(c => (c.volatility !== undefined ? c.volatility <= 0.55 : true));
+      const validCases = lowVolCases.length >= 5 ? lowVolCases : under5kCases;
+
+      // Sort strictly from smallest price to highest price
       validCases.sort((a, b) => a.price - b.price);
 
       if (validCases.length === 0) {
