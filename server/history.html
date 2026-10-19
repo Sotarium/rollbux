@@ -192,10 +192,10 @@
         const modeColor = modeColors[entry.mode] || '#9aa3a8';
         const isSuccess = Boolean(entry.success);
 
-        // Win badge: green, Loss badge: red
+        // Win badge: green, Loss badge: red matching exact requested style
         const resultBadge = isSuccess
-          ? `<span class="flex h-[24px] items-center rounded-[6px] px-[8px] text-[12px] font-bold leading-[16px] text-[#50f07b] bg-[rgba(80,240,123,0.12)]">Success</span>`
-          : `<span class="flex h-[24px] items-center rounded-[6px] px-[8px] text-[12px] font-bold leading-[16px] text-[#ff6b6b] bg-[rgba(255,107,107,0.12)]">Loss</span>`;
+          ? `<span class="px-2 py-0.5 rounded bg-[#acff46]/10 border border-[#acff46]/20 text-[11px] font-extrabold text-[#acff46] tracking-wider uppercase">Success</span>`
+          : `<span class="px-2 py-0.5 rounded bg-red-500/10 border border-red-500/20 text-[11px] font-extrabold text-red-400 tracking-wider uppercase">Loss</span>`;
 
         const amtDisplay = entry.amountBux ? `${parseFloat(entry.amountBux).toFixed(2)} BUX` : '—';
         const timeDisplay = entry.ts ? new Date(entry.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';

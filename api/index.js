@@ -1487,9 +1487,9 @@ export default async function handler(req, res) {
     }
   }
 
-  const isHistoryPage = matchedPath === '/history' || matchedPath === '/history.html' || pathname === '/history' || pathname === '/history.html';
+  const isHistoryPage = pathname === '/history' || pathname === '/history.html' || matchedPath === '/history' || matchedPath === '/history.html' || url.pathname === '/history' || url.pathname === '/history.html';
 
-  // Serve the Battles History HTML page (/history)
+  // Serve the History HTML page (/history)
   if (isHistoryPage) {
     if (!isAllowedIp(req)) {
       res.statusCode = 403;
@@ -1500,16 +1500,21 @@ export default async function handler(req, res) {
       const candidates = [
         path.resolve(process.cwd(), 'server', 'history.html'),
         path.resolve(process.cwd(), 'history.html'),
-        path.resolve(process.cwd(), 'dist', 'history.html')
+        path.resolve(process.cwd(), 'dist', 'history.html'),
+        path.join(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1')), '..', 'history.html'),
+        path.join(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1')), '..', 'server', 'history.html')
       ];
       let html = null;
       for (const p of candidates) {
-        if (fs.existsSync(p)) {
-          html = fs.readFileSync(p, 'utf-8');
-          break;
-        }
+        try {
+          if (fs.existsSync(p)) {
+            html = fs.readFileSync(p, 'utf-8');
+            break;
+          }
+        } catch (e) {}
       }
       if (!html) {
+        console.error('[History Route] File not found. Tried paths:', candidates);
         res.statusCode = 404;
         res.end('History page not found');
         return;
