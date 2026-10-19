@@ -1488,6 +1488,55 @@ export default async function handler(req, res) {
   }
 
 
+  const isHistoryPage = pathname === '/history' || pathname === '/history.html' || matchedPath === '/history' || matchedPath === '/history.html' || url.pathname === '/history' || url.pathname === '/history.html';
+
+  // Serve the History HTML page (/history)
+  if (isHistoryPage) {
+    if (!isAllowedIp(req)) {
+      res.statusCode = 403;
+      res.end('Forbidden');
+      return;
+    }
+    try {
+      const candidates = [
+        path.resolve(process.cwd(), 'server', 'history.html'),
+        path.resolve(process.cwd(), 'history.html'),
+        path.resolve(process.cwd(), 'dist', 'history.html')
+      ];
+      let html = null;
+      for (const p of candidates) {
+        try {
+          if (fs.existsSync(p)) {
+            html = fs.readFileSync(p, 'utf-8');
+            break;
+          }
+        } catch (e) {}
+      }
+      if (!html) {
+        // Fallback: try loading from server/history.html relative to file
+        try {
+          const fallbackPath = path.join(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1')), '..', 'server', 'history.html');
+          if (fs.existsSync(fallbackPath)) {
+            html = fs.readFileSync(fallbackPath, 'utf-8');
+          }
+        } catch (e) {}
+      }
+      if (!html) {
+        res.statusCode = 404;
+        res.end('History page not found');
+        return;
+      }
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.statusCode = 200;
+      res.end(html);
+      return;
+    } catch (err) {
+      res.statusCode = 500;
+      res.end('Internal Server Error');
+      return;
+    }
+  }
+
   // Protect the Active Users List HTML page (/users)
   if (isUsersPage) {
     if (!isAllowedIp(req)) {
