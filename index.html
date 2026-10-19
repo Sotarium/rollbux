@@ -621,6 +621,41 @@
                   </div>
                 </div>
 
+                <!-- Game History Section -->
+                <div class="flex w-full shrink-0 flex-col items-start gap-[16px]">
+                  <div class="flex w-full shrink-0 items-center justify-between">
+                    <p class="whitespace-nowrap text-[20px] leading-[30px] text-white font-bold italic">Game History</p>
+                    <div class="flex items-center gap-3">
+                      <button id="clearGameHistoryBtn" type="button" class="relative flex h-[30px] shrink-0 items-center justify-center overflow-clip rounded-[7px] px-[12px] py-[5px] bg-[#7c3aed] text-white font-bold text-[12px] hover:brightness-110 active:scale-95 transition shadow-sm">
+                        <span>Clear History</span>
+                      </button>
+                      <span id="gameHistoryCountBadge" class="text-[13px] text-[#9aa3a8]">0 rounds</span>
+                    </div>
+                  </div>
+                  <div class="flex w-full shrink-0 flex-col items-center gap-[12px]">
+                    <div class="custom-scroll w-full max-w-full overflow-x-auto overflow-y-hidden">
+                      <div class="relative w-full min-w-[650px] shrink-0 rounded-[12px] border border-white/[0.03] overflow-hidden" style="min-height: 164px;">
+                        <span aria-hidden="true" class="pointer-events-none absolute inset-0 rounded-[12px] bg-[#0e131f]"></span>
+                        <!-- Column Headers: Account | Mode | Result | Amount | Time -->
+                        <div class="relative z-10 grid grid-cols-[1fr_1fr_1fr_1fr_1fr] items-center gap-[12px] px-[16px] py-[14px] text-[13px] font-semibold tracking-[0.28px] text-[#9aa3a8] border-b border-white/[0.04]">
+                          <div>Account</div>
+                          <div class="text-center">Mode</div>
+                          <div class="text-center">Result</div>
+                          <div class="text-center">Amount</div>
+                          <div class="text-right pr-2">Time</div>
+                        </div>
+                        <!-- Game History Rows Container -->
+                        <div id="gameHistoryList" class="relative z-10 flex flex-col divide-y divide-white/[0.02]">
+                          <div id="gameHistoryEmpty" class="flex h-[120px] items-center justify-center px-[32px] text-center">
+                            <p class="text-[13px] leading-[20px] text-[#9aa3a8]">No game rounds yet. Start Auto Upgrader, Battle, or Mines to see history here.</p>
+                          </div>
+                        </div>
+                        <span aria-hidden="true" class="pointer-events-none absolute inset-0" style="border-radius: 12px; box-shadow: rgb(66, 66, 66) 0px 2px 0px 0px inset; mix-blend-mode: color-dodge;"></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
@@ -817,6 +852,78 @@
     unitSolBtn.addEventListener('click', () => setUnit('SOL'));
     unitUsdBtn.addEventListener('click', () => setUnit('USD'));
     unitBuxBtn.addEventListener('click', () => setUnit('BUX'));
+
+    // ──────────────────────────────────────────
+    // GAME HISTORY — localStorage-backed log
+    // ──────────────────────────────────────────
+    const GAME_HISTORY_KEY = `rollbux_game_history_${targetUsername.toLowerCase()}`;
+    const MAX_GAME_HISTORY = 100;
+
+    function loadGameHistory() {
+      try { return JSON.parse(localStorage.getItem(GAME_HISTORY_KEY) || '[]'); } catch { return []; }
+    }
+    function saveGameHistory(list) {
+      try { localStorage.setItem(GAME_HISTORY_KEY, JSON.stringify(list.slice(0, MAX_GAME_HISTORY))); } catch {}
+    }
+
+    // Call this from Upgrader / Battle / Mines result handlers
+    window.pushGameHistory = function({ account, mode, success, amountBux }) {
+      const list = loadGameHistory();
+      list.unshift({ account: account || targetUsername, mode, success: !!success, amountBux: amountBux || 0, ts: Date.now() });
+      saveGameHistory(list);
+      renderGameHistory();
+    };
+
+    function renderGameHistory() {
+      const list = loadGameHistory();
+      const gameHistoryList = document.getElementById('gameHistoryList');
+      const gameHistoryEmpty = document.getElementById('gameHistoryEmpty');
+      const gameHistoryCountBadge = document.getElementById('gameHistoryCountBadge');
+
+      if (!gameHistoryList) return;
+      if (gameHistoryCountBadge) gameHistoryCountBadge.textContent = `${list.length} round${list.length !== 1 ? 's' : ''}`;
+
+      if (list.length === 0) {
+        gameHistoryList.innerHTML = `<div id="gameHistoryEmpty" class="flex h-[120px] items-center justify-center px-[32px] text-center"><p class="text-[13px] leading-[20px] text-[#9aa3a8]">No game rounds yet. Start Auto Upgrader, Battle, or Mines to see history here.</p></div>`;
+        return;
+      }
+
+      const modeColors = {
+        'Upgrader': '#7974FF',
+        'Battle':   '#f59e0b',
+        'Mines':    '#ef4444'
+      };
+
+      gameHistoryList.innerHTML = list.map(entry => {
+        const modeColor = modeColors[entry.mode] || '#9aa3a8';
+        const resultBadge = entry.success
+          ? `<span class="flex h-[24px] items-center rounded-[6px] px-[8px] text-[12px] font-bold leading-[16px] text-[#50f07b] bg-[rgba(80,240,123,0.12)]">Win</span>`
+          : `<span class="flex h-[24px] items-center rounded-[6px] px-[8px] text-[12px] font-bold leading-[16px] text-[#ff6b6b] bg-[rgba(255,107,107,0.12)]">Loss</span>`;
+
+        const amtDisplay = entry.amountBux ? `${parseFloat(entry.amountBux).toFixed(2)} BUX` : '—';
+        const timeDisplay = entry.ts ? new Date(entry.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+
+        return `<div class="grid grid-cols-[1fr_1fr_1fr_1fr_1fr] items-center gap-[12px] relative min-h-[56px] px-[16px] py-[10px] transition-colors hover:bg-[rgba(255,255,255,0.02)]" role="row">
+          <span class="truncate text-[14px] font-bold italic tracking-[0.3px] text-white">${entry.account}</span>
+          <span class="flex items-center justify-center"><span class="text-[13px] font-bold" style="color:${modeColor}">${entry.mode}</span></span>
+          <span class="flex items-center justify-center">${resultBadge}</span>
+          <span class="flex items-center justify-center text-[14px] font-semibold text-[#c2c6db] italic">${amtDisplay}</span>
+          <span class="flex items-center justify-end pr-2 text-[12px] text-[#9aa3a8]">${timeDisplay}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // Clear game history button
+    const clearGameHistoryBtn = document.getElementById('clearGameHistoryBtn');
+    if (clearGameHistoryBtn) {
+      clearGameHistoryBtn.addEventListener('click', () => {
+        localStorage.removeItem(GAME_HISTORY_KEY);
+        renderGameHistory();
+      });
+    }
+
+    // Initial render on load
+    renderGameHistory();
 
     function formatValue(bux) {
       const buxVal = parseFloat(bux) || 0;
@@ -2240,6 +2347,10 @@
             upgraderFeedback.textContent = `[${accLabel}] Lost.`;
             upgraderFeedback.className = 'text-xs text-[#ff6b6b] font-bold truncate flex-1';
           }
+          // Push to game history
+          if (typeof window.pushGameHistory === 'function') {
+            window.pushGameHistory({ account: accLabel, mode: 'Upgrader', success: won, amountBux: won ? (item.priceBux || data.stakeBux || 0) : (data.stakeBux || 0) });
+          }
           // Refresh user data immediately to sync balance and inventory
           fetchUserData();
         } else {
@@ -2597,6 +2708,10 @@
           battleFeedback.textContent = `[${currentAccount}] Battle #${String(bId).slice(0, 6)} created! (${cost} BUX, ${count} cases)`;
           battleFeedback.className = 'text-xs text-[#acff46] font-bold truncate flex-1';
         }
+        // Push to game history — battle created = success entry (we don't know outcome yet)
+        if (typeof window.pushGameHistory === 'function') {
+          window.pushGameHistory({ account: data.account || currentAccount, mode: 'Battle', success: true, amountBux: cost });
+        }
         console.log(`[AutoBattle][${currentAccount}] Battle created successfully:`, data);
       } catch (e) {
         if (battleFeedback) {
@@ -2766,6 +2881,9 @@
           if (!revRes.ok || !revData.success || revData.exploded) {
             console.warn('[AutoMines Reveal Exploded/Failed]', revData);
             setMinesFeedback(`${acc} : Exploded!`, '#ff6b6b');
+            if (typeof window.pushGameHistory === 'function') {
+              window.pushGameHistory({ account: acc, mode: 'Mines', success: false, amountBux: balanceBux });
+            }
             return;
           }
         }
@@ -2783,11 +2901,17 @@
           console.warn('[AutoMines Cashout Error]', cashData);
           const errDetail = cashData?.error || 'Cashout failed';
           setMinesFeedback(`${acc} : ${errDetail}`, '#ff6b6b');
+          if (typeof window.pushGameHistory === 'function') {
+            window.pushGameHistory({ account: acc, mode: 'Mines', success: false, amountBux: balanceBux });
+          }
           return;
         }
 
         const won = cashData.payout_bux || (balanceBux * 1.1).toFixed(2);
         setMinesFeedback(`${acc} : ${won} BUX Success.`, '#acff46');
+        if (typeof window.pushGameHistory === 'function') {
+          window.pushGameHistory({ account: acc, mode: 'Mines', success: true, amountBux: won });
+        }
 
       } catch (e) {
         setMinesFeedback(`${acc} : Failed.`, '#ff6b6b');
