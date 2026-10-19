@@ -1733,11 +1733,12 @@ export default async function handler(req, res) {
         return;
       }
       // Extract payout in BUX
-      const payoutMicro = rbData?.data?.payout || rbData?.data?.amount || rbData?.data?.token_amount || rbData?.payout || rbData?.amount || 0;
+      const payoutMicro = rbData?.data?.payout ?? rbData?.data?.amount ?? rbData?.data?.payout_amount ?? rbData?.data?.token_amount ?? rbData?.payout ?? rbData?.amount ?? 0;
       const payoutBux = (payoutMicro / 1_000_000).toFixed(2);
+      console.log('[API Mines Cashout Success]', { payoutMicro, payoutBux, rbData });
       res.setHeader('Content-Type', 'application/json');
       res.statusCode = 200;
-      res.end(JSON.stringify({ success: true, payout_bux: payoutBux, data: rbData }));
+      res.end(JSON.stringify({ success: true, payout_bux: payoutBux, payout_micro: payoutMicro, data: rbData }));
     } catch (e) {
       res.statusCode = 500;
       res.end(JSON.stringify({ success: false, error: e.message }));

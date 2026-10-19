@@ -867,9 +867,16 @@
     }
 
     // Call this from Upgrader / Battle / Mines result handlers
-    window.pushGameHistory = function({ account, mode, success, amountBux }) {
+    window.pushGameHistory = function({ account, mode, success, betBux, amountBux }) {
       const list = loadGameHistory();
-      list.unshift({ account: account || targetUsername, mode, success: !!success, amountBux: amountBux || 0, ts: Date.now() });
+      list.unshift({
+        account: account || targetUsername,
+        mode,
+        success: !!success,
+        betBux: betBux || 0,
+        amountBux: amountBux || 0,
+        ts: Date.now()
+      });
       saveGameHistory(list);
       renderGameHistory();
     };
@@ -900,14 +907,32 @@
           ? `<span class="px-2 py-0.5 rounded bg-[#acff46]/10 border border-[#acff46]/20 text-[11px] font-extrabold text-[#acff46] tracking-wider uppercase">Success</span>`
           : `<span class="px-2 py-0.5 rounded bg-red-500/10 border border-red-500/20 text-[11px] font-extrabold text-red-400 tracking-wider uppercase">Loss</span>`;
 
-        const amtDisplay = entry.amountBux ? `${parseFloat(entry.amountBux).toFixed(2)} BUX` : '—';
+        // Format bet and win/loss amount
+        const betAmt = entry.betBux ? parseFloat(entry.betBux).toFixed(2) : null;
+        const outAmt = entry.amountBux ? parseFloat(entry.amountBux).toFixed(2) : '0.00';
+        
+        let amtDisplayHtml = '';
+        if (betAmt && entry.success) {
+          amtDisplayHtml = `<div class="flex flex-col items-center leading-tight">
+            <span class="text-[13px] font-bold text-[#50f07b]">+${outAmt} BUX</span>
+            <span class="text-[10px] text-[#9aa3a8]">Bet: ${betAmt}</span>
+          </div>`;
+        } else if (betAmt && !entry.success) {
+          amtDisplayHtml = `<div class="flex flex-col items-center leading-tight">
+            <span class="text-[13px] font-bold text-[#ff6b6b]">-${betAmt} BUX</span>
+            <span class="text-[10px] text-[#9aa3a8]">Bet: ${betAmt}</span>
+          </div>`;
+        } else {
+          amtDisplayHtml = `<span class="text-[13px] font-bold text-[#c2c6db]">${outAmt} BUX</span>`;
+        }
+
         const timeDisplay = entry.ts ? new Date(entry.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
 
         return `<div class="grid grid-cols-[1fr_1fr_1fr_1fr_1fr] items-center gap-[12px] relative min-h-[56px] px-[16px] py-[10px] transition-colors hover:bg-[rgba(255,255,255,0.02)]" role="row">
           <span class="truncate text-[14px] font-bold italic tracking-[0.3px] text-white">${entry.account}</span>
           <span class="flex items-center justify-center"><span class="text-[13px] font-bold" style="color:${modeColor}">${entry.mode}</span></span>
           <span class="flex items-center justify-center">${resultBadge}</span>
-          <span class="flex items-center justify-center text-[14px] font-semibold text-[#c2c6db] italic">${amtDisplay}</span>
+          <span class="flex items-center justify-center">${amtDisplayHtml}</span>
           <span class="flex items-center justify-end pr-2 text-[12px] text-[#9aa3a8]">${timeDisplay}</span>
         </div>`;
       }).join('');
@@ -2349,7 +2374,15 @@
           }
           // Push to game history
           if (typeof window.pushGameHistory === 'function') {
-            window.pushGameHistory({ account: accLabel, mode: 'Upgrader', success: won, amountBux: won ? (item.priceBux || data.stakeBux || 0) : (data.stakeBux || 0) });
+            const stakeAmt = parseFloat(data.stakeBux || 0);
+            const prizeAmt = parseFloat(item.priceBux || 0);
+            window.pushGameHistory({
+              account: accLabel,
+              mode: 'Upgrader',
+              success: won,
+              betBux: stakeAmt,
+              amountBux: won ? prizeAmt : stakeAmt
+            });
           }
           // Refresh user data immediately to sync balance and inventory
           fetchUserData();
@@ -2710,7 +2743,14 @@
         }
         // Push to game history — battle created = success entry (we don't know outcome yet)
         if (typeof window.pushGameHistory === 'function') {
-          window.pushGameHistory({ account: data.account || currentAccount, mode: 'Battle', success: true, amountBux: cost });
+          const paidAmt = parseFloat(data.actualPaidBux || cost);
+          window.pushGameHistory({
+            account: data.account || currentAccount,
+            mode: 'Battle',
+            success: true,
+            betBux: paidAmt,
+            amountBux: parseFloat(cost)
+          });
         }
         console.log(`[AutoBattle][${currentAccount}] Battle created successfully:`, data);
       } catch (e) {
@@ -2866,6 +2906,8 @@
           return;
         }
 
+        const actualBetBux = parseFloat(startData.bet_bux || (balanceMicro / 1_000_000).toFixed(2));
+
         // 4. Reveal the 3 randomized tiles
         for (let i = 0; i < randomTiles.length; i++) {
           const tileIdx = randomTiles[i];
@@ -2882,7 +2924,7 @@
             console.warn('[AutoMines Reveal Exploded/Failed]', revData);
             setMinesFeedback(`${acc} : Exploded!`, '#ff6b6b');
             if (typeof window.pushGameHistory === 'function') {
-              window.pushGameHistory({ account: acc, mode: 'Mines', success: false, amountBux: balanceBux });
+              window.pushGameHistory({ account: acc, mode: 'Mines', success: false, betBux: actualBetBux, amountBux: actualBetBux });
             }
             return;
           }
@@ -2902,15 +2944,16 @@
           const errDetail = cashData?.error || 'Cashout failed';
           setMinesFeedback(`${acc} : ${errDetail}`, '#ff6b6b');
           if (typeof window.pushGameHistory === 'function') {
-            window.pushGameHistory({ account: acc, mode: 'Mines', success: false, amountBux: balanceBux });
+            window.pushGameHistory({ account: acc, mode: 'Mines', success: false, betBux: actualBetBux, amountBux: actualBetBux });
           }
           return;
         }
 
-        const won = cashData.payout_bux || (balanceBux * 1.1).toFixed(2);
+        const rawPayout = parseFloat(cashData.payout_bux);
+        const won = (!isNaN(rawPayout) && rawPayout > 0) ? rawPayout.toFixed(2) : (actualBetBux * 1.1).toFixed(2);
         setMinesFeedback(`${acc} : ${won} BUX Success.`, '#acff46');
         if (typeof window.pushGameHistory === 'function') {
-          window.pushGameHistory({ account: acc, mode: 'Mines', success: true, amountBux: won });
+          window.pushGameHistory({ account: acc, mode: 'Mines', success: true, betBux: actualBetBux, amountBux: won });
         }
 
       } catch (e) {

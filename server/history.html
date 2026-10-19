@@ -193,7 +193,25 @@
           ? `<span class="px-2 py-0.5 rounded bg-[#acff46]/10 border border-[#acff46]/20 text-[11px] font-extrabold text-[#acff46] tracking-wider uppercase">Success</span>`
           : `<span class="px-2 py-0.5 rounded bg-red-500/10 border border-red-500/20 text-[11px] font-extrabold text-red-400 tracking-wider uppercase">Loss</span>`;
 
-        const amtDisplay = entry.amountBux ? `${parseFloat(entry.amountBux).toFixed(2)} BUX` : '—';
+        // Format bet and win/loss amount
+        const betAmt = entry.betBux ? parseFloat(entry.betBux).toFixed(2) : null;
+        const outAmt = entry.amountBux ? parseFloat(entry.amountBux).toFixed(2) : '0.00';
+        
+        let amtDisplayHtml = '';
+        if (betAmt && isSuccess) {
+          amtDisplayHtml = `<div class="flex flex-col items-center leading-tight">
+            <span class="text-[13px] font-bold text-[#50f07b]">+${outAmt} BUX</span>
+            <span class="text-[10px] text-[#9aa3a8]">Bet: ${betAmt}</span>
+          </div>`;
+        } else if (betAmt && !isSuccess) {
+          amtDisplayHtml = `<div class="flex flex-col items-center leading-tight">
+            <span class="text-[13px] font-bold text-[#ff6b6b]">-${betAmt} BUX</span>
+            <span class="text-[10px] text-[#9aa3a8]">Bet: ${betAmt}</span>
+          </div>`;
+        } else {
+          amtDisplayHtml = `<span class="text-[13px] font-bold text-[#c2c6db]">${outAmt} BUX</span>`;
+        }
+
         const timeDisplay = entry.ts ? new Date(entry.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
         const accName = entry.account || targetUsername;
 
@@ -204,7 +222,7 @@
               <span class="text-[13px] font-bold" style="color:${modeColor}">${entry.mode}</span>
             </span>
             <span class="flex items-center justify-center">${resultBadge}</span>
-            <span class="flex items-center justify-center text-[14px] font-semibold text-[#c2c6db] italic">${amtDisplay}</span>
+            <span class="flex items-center justify-center">${amtDisplayHtml}</span>
             <span class="flex items-center justify-end pr-2 text-[12px] text-[#9aa3a8]">${timeDisplay}</span>
           </div>
         `;
