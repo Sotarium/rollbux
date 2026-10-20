@@ -1,5 +1,9 @@
 {
   "rewrites": [
+    { "source": "/login", "destination": "/api" },
+    { "source": "/signup", "destination": "/api" },
+    { "source": "/login.html", "destination": "/api" },
+    { "source": "/signup.html", "destination": "/api" },
     { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/roach", "destination": "/api" },
     { "source": "/accounts", "destination": "/api" },

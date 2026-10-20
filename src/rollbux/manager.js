@@ -105,6 +105,10 @@ async function tick() {
     }
 
     const { cycleId, status, secondsRemaining, livePool, joinOpen } = snapshot;
+    // The live API uses JOINING for the two-minute join phase. Joining should
+    // be attempted whenever the server says the window is open; requiring a
+    // <=60s timer can miss the window when polling or processing accounts.
+    const joinWindowActive = joinOpen && (status === 'COLLECTING' || status === 'JOINING');
     const potBux = (livePool / 1000000).toFixed(2);
 
     const lastJoined = await redis('get', 'roach:last_joined_cycle');
@@ -124,7 +128,7 @@ async function tick() {
     }));
 
     // Auto-join at <= 60s
-    if (joinOpen && secondsRemaining !== null && secondsRemaining <= 60 && status === 'COLLECTING' && !isJoined && !isJoining) {
+    if (joinWindowActive && !isJoined && !isJoining) {
       if (!ROLLBUX_TOKEN) {
         console.log("⚠️ Join window reached, but ROLLBUX_SESSION_TOKEN is not set!");
         return;

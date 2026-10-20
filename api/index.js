@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { handleAction, getUser, clearUserStats, getAllUsers, getSolPrice, buxToUsd, buxToSol } from '../server/db.js';
 import roachTickHandler from './roach/tick.js';
+import { signUp, signIn, sessionCookie, clearSessionCookie, currentSession } from '../server/auth.js';
 
 const ALLOWED_IP = '24.49.252.230';
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || "https://flowing-chigger-149490.upstash.io";
@@ -42,6 +43,21 @@ function handleCors(res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
 
+function sendJson(res, status, body, headers = {}) {
+  Object.entries(headers).forEach(([key, value]) => res.setHeader(key, value));
+  res.setHeader('Content-Type', 'application/json');
+  res.status(status).json(body);
+}
+
+function sendPage(res, filename) {
+  const candidates = [path.resolve(process.cwd(), 'server', filename), path.resolve(process.cwd(), filename), path.resolve(process.cwd(), 'dist', filename)];
+  const file = candidates.find((candidate) => fs.existsSync(candidate));
+  if (!file) return false;
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.status(200).send(fs.readFileSync(file, 'utf8'));
+  return true;
+}
+
 export default async function handler(req, res) {
   handleCors(res);
   if (req.method === 'OPTIONS') {
@@ -53,6 +69,40 @@ export default async function handler(req, res) {
   const rawPath = req.headers['x-matched-path'] || req.headers['x-vercel-matched-path'] || url.pathname;
   const pathname = rawPath.split('?')[0];
 
+  if (pathname === '/api/auth/signup' && req.method === 'POST') {
+    try {
+      const user = await signUp(req.body || await parseBody(req));
+      sendJson(res, 201, { user }, { 'Set-Cookie': sessionCookie(user) });
+    } catch (error) {
+      sendJson(res, 400, { error: error.message });
+    }
+    return;
+  }
+  if (pathname === '/api/auth/login' && req.method === 'POST') {
+    try {
+      const user = await signIn(req.body || await parseBody(req));
+      sendJson(res, 200, { user }, { 'Set-Cookie': sessionCookie(user) });
+    } catch (error) {
+      sendJson(res, 401, { error: error.message });
+    }
+    return;
+  }
+  if (pathname === '/api/auth/logout' && req.method === 'POST') {
+    sendJson(res, 200, { ok: true }, { 'Set-Cookie': clearSessionCookie() });
+    return;
+  }
+  if (pathname === '/api/auth/me' && req.method === 'GET') {
+    sendJson(res, 200, { user: currentSession(req) });
+    return;
+  }
+  if ((pathname === '/login' || pathname === '/login.html') && req.method === 'GET') {
+    if (!sendPage(res, 'login.html')) res.status(404).send('Login page not found');
+    return;
+  }
+  if ((pathname === '/signup' || pathname === '/signup.html') && req.method === 'GET') {
+    if (!sendPage(res, 'signup.html')) res.status(404).send('Signup page not found');
+    return;
+  }
 
   // Roach Engine Routes
   if (pathname === '/api/roach/tick') {
@@ -1299,14 +1349,21 @@ export default async function handler(req, res) {
         const rainResp = await fetch("https://rollbux.com/_api/rain/current");
         if (rainResp.ok) {
           const rainData = await rainResp.json();
-          const cycleEnd = rainData?.data?.cycle?.cycle_end;
-          const livePool = rainData?.data?.live_pool || 0;
-          if (cycleEnd) {
-            const secondsLeft = Math.max(0, Math.floor((new Date(cycleEnd).getTime() - Date.now()) / 1000));
+          const rainState = rainData?.data || {};
+          const legacyCycle = rainState.cycle || {};
+          const cycleId = rainState.cycle_id || legacyCycle.id;
+          const cycleEnd = rainState.cycle_end ?? legacyCycle.cycle_end ?? null;
+          const livePool = rainState.live_pot ?? rainState.live_pool ?? 0;
+          if (cycleId) {
+            const cycleEndMs = cycleEnd ? new Date(cycleEnd).getTime() : NaN;
+            const secondsLeft = Number.isFinite(cycleEndMs)
+              ? Math.max(0, Math.floor((cycleEndMs - Date.now()) / 1000))
+              : 0;
             const potBux = parseFloat((livePool / 1000000).toFixed(2));
             handleAction({
               action: 'rain_tick',
               username,
+              cycle_id: cycleId,
               time_left: secondsLeft,
               pot_amount: potBux
             });

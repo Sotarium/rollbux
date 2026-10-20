@@ -107,6 +107,11 @@ export default async function handler(req, res) {
     }
 
     const { cycleId, status, secondsRemaining, livePool, joinOpen } = snapshot;
+    // The live API changes status to JOINING during the two-minute join window.
+    // Do not gate joining on a legacy COLLECTING status or a <=60s countdown:
+    // cycle_end is intentionally null until the window opens, and cron ticks
+    // can arrive anywhere inside the window.
+    const joinWindowActive = joinOpen && (status === 'COLLECTING' || status === 'JOINING');
 
     log(`Cycle: ${cycleId.slice(0, 8)} | Status: ${status} | Join Open: ${joinOpen} | Ends In: ${secondsRemaining ?? 'unknown'}s | Pot: ${livePool}`);
 
@@ -244,7 +249,7 @@ export default async function handler(req, res) {
 
       // Join Engine: Join when <= 60s and not joined
       let joinStatus = isAccountJoined ? "ALREADY_JOINED" : "WAITING";
-      if (joinOpen && secondsRemaining !== null && secondsRemaining <= 60 && status === 'COLLECTING' && !isAccountJoined) {
+      if (joinWindowActive && !isAccountJoined) {
         log(`[${accName}] Attempting Rain Join...`);
 
         const joinRes = await rollbuxFetch('/users/me/rain/join', token, {

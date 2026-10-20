@@ -1,0 +1,1 @@
+{"routes":[{"path":"/","title":"Rollbux Dashboard"},{"path":"/login","title":"Log in"},{"path":"/signup","title":"Create account"},{"path":"/accounts","title":"Accounts"},{"path":"/history","title":"History"},{"path":"/users","title":"Users"},{"path":"/user/:username","title":"User dashboard"}]}
