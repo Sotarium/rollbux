@@ -10,6 +10,27 @@ const ENV_SESSION_TOKEN = process.env.ROLLBUX_SESSION_TOKEN;
 
 const ROLLBUX_API_BASE = "https://rollbux.com/_api";
 
+function parseRainSnapshot(payload) {
+  const data = payload?.data || {};
+  const legacyCycle = data.cycle || {};
+  const cycleId = data.cycle_id || legacyCycle.id || null;
+  const status = data.status || legacyCycle.status || null;
+  const cycleEnd = data.cycle_end ?? legacyCycle.cycle_end ?? null;
+  const livePool = data.live_pot ?? data.live_pool ?? 0;
+  const joinOpen = typeof data.join_open === 'boolean'
+    ? data.join_open
+    : Boolean(status === 'COLLECTING' && cycleEnd && new Date(cycleEnd).getTime() > Date.now());
+
+  if (!cycleId) return null;
+
+  const cycleEndMs = cycleEnd ? new Date(cycleEnd).getTime() : NaN;
+  const secondsRemaining = Number.isFinite(cycleEndMs)
+    ? Math.max(0, Math.round((cycleEndMs - Date.now()) / 1000))
+    : null;
+
+  return { cycleId, status, secondsRemaining, livePool, joinOpen };
+}
+
 async function redis(command, ...args) {
   if (!UPSTASH_TOKEN) return null;
   const path = [command, ...args.map(a => encodeURIComponent(typeof a === 'object' ? JSON.stringify(a) : String(a)))].join('/');
@@ -79,16 +100,15 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: false, logs, error: "Rain state fetch failed" });
     }
 
-    const rainData = rainRes.data.data;
-    const cycle = rainData.cycle;
-    const cycleId = cycle.id;
-    const status = cycle.status;
-    const cycleEnd = new Date(cycle.cycle_end).getTime();
-    const now = Date.now();
-    const secondsRemaining = Math.max(0, Math.round((cycleEnd - now) / 1000));
-    const livePool = rainData.live_pool || 0;
+    const snapshot = parseRainSnapshot(rainRes.data);
+    if (!snapshot) {
+      log('Rain state response did not contain a cycle id.');
+      return res.status(200).json({ success: false, logs, error: "Invalid rain state" });
+    }
 
-    log(`Cycle: ${cycleId.slice(0, 8)} | Status: ${status} | Ends In: ${secondsRemaining}s | Pot: ${livePool}`);
+    const { cycleId, status, secondsRemaining, livePool, joinOpen } = snapshot;
+
+    log(`Cycle: ${cycleId.slice(0, 8)} | Status: ${status} | Join Open: ${joinOpen} | Ends In: ${secondsRemaining ?? 'unknown'}s | Pot: ${livePool}`);
 
     // 2. Fetch config and all registered accounts from Upstash
     let configRaw = await redis('get', 'roach:config');
@@ -166,7 +186,7 @@ export default async function handler(req, res) {
           action: 'rain_tick',
           username: accName,
           cycle_id: cycleId,
-          time_left: secondsRemaining,
+          time_left: secondsRemaining ?? 0,
           pot_amount: potBux
         });
       } catch (e) {}
@@ -177,7 +197,9 @@ export default async function handler(req, res) {
       let chatCount = parseInt((await redis('get', chatKey)) || '0', 10);
 
       if (autoMessagesEnabled) {
-        const targetCount = secondsRemaining <= 220 ? 3 : (secondsRemaining <= 1200 ? 2 : (secondsRemaining <= 2400 ? 1 : 0));
+        const targetCount = secondsRemaining !== null
+          ? (secondsRemaining <= 220 ? 3 : (secondsRemaining <= 1200 ? 2 : (secondsRemaining <= 2400 ? 1 : 0)))
+          : 0;
 
         if (chatCount < targetCount && secondsRemaining > 90) {
           const uniqueMsg = pickUniqueMsgForAccount(i);
@@ -196,7 +218,7 @@ export default async function handler(req, res) {
         }
 
         // Emergency Chat Catchup: If short on time (<= 90s) and missing messages, send them right before join
-        if (chatCount < 3 && secondsRemaining <= 90 && status === 'COLLECTING') {
+        if (chatCount < 3 && secondsRemaining !== null && secondsRemaining <= 90 && status === 'COLLECTING') {
           const missing = 3 - chatCount;
           log(`[${accName}] Late on messages (${chatCount}/3), bursting ${missing} message(s) before joining...`);
           for (let j = 0; j < missing; j++) {
@@ -222,7 +244,7 @@ export default async function handler(req, res) {
 
       // Join Engine: Join when <= 60s and not joined
       let joinStatus = isAccountJoined ? "ALREADY_JOINED" : "WAITING";
-      if (secondsRemaining <= 60 && status === 'COLLECTING' && !isAccountJoined) {
+      if (joinOpen && secondsRemaining !== null && secondsRemaining <= 60 && status === 'COLLECTING' && !isAccountJoined) {
         log(`[${accName}] Attempting Rain Join...`);
 
         const joinRes = await rollbuxFetch('/users/me/rain/join', token, {

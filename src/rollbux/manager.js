@@ -11,6 +11,27 @@ const ROLLBUX_TOKEN = process.env.ROLLBUX_SESSION_TOKEN || "";
 
 const ROLLBUX_API_BASE = "https://rollbux.com/_api";
 
+function parseRainSnapshot(payload) {
+  const data = payload?.data || {};
+  const legacyCycle = data.cycle || {};
+  const cycleId = data.cycle_id || legacyCycle.id || null;
+  const status = data.status || legacyCycle.status || null;
+  const cycleEnd = data.cycle_end ?? legacyCycle.cycle_end ?? null;
+  const livePool = data.live_pot ?? data.live_pool ?? 0;
+  const joinOpen = typeof data.join_open === 'boolean'
+    ? data.join_open
+    : Boolean(status === 'COLLECTING' && cycleEnd && new Date(cycleEnd).getTime() > Date.now());
+
+  if (!cycleId) return null;
+
+  const cycleEndMs = cycleEnd ? new Date(cycleEnd).getTime() : NaN;
+  const secondsRemaining = Number.isFinite(cycleEndMs)
+    ? Math.max(0, Math.round((cycleEndMs - Date.now()) / 1000))
+    : null;
+
+  return { cycleId, status, secondsRemaining, livePool, joinOpen };
+}
+
 async function redis(command, ...args) {
   if (!UPSTASH_TOKEN) return null;
   const urlPath = [command, ...args.map(a => encodeURIComponent(typeof a === 'object' ? JSON.stringify(a) : String(a)))].join('/');
@@ -77,12 +98,14 @@ async function tick() {
       return;
     }
 
-    const { cycle, live_pool } = rainRes.data.data;
-    const cycleId = cycle.id;
-    const status = cycle.status;
-    const cycleEnd = new Date(cycle.cycle_end).getTime();
-    const secondsRemaining = Math.max(0, Math.round((cycleEnd - Date.now()) / 1000));
-    const potBux = (live_pool / 1000000).toFixed(2);
+    const snapshot = parseRainSnapshot(rainRes.data);
+    if (!snapshot) {
+      console.log(`[${new Date().toLocaleTimeString()}] Invalid rain state response`);
+      return;
+    }
+
+    const { cycleId, status, secondsRemaining, livePool, joinOpen } = snapshot;
+    const potBux = (livePool / 1000000).toFixed(2);
 
     const lastJoined = await redis('get', 'roach:last_joined_cycle');
     const isJoined = lastJoined === cycleId;
@@ -95,12 +118,13 @@ async function tick() {
       cycle_id: cycleId,
       status,
       seconds_remaining: secondsRemaining,
-      live_pool,
+      live_pool: livePool,
+      join_open: joinOpen,
       is_joined: isJoined
     }));
 
     // Auto-join at <= 60s
-    if (secondsRemaining <= 60 && status === 'COLLECTING' && !isJoined && !isJoining) {
+    if (joinOpen && secondsRemaining !== null && secondsRemaining <= 60 && status === 'COLLECTING' && !isJoined && !isJoining) {
       if (!ROLLBUX_TOKEN) {
         console.log("⚠️ Join window reached, but ROLLBUX_SESSION_TOKEN is not set!");
         return;
