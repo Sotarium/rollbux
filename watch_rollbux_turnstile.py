@@ -176,8 +176,8 @@ def main() -> None:
         except KeyboardInterrupt:
             print("\n[watcher] Stopped.")
         finally:
-            # Do not close the user's browser; only disconnect this watcher.
-            browser.close()
+            # Do not close the user's browser; exiting Playwright disconnects only.
+            pass
 
 
 if __name__ == "__main__":
