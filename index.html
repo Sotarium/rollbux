@@ -149,54 +149,6 @@
                   </div>
                 </div>
 
-                <!-- Accounts Infos Card -->
-                <div class="relative flex w-full flex-col items-start gap-[12px] overflow-clip rounded-[12px] bg-[#0e131f] p-[20px] shadow-sm border border-white/[0.03]">
-                  <div class="flex w-full items-center justify-between">
-                    <span class="text-[14px] font-bold text-white">Accounts Infos</span>
-                    <div class="flex items-center gap-2">
-                      <span class="text-[11px] font-medium text-gray-400">Auto Messages</span>
-                      <label class="relative inline-flex items-center cursor-pointer select-none">
-                        <input type="checkbox" id="autoMessagesToggle" class="sr-only peer">
-                        <div class="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#8b5cf6]"></div>
-                      </label>
-                    </div>
-                  </div>
-                  
-                  <!-- Registered Accounts Live List -->
-                  <div id="accountsListContainer" class="flex w-full flex-col gap-2 pt-1 border-t border-white/[0.04]">
-                    <div class="text-[11px] text-gray-500">Loading accounts...</div>
-                  </div>
-
-                  <!-- Next Message Countdown Circle -->
-                  <div class="flex w-full flex-col items-center justify-center py-2 border-t border-white/[0.04] gap-1">
-                    <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Next Message In</span>
-                    <div class="relative flex items-center justify-center size-[96px] mt-1">
-                      <svg class="size-full -rotate-90" viewBox="0 0 36 36">
-                        <!-- Background Circle -->
-                        <path class="text-white/5" stroke-width="3" stroke="currentColor" fill="none"
-                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                        <!-- Animated Progress Ring -->
-                        <path id="chatCountdownRing" class="text-[#acff46] transition-[stroke-dasharray] duration-1000 ease-linear"
-                          stroke-width="3" stroke-dasharray="100, 100" stroke-linecap="round" stroke="currentColor" fill="none"
-                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                      </svg>
-                      <div class="absolute flex flex-col items-center justify-center text-center">
-                        <span id="chatCountdownText" class="text-[15px] font-mono font-bold text-white">--:--</span>
-                        <span id="chatCountdownSub" class="text-[9px] text-[#acff46] uppercase font-semibold">Active</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Buttons Row -->
-                  <div class="grid grid-cols-2 gap-2 pt-2 w-full border-t border-white/[0.04]">
-                    <button id="configureFarmerBtn" type="button" class="w-full py-2 bg-[#acff46] hover:bg-[#96e036] text-[#121418] rounded-lg text-xs font-bold transition shadow-sm active:scale-95 text-center">
-                      Token
-                    </button>
-                    <a href="/accounts" class="w-full py-2 bg-gradient-to-r from-[#a855f7] to-[#8b5cf6] hover:brightness-110 text-white rounded-lg text-xs font-bold transition shadow-sm active:scale-95 text-center flex items-center justify-center">
-                      <span>Accounts</span>
-                    </a>
-                  </div>
-                </div>
               </div>
 
               <!-- Right Main Content -->

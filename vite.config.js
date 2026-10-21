@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import http from 'http';
 import { handleAction, getUser, clearUserStats, getAllUsers, getSolPrice, buxToUsd, buxToSol } from './server/db.js';
+import { signUp, signIn, sessionCookie, clearSessionCookie, currentSession } from './server/auth.js';
 
 function parseBody(req) {
   return new Promise((resolve) => {
@@ -33,6 +34,57 @@ async function handleApiRequest(req, res) {
   const pathname = url.pathname;
 
   if (handleCors(req, res)) return;
+
+  if (pathname === '/api/auth/signup' && req.method === 'POST') {
+    try {
+      const user = await signUp(await parseBody(req));
+      res.statusCode = 201;
+      res.setHeader('Set-Cookie', sessionCookie(user));
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ user }));
+    } catch (error) {
+      res.statusCode = 400;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ error: error.message }));
+    }
+    return;
+  }
+
+  if (pathname === '/api/auth/login' && req.method === 'POST') {
+    try {
+      const user = await signIn(await parseBody(req));
+      res.statusCode = 200;
+      res.setHeader('Set-Cookie', sessionCookie(user));
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ user }));
+    } catch (error) {
+      res.statusCode = 401;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ error: error.message }));
+    }
+    return;
+  }
+
+  if (pathname === '/api/auth/logout' && req.method === 'POST') {
+    res.setHeader('Set-Cookie', clearSessionCookie());
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ ok: true }));
+    return;
+  }
+
+  if (pathname === '/api/account' && req.method === 'GET') {
+    const session = currentSession(req);
+    if (!session) {
+      res.statusCode = 401;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ error: 'Authentication required' }));
+      return;
+    }
+    const user = getUser(session.username || session.email);
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ user, authUser: session }));
+    return;
+  }
 
   if (pathname === '/api/status' && req.method === 'POST') {
     const payload = await parseBody(req);
@@ -122,6 +174,9 @@ export default defineConfig({
         server.middlewares.use(async (req, res, next) => {
           if (req.url && req.url.startsWith('/api/')) {
             await handleApiRequest(req, res);
+          } else if (req.url && (req.url === '/accounts' || req.url === '/accounts/')) {
+            req.url = '/server/accounts.html';
+            next();
           } else if (req.url && (req.url === '/users' || req.url === '/users/')) {
             req.url = '/users.html';
             next();

@@ -34,7 +34,7 @@ function verifyPassword(password, stored) {
 }
 
 function sign(value) { return crypto.createHmac('sha256', SESSION_SECRET).update(value).digest('base64url'); }
-function publicUser(user) { return { id: user.id, username: user.username || null, email: user.email || null, identifierType: user.identifier_type }; }
+function publicUser(user) { return { id: user.id, username: user.username || null, email: user.email || null, identifierType: user.identifier_type, createdAt: user.created_at || null }; }
 
 function encodeSession(user) {
   const payload = Buffer.from(JSON.stringify({
@@ -42,6 +42,7 @@ function encodeSession(user) {
     username: user.username || null,
     email: user.email || null,
     identifierType: user.identifier_type || user.identifierType,
+    createdAt: user.created_at || user.createdAt || null,
     exp: Date.now() + SESSION_TTL * 1000
   })).toString('base64url');
   return `${payload}.${sign(payload)}`;

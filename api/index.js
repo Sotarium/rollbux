@@ -95,6 +95,30 @@ export default async function handler(req, res) {
     sendJson(res, 200, { user: currentSession(req) });
     return;
   }
+  if (pathname === '/api/account' && req.method === 'GET') {
+    const session = currentSession(req);
+    if (!session) {
+      sendJson(res, 401, { error: 'Authentication required' });
+      return;
+    }
+    const username = session.username || session.email;
+    const user = getUser(username);
+    if (!user) {
+      sendJson(res, 404, { error: 'Account not found' });
+      return;
+    }
+    sendJson(res, 200, {
+      user,
+      authUser: {
+        id: session.sub,
+        username: session.username,
+        email: session.email,
+        identifierType: session.identifierType,
+        createdAt: session.createdAt
+      }
+    });
+    return;
+  }
   if ((pathname === '/login' || pathname === '/login.html') && req.method === 'GET') {
     if (!sendPage(res, 'login.html')) res.status(404).send('Login page not found');
     return;
@@ -1508,13 +1532,8 @@ export default async function handler(req, res) {
 
   const isAccountsPage = matchedPath === '/accounts' || matchedPath === '/accounts.html' || pathname === '/accounts' || pathname === '/accounts.html';
 
-  // Protect the Accounts Management HTML page (/accounts)
+  // Serve the personal Accounts HTML page; its data endpoint enforces the session.
   if (isAccountsPage) {
-    if (!isAllowedIp(req)) {
-      res.statusCode = 403;
-      res.end('Forbidden');
-      return;
-    }
     try {
       const candidates = [
         path.resolve(process.cwd(), 'server', 'accounts.html'),
