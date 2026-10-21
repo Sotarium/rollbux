@@ -10,8 +10,12 @@
   <main class="mx-auto max-w-4xl space-y-5">
     <header class="flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.07] pb-5">
       <div><p class="text-xs font-bold uppercase tracking-[.2em] text-[#acff46]">Safe testing</p><h1 class="mt-1 text-2xl font-bold italic text-white">RainRoach Sandbox</h1><p class="mt-1 text-xs text-gray-400">Normal session requests only. No cookie rotation or challenge bypass.</p></div>
-      <button id="tickButton" class="rounded-lg bg-[#acff46] px-4 py-2 text-xs font-bold text-[#080b11] hover:bg-[#96e036] disabled:opacity-50">Run rain tick</button>
+      <div class="flex flex-wrap items-center gap-2">
+        <a href="/rollbux-autorain.user.js" target="_blank" rel="noopener" class="rounded-lg border border-[#acff46]/30 bg-[#acff46]/10 px-4 py-2 text-xs font-bold text-[#acff46] hover:bg-[#acff46]/20">Install AutoRain userscript</a>
+        <button id="tickButton" class="rounded-lg bg-[#acff46] px-4 py-2 text-xs font-bold text-[#080b11] hover:bg-[#96e036] disabled:opacity-50">Run rain tick</button>
+      </div>
     </header>
+    <p class="rounded-lg border border-white/[0.06] bg-[#0b1018] px-4 py-3 text-[11px] leading-5 text-gray-400">The userscript runs in your own browser through Tampermonkey and only clicks a visible button containing “Join” and “Rain.” Install Tampermonkey separately and approve the script yourself.</p>
     <section class="grid gap-4 sm:grid-cols-3">
       <div class="card rounded-xl p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Cycle status</p><p id="cycleStatus" class="mt-2 text-lg font-bold text-white">—</p></div>
       <div class="card rounded-xl p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Time remaining</p><p id="timeRemaining" class="mt-2 text-lg font-bold text-white">—</p></div>
