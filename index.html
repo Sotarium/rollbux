@@ -158,7 +158,7 @@
                     </div>
                     <span class="rounded-md bg-[#acff46]/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[#acff46]">Private</span>
                   </div>
-                  <a href="/accounts" class="w-full rounded-lg bg-gradient-to-r from-[#a855f7] to-[#8b5cf6] py-2 text-center text-xs font-bold text-white transition hover:brightness-110 active:scale-95">Open My Account</a>
+                  <a id="dashboardAccountLink" href="/accounts" class="w-full rounded-lg bg-gradient-to-r from-[#a855f7] to-[#8b5cf6] py-2 text-center text-xs font-bold text-white transition hover:brightness-110 active:scale-95">Open My Account</a>
                 </div>
               </div>
 
@@ -1495,6 +1495,8 @@
               targetUsername = signedInName;
               const accountName = document.getElementById('dashboardAccountName');
               if (accountName) accountName.textContent = `Signed in as ${signedInName}`;
+              const accountLink = document.getElementById('dashboardAccountLink');
+              if (accountLink) accountLink.href = `/users/${encodeURIComponent(signedInName)}/accounts`;
             }
           }
           sessionIdentityResolved = true;

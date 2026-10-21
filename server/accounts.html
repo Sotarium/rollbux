@@ -22,7 +22,10 @@
         <p class="mt-5 text-[21px] font-bold italic">My Account</p>
         <p class="mt-1 text-sm text-[#9aa3a8]">Your personal Rollbux account and activity.</p>
       </div>
-      <button id="logoutBtn" type="button" class="rounded-lg border border-white/[0.06] bg-white/[0.04] px-3 py-2 text-xs font-semibold text-[#9aa3a8] transition hover:bg-white/[0.08] hover:text-white">Log out</button>
+      <div class="flex items-center gap-2">
+        <button id="addAccountBtn" type="button" class="rounded-lg bg-[#acff46] px-3 py-2 text-xs font-bold text-[#121418] transition hover:bg-[#96e036]">Add Account</button>
+        <button id="logoutBtn" type="button" class="rounded-lg border border-white/[0.06] bg-white/[0.04] px-3 py-2 text-xs font-semibold text-[#9aa3a8] transition hover:bg-white/[0.08] hover:text-white">Log out</button>
+      </div>
     </header>
 
     <section id="loading" class="card flex min-h-[170px] items-center justify-center p-6 text-sm text-[#9aa3a8]">Loading your account...</section>
@@ -48,6 +51,13 @@
       <div class="card divide-y divide-white/[0.05] p-5 text-sm">
         <div class="flex items-center justify-between py-2"><span class="text-[#9aa3a8]">Account type</span><span id="accountType" class="font-semibold text-white">—</span></div>
         <div class="flex items-center justify-between py-2"><span class="text-[#9aa3a8]">Member since</span><span id="createdAt" class="font-semibold text-white">—</span></div>
+      </div>
+      <div class="card p-5">
+        <div class="flex items-center justify-between gap-3">
+          <div><p class="font-bold text-white">Connected accounts</p><p class="mt-1 text-xs text-[#9aa3a8]">Only your connected Rollbux accounts are shown here.</p></div>
+          <span id="connectedCount" class="text-xs text-[#9aa3a8]">0</span>
+        </div>
+        <div id="connectedAccounts" class="mt-4 space-y-2"><p class="text-xs text-[#9aa3a8]">No connected accounts yet.</p></div>
       </div>
     </section>
 
@@ -98,7 +108,33 @@
       await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
       window.location.href = '/login';
     });
+    async function loadConnectedAccounts() {
+      const response = await fetch('/api/account/accounts', { credentials: 'include' });
+      if (!response.ok) return;
+      const data = await response.json();
+      const accounts = data.accounts || [];
+      document.getElementById('connectedCount').textContent = `${accounts.length}`;
+      document.getElementById('connectedAccounts').innerHTML = accounts.length ? accounts.map(account => `
+        <div class="flex items-center justify-between rounded-lg bg-[#131a29] px-3 py-2 text-xs">
+          <span class="font-semibold text-white">${account.name}</span>
+          <div class="flex items-center gap-3"><span class="font-mono text-[#9aa3a8]">${account.token_preview || 'Connected'}</span><button type="button" data-account-id="${account.id}" class="remove-account text-red-400 hover:text-red-300">Remove</button></div>
+        </div>`).join('') : '<p class="text-xs text-[#9aa3a8]">No connected accounts yet.</p>';
+      document.querySelectorAll('.remove-account').forEach(button => button.addEventListener('click', async () => {
+        await fetch('/api/account/accounts', { method: 'DELETE', credentials: 'include', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id: button.dataset.accountId }) });
+        loadConnectedAccounts();
+      }));
+    }
+    document.getElementById('addAccountBtn').addEventListener('click', async () => {
+      const name = window.prompt('Account name');
+      if (!name) return;
+      const token = window.prompt('Rollbux session token');
+      if (!token) return;
+      const response = await fetch('/api/account/accounts', { method: 'POST', credentials: 'include', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name, token }) });
+      if (!response.ok) { const data = await response.json().catch(() => ({})); window.alert(data.error || 'Unable to add account'); return; }
+      loadConnectedAccounts();
+    });
     loadAccount();
+    loadConnectedAccounts();
   </script>
 </body>
 </html>

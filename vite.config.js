@@ -174,7 +174,7 @@ export default defineConfig({
         server.middlewares.use(async (req, res, next) => {
           if (req.url && req.url.startsWith('/api/')) {
             await handleApiRequest(req, res);
-          } else if (req.url && (req.url === '/accounts' || req.url === '/accounts/')) {
+          } else if (req.url && (/^\/users\/[^/]+\/accounts\/?(?:\?.*)?$/.test(req.url) || req.url === '/accounts' || req.url === '/accounts/')) {
             req.url = '/server/accounts.html';
             next();
           } else if (req.url && (req.url === '/users' || req.url === '/users/')) {

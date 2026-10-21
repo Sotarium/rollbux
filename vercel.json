@@ -10,6 +10,7 @@
     { "source": "/accounts.html", "destination": "/api" },
     { "source": "/history", "destination": "/api" },
     { "source": "/history.html", "destination": "/api" },
+    { "source": "/users/(.*)/accounts", "destination": "/api" },
     { "source": "/users", "destination": "/api" },
     { "source": "/users.html", "destination": "/api" },
     { "source": "/user/(.*)", "destination": "/api" }

@@ -119,6 +119,44 @@ export default async function handler(req, res) {
     });
     return;
   }
+  if (pathname === '/api/account/accounts') {
+    const session = currentSession(req);
+    if (!session) {
+      sendJson(res, 401, { error: 'Authentication required' });
+      return;
+    }
+    const accountKey = `roach:accounts:user:${session.sub}`;
+    try {
+      const response = await fetch(`${UPSTASH_URL}/get/${encodeURIComponent(accountKey)}`, { headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` } });
+      const data = await response.json();
+      let accounts = data.result ? JSON.parse(data.result) : [];
+      if (req.method === 'GET') {
+        sendJson(res, 200, { accounts: accounts.map(({ token, ...account }) => ({ ...account, token_preview: token ? `${token.slice(0, 8)}...${token.slice(-6)}` : '' })) });
+        return;
+      }
+      const payload = req.body || await parseBody(req);
+      if (req.method === 'POST') {
+        const name = String(payload.name || '').trim();
+        const token = String(payload.token || '').trim();
+        if (!name || !token) {
+          sendJson(res, 400, { error: 'Account name and session token are required' });
+          return;
+        }
+        accounts = accounts.filter(account => account.name.toLowerCase() !== name.toLowerCase());
+        accounts.push({ id: `acc_${Date.now()}`, name, token, created_at: new Date().toISOString() });
+      } else if (req.method === 'DELETE') {
+        accounts = accounts.filter(account => account.id !== payload.id);
+      } else {
+        sendJson(res, 405, { error: 'Method not allowed' });
+        return;
+      }
+      await fetch(`${UPSTASH_URL}/pipeline`, { method: 'POST', headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify([['SET', accountKey, JSON.stringify(accounts)]]) });
+      sendJson(res, req.method === 'POST' ? 201 : 200, { ok: true });
+    } catch (error) {
+      sendJson(res, 500, { error: error.message });
+    }
+    return;
+  }
   if ((pathname === '/login' || pathname === '/login.html') && req.method === 'GET') {
     if (!sendPage(res, 'login.html')) res.status(404).send('Login page not found');
     return;
@@ -1371,6 +1409,18 @@ export default async function handler(req, res) {
             String(account.name || '').trim().toLowerCase() === username.toLowerCase()
           );
         }
+        const requestSession = currentSession(req);
+        if (requestSession && String(requestSession.username || requestSession.email || '').trim().toLowerCase() === username.toLowerCase()) {
+          const personalResp = await fetch(`${upstashUrl}/get/${encodeURIComponent(`roach:accounts:user:${requestSession.sub}`)}`, {
+            headers: { Authorization: `Bearer ${upstashToken}` }
+          });
+          const personalData = await personalResp.json();
+          const personalAccounts = personalData.result ? JSON.parse(personalData.result) : [];
+          if (personalAccounts.length > 0) {
+            allAccountsToSync = personalAccounts;
+            hasRegisteredAccounts = true;
+          }
+        }
       }
 
       // If no accounts found in Redis, fall back to ENV token for the requested username
@@ -1540,10 +1590,25 @@ export default async function handler(req, res) {
     }
   }
 
-  const isAccountsPage = matchedPath === '/accounts' || matchedPath === '/accounts.html' || pathname === '/accounts' || pathname === '/accounts.html';
+  const personalAccountsMatch = pathname.match(/^\/users\/([^/]+)\/accounts\/?$/);
+  const isPersonalAccountsPage = Boolean(personalAccountsMatch);
+  const isAccountsPage = isPersonalAccountsPage || matchedPath === '/accounts' || matchedPath === '/accounts.html' || pathname === '/accounts' || pathname === '/accounts.html';
 
   // Serve the personal Accounts HTML page; its data endpoint enforces the session.
   if (isAccountsPage) {
+    const session = currentSession(req);
+    if (isPersonalAccountsPage) {
+      const requestedUser = decodeURIComponent(personalAccountsMatch[1]).trim().toLowerCase();
+      const sessionUser = String(session?.username || session?.email || '').trim().toLowerCase();
+      if (!session || requestedUser !== sessionUser) {
+        res.statusCode = session ? 403 : 401;
+        res.end(session ? 'Forbidden' : 'Authentication required');
+        return;
+      }
+    } else if (session) {
+      res.redirect(302, `/users/${encodeURIComponent(session.username || session.email)}/accounts`);
+      return;
+    }
     try {
       const candidates = [
         path.resolve(process.cwd(), 'server', 'accounts.html'),
