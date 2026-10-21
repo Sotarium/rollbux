@@ -247,7 +247,7 @@ export default async function handler(req, res) {
         log(`[${accName}] Auto Messages disabled; skipping chat (chat count: ${chatCount}).`);
       }
 
-      // Join Engine: Join when <= 60s and not joined
+      // Join Engine: follow the live randomized join window instead of a clock schedule
       let joinStatus = isAccountJoined ? "ALREADY_JOINED" : "WAITING";
       if (joinWindowActive && !isAccountJoined) {
         log(`[${accName}] Attempting Rain Join...`);
@@ -285,6 +285,7 @@ export default async function handler(req, res) {
       cycle_id: cycleId,
       status,
       seconds_remaining: secondsRemaining,
+      join_open: joinOpen,
       live_pool: livePool,
       accounts: results,
       last_logs: logs

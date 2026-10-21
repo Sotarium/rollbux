@@ -1002,22 +1002,13 @@
 
     function getRainEndTime(secondsLeft) {
       const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      let targetDate;
-      if (typeof secondsLeft === 'number' && secondsLeft > 0) {
-        const targetMs = Date.now() + (secondsLeft * 1000);
-        // Round to NEAREST top-of-hour (not always +1) — e.g. 08:00:21 → 08h00, not 09h00
-        const rounded = Math.round(targetMs / 3600000) * 3600000;
-        targetDate = new Date(rounded);
-      } else {
-        // Fallback: next top-of-hour
-        targetDate = new Date();
-        targetDate.setHours(targetDate.getHours() + 1, 0, 0, 0);
-      }
+      const targetDate = new Date(Date.now() + Math.max(0, Number(secondsLeft) || 0) * 1000);
       const day = targetDate.getDate();
       const month = months[targetDate.getMonth()];
       const hours = String(targetDate.getHours()).padStart(2, '0');
       const mins = String(targetDate.getMinutes()).padStart(2, '0');
-      return `${day} ${month} ${hours}h${mins}`;
+      const secs = String(targetDate.getSeconds()).padStart(2, '0');
+      return `${day} ${month} ${hours}h${mins}:${secs}`;
     }
 
     // Format transaction time strictly in the user's browser local timezone
@@ -1054,7 +1045,7 @@
         if (activeTimerEl) {
           activeTimerEl.textContent = formatSeconds(activeTimerLeft);
         }
-        // Auto-trigger join tick when rain timer hits 60s window
+        // Trigger a safety tick near the end of an active live rain window.
         if (activeTimerLeft <= 60 && !joinTickFired) {
           joinTickFired = true;
           console.log('[RainRoach] Join window reached, firing tick for auto-join...');
@@ -1795,7 +1786,7 @@
           sData = await statusRes.json();
           const currentCycleId = sData?.status?.cycle_id;
 
-          // If site activeTimerLeft is fresh (~50-60 min) or status has a new cycle, detect cycle rotation
+          // Detect a new live cycle from the API rather than assuming hourly rotation.
           if (currentCycleId) {
             if (lastKnownRoachCycle && lastKnownRoachCycle !== currentCycleId) {
               console.log('[RainRoach] New rain cycle detected! Resetting countdown and chat counters.');
@@ -1804,8 +1795,12 @@
             lastKnownRoachCycle = currentCycleId;
           }
 
-          // If the status in Redis is from an old rain cycle that already ended (e.g. updated_at > 90s ago and timer <= 0, or active timer > 3000s while status timer was 0)
-          if (activeTimerLeft > 3000 && (sData?.status?.seconds_remaining || 0) < 60) {
+          // Rains now begin at randomized times. Only use the live status age
+          // to detect stale state; never infer it from an hourly-length timer.
+          const statusAge = sData?.status?.updated_at
+            ? Date.now() - new Date(sData.status.updated_at).getTime()
+            : 0;
+          if (statusAge > 90000 && Number(sData?.status?.seconds_remaining || 0) <= 0) {
             isStaleCycle = true;
           }
 
@@ -1918,9 +1913,8 @@
       });
 
       // Target threshold for next message:
-      // Msg 1 (minChatCount == 0): triggers at 2400s (40 min left)
-      // Msg 2 (minChatCount == 1): triggers at 1200s (20 min left)
-      // Msg 3 (minChatCount == 2): triggers at 220s (3.6 min left)
+      // The live API only supplies a countdown during the active window.
+      // Keep the final three-message schedule anchored to that live window.
       let nextTarget = 0;
       if (minChatCount === 0) {
         nextTarget = 2400;

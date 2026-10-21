@@ -127,7 +127,7 @@ async function tick() {
       is_joined: isJoined
     }));
 
-    // Auto-join at <= 60s
+    // Auto-join whenever the live API opens the randomized join window.
     if (joinWindowActive && !isJoined && !isJoining) {
       if (!ROLLBUX_TOKEN) {
         console.log("⚠️ Join window reached, but ROLLBUX_SESSION_TOKEN is not set!");
