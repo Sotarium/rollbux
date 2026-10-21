@@ -1571,16 +1571,26 @@ export default async function handler(req, res) {
 
   const matchedPath = req.headers['x-matched-path'] || req.headers['x-vercel-matched-path'] || pathname;
   const isUsersPage = matchedPath === '/users' || matchedPath === '/users.html' || pathname === '/users' || pathname === '/users.html' || pathname === '/api/users-page' || url.searchParams.get('view') === 'users';
-  const isUserDashboardPage = matchedPath === '/dashboard/user' || pathname === '/dashboard/user' || matchedPath.startsWith('/user/') || pathname.startsWith('/user/');
+  const dashboardMatch = pathname.match(/^\/dashboard\/([^/]+)\/?$/);
+  const isUserDashboardPage = matchedPath === '/dashboard/user' || pathname === '/dashboard/user' || Boolean(dashboardMatch) || matchedPath.startsWith('/user/') || pathname.startsWith('/user/');
 
   // Protect the Individual User Profile Dashboard HTML page (/user/:username)
   if (isUserDashboardPage) {
-    if (pathname === '/dashboard/user' && !currentSession(req)) {
+    if ((pathname === '/dashboard/user' || dashboardMatch) && !currentSession(req)) {
       res.statusCode = 401;
       res.end('Authentication required');
       return;
     }
-    if (pathname !== '/dashboard/user' && !isAllowedIp(req)) {
+    if (dashboardMatch) {
+      const session = currentSession(req);
+      const requestedUser = decodeURIComponent(dashboardMatch[1]).trim().toLowerCase();
+      const sessionUser = String(session?.username || session?.email || '').trim().toLowerCase();
+      if (!session || requestedUser !== sessionUser) {
+        res.statusCode = session ? 403 : 401;
+        res.end(session ? 'Forbidden' : 'Authentication required');
+        return;
+      }
+    } else if (pathname !== '/dashboard/user' && !isAllowedIp(req)) {
       res.statusCode = 403;
       res.end('Forbidden');
       return;

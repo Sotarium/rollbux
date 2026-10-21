@@ -690,13 +690,14 @@
 
     function getUsernameFromUrl() {
       const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
+      const parts = path.split('/');
       if (!path) return 'Sotarium';
       if (path === 'dashboard/user') return 'Sotarium';
+      if (parts[0] === 'dashboard' && parts[1]) return decodeURIComponent(parts[1]);
       if (path === 'users') {
         window.location.replace('/users.html');
         return 'Sotarium';
       }
-      const parts = path.split('/');
       if (parts[0] === 'user' && parts[1]) {
         return decodeURIComponent(parts[1]);
       }

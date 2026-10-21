@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/dashboard/user", "destination": "/api" },
+    { "source": "/dashboard/(.*)", "destination": "/api" },
     { "source": "/login", "destination": "/api" },
     { "source": "/signup", "destination": "/api" },
     { "source": "/login.html", "destination": "/api" },
