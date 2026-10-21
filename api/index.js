@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { handleAction, getUser, clearUserStats, getAllUsers, getSolPrice, buxToUsd, buxToSol } from '../server/db.js';
+import { handleAction, getUser, getUserForAuth, clearUserStats, getAllUsers, getSolPrice, buxToUsd, buxToSol } from '../server/db.js';
 import roachTickHandler from './roach/tick.js';
 import { signUp, signIn, sessionCookie, clearSessionCookie, currentSession } from '../server/auth.js';
 
@@ -102,7 +102,7 @@ export default async function handler(req, res) {
       return;
     }
     const username = session.username || session.email;
-    const user = getUser(username);
+    const user = getUserForAuth({ id: session.sub, username: session.username, email: session.email, createdAt: session.createdAt });
     if (!user) {
       sendJson(res, 404, { error: 'Account not found' });
       return;
@@ -1361,7 +1361,11 @@ export default async function handler(req, res) {
       return;
     }
     const username = decodeURIComponent(pathname.replace('/api/user/', '')).trim();
-    const user = getUser(username);
+    const session = currentSession(req);
+    const ownsRequestedUser = session && String(session.username || session.email || '').trim().toLowerCase() === username.toLowerCase();
+    const user = ownsRequestedUser
+      ? getUserForAuth({ id: session.sub, username: session.username, email: session.email, createdAt: session.createdAt })
+      : getUser(username);
     if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;

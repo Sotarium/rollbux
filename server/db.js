@@ -137,6 +137,34 @@ export function getUser(username) {
   return newUser;
 }
 
+export function getUserForAuth({ id, username, email, createdAt }) {
+  const displayName = String(username || email || '').trim();
+  if (!displayName || !id) return null;
+  const users = loadUsers();
+  const key = displayName.toLowerCase();
+  const existing = users[key];
+  if (existing && existing.auth_user_id === id) return existing;
+
+  const now = new Date().toISOString();
+  const user = {
+    username: displayName,
+    auth_user_id: id,
+    avatar: 'https://rollbux.com/icons/token.png',
+    balance_bux: 0,
+    total_earnings_bux: 0,
+    rains_joined: 0,
+    first_tx_time: null,
+    active_rain: { pot_amount: 0, time_left: 0, updated_at: Date.now() },
+    first_seen: createdAt || now,
+    last_seen: now,
+    transactions: [],
+    history: []
+  };
+  users[key] = user;
+  saveUsers(users);
+  return user;
+}
+
 export function clearUserStats(username) {
   if (!username) return null;
   const users = loadUsers();

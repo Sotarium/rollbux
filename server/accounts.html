@@ -33,10 +33,9 @@
     <section id="accountContent" class="hidden space-y-5">
       <div class="card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex items-center gap-3">
-          <div id="avatar" class="flex size-12 shrink-0 items-center justify-center rounded-full border-2 border-[#acff46]/50 bg-[#131a29] text-lg font-bold text-[#acff46]">?</div>
           <div>
             <p id="username" class="text-lg font-bold text-white">—</p>
-            <p id="email" class="mt-1 text-xs text-[#9aa3a8]">—</p>
+            <p id="email" class="mt-1 text-xs text-[#9aa3a8]"></p>
           </div>
         </div>
         <a id="dashboardLink" href="/" class="rounded-lg bg-[#acff46] px-4 py-2 text-center text-xs font-bold text-[#121418] transition hover:bg-[#96e036]">Open dashboard</a>
@@ -89,8 +88,7 @@
         const authUser = data.authUser;
         const displayName = authUser.username || authUser.email || 'Account';
         document.getElementById('username').textContent = displayName;
-        document.getElementById('email').textContent = authUser.email || 'Username account';
-        document.getElementById('avatar').textContent = displayName.slice(0, 1).toUpperCase();
+        document.getElementById('email').textContent = authUser.email || '';
         document.getElementById('balance').innerHTML = `${number(user.balance_bux)} <span class="text-xs text-[#9aa3a8]">BUX</span>`;
         document.getElementById('earnings').innerHTML = `${number(user.total_earnings_bux)} <span class="text-xs text-[#9aa3a8]">BUX</span>`;
         document.getElementById('rains').textContent = Number(user.rains_joined) || 0;

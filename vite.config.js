@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import http from 'http';
-import { handleAction, getUser, clearUserStats, getAllUsers, getSolPrice, buxToUsd, buxToSol } from './server/db.js';
+import { handleAction, getUser, getUserForAuth, clearUserStats, getAllUsers, getSolPrice, buxToUsd, buxToSol } from './server/db.js';
 import { signUp, signIn, sessionCookie, clearSessionCookie, currentSession } from './server/auth.js';
 
 function parseBody(req) {
@@ -72,6 +72,12 @@ async function handleApiRequest(req, res) {
     return;
   }
 
+  if (pathname === '/api/auth/me' && req.method === 'GET') {
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ user: currentSession(req) }));
+    return;
+  }
+
   if (pathname === '/api/account' && req.method === 'GET') {
     const session = currentSession(req);
     if (!session) {
@@ -80,7 +86,7 @@ async function handleApiRequest(req, res) {
       res.end(JSON.stringify({ error: 'Authentication required' }));
       return;
     }
-    const user = getUser(session.username || session.email);
+    const user = getUserForAuth({ id: session.sub, username: session.username, email: session.email, createdAt: session.createdAt });
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify({ user, authUser: session }));
     return;
