@@ -9,11 +9,19 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,600;1,700&display=swap" rel="stylesheet">
   <script>tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans-serif']}}}}</script>
-  <style>body{background:#05070b;color:#fff;font-family:Inter,sans-serif}.page-panel{background:#080b11;min-height:100vh}</style>
+  <style>
+    body{background:#05070b;color:#fff;font-family:Inter,sans-serif}
+    .page-panel{background:#080b11;min-height:100vh}
+    html{scroll-behavior:smooth;scrollbar-width:thin;scrollbar-color:#293548 #080b11}
+    ::-webkit-scrollbar{width:9px}
+    ::-webkit-scrollbar-track{background:#080b11}
+    ::-webkit-scrollbar-thumb{background:#293548;border:2px solid #080b11;border-radius:999px}
+    ::-webkit-scrollbar-thumb:hover{background:#3a4b63}
+  </style>
 </head>
 <body class="min-h-screen">
   <main class="page-panel">
-    <div class="mx-auto flex min-h-screen w-full max-w-[720px] flex-col px-5 pb-10 pt-8 sm:px-7">
+    <div class="mx-auto flex min-h-screen w-full max-w-[720px] flex-col items-center px-5 pb-14 pt-8 sm:px-7">
       <section class="flex flex-1 flex-col items-center justify-center py-14 text-center">
         <a href="/" class="text-[48px] font-bold italic tracking-[.5px]">Roll<span class="text-[#acff46]">bux</span></a>
         <div class="mt-7 flex w-full flex-col items-center justify-center gap-3 sm:flex-row">
@@ -30,33 +38,45 @@
         <section class="mx-auto mt-24 w-full max-w-[660px] text-center">
           <h2 class="text-center text-xl font-bold italic text-white">Preview</h2>
           <div id="previewFrame" class="group relative mx-auto mt-5 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#070a0f] p-2 shadow-[0_18px_60px_rgba(0,0,0,.35)] sm:p-3">
-            <img id="previewImage" src="https://i.imgur.com/uPJSEXd.png" alt="Rollbux preview" class="block w-full rounded-xl object-contain transition-transform duration-300 ease-out" />
+            <img id="previewImage" src="https://i.imgur.com/uPJSEXd.png" alt="Rollbux preview" class="block w-full cursor-zoom-in rounded-xl object-contain" />
             <button id="zoomPreviewBtn" type="button" aria-label="Zoom preview" class="absolute right-4 top-4 flex size-10 items-center justify-center rounded-full border border-white/[0.12] bg-[#080b11]/85 text-white opacity-0 shadow-lg backdrop-blur transition group-hover:opacity-100 hover:bg-[#131a29]">
-              <svg id="zoomPlusIcon" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path><path d="M11 8v6M8 11h6"></path></svg>
-              <svg id="zoomMinusIcon" class="hidden size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path><path d="M8 11h6"></path></svg>
+              <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path><path d="M11 8v6M8 11h6"></path></svg>
             </button>
           </div>
         </section>
       </section>
     </div>
   </main>
+  <div id="previewModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#020307]/90 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Rollbux preview zoom">
+    <button id="closePreviewBtn" type="button" aria-label="Close preview" class="absolute right-5 top-5 flex size-11 items-center justify-center rounded-full border border-white/[0.12] bg-[#0b1018] text-2xl leading-none text-white shadow-xl transition hover:bg-[#172132]">&times;</button>
+    <img id="modalPreviewImage" src="https://i.imgur.com/uPJSEXd.png" alt="Rollbux preview enlarged" class="max-h-[90vh] max-w-[95vw] rounded-xl object-contain shadow-2xl" />
+  </div>
   <script>
-    const previewFrame = document.getElementById('previewFrame');
     const previewImage = document.getElementById('previewImage');
     const zoomPreviewBtn = document.getElementById('zoomPreviewBtn');
-    const zoomPlusIcon = document.getElementById('zoomPlusIcon');
-    const zoomMinusIcon = document.getElementById('zoomMinusIcon');
-    let previewZoomed = false;
+    const previewModal = document.getElementById('previewModal');
+    const modalPreviewImage = document.getElementById('modalPreviewImage');
+    const closePreviewBtn = document.getElementById('closePreviewBtn');
 
-    zoomPreviewBtn.addEventListener('click', () => {
-      previewZoomed = !previewZoomed;
-      previewImage.classList.toggle('scale-[1.8]', previewZoomed);
-      previewImage.classList.toggle('cursor-zoom-out', previewZoomed);
-      previewImage.classList.toggle('cursor-zoom-in', !previewZoomed);
-      zoomPlusIcon.classList.toggle('hidden', previewZoomed);
-      zoomMinusIcon.classList.toggle('hidden', !previewZoomed);
-      zoomPreviewBtn.setAttribute('aria-label', previewZoomed ? 'Reset preview zoom' : 'Zoom preview');
-      previewFrame.classList.toggle('cursor-zoom-out', previewZoomed);
+    function openPreview() {
+      modalPreviewImage.src = previewImage.src;
+      previewModal.classList.remove('hidden');
+      previewModal.classList.add('flex');
+      document.body.classList.add('overflow-hidden');
+    }
+    function closePreview() {
+      previewModal.classList.add('hidden');
+      previewModal.classList.remove('flex');
+      document.body.classList.remove('overflow-hidden');
+    }
+    previewImage.addEventListener('click', openPreview);
+    zoomPreviewBtn.addEventListener('click', openPreview);
+    closePreviewBtn.addEventListener('click', closePreview);
+    previewModal.addEventListener('click', (event) => {
+      if (event.target === previewModal) closePreview();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closePreview();
     });
   </script>
 </body>
