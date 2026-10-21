@@ -9,6 +9,7 @@
     { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/roach", "destination": "/api" },
     { "source": "/roach/sandbox", "destination": "/api" },
+    { "source": "/sandbox", "destination": "/api" },
     { "source": "/accounts", "destination": "/api" },
     { "source": "/accounts.html", "destination": "/api" },
     { "source": "/history", "destination": "/api" },

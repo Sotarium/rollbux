@@ -1290,7 +1290,7 @@ export default async function handler(req, res) {
     }
   }
 
-  if (pathname === '/roach/sandbox') {
+  if (pathname === '/sandbox' || pathname === '/roach/sandbox') {
     if (!isAllowedIp(req)) {
       res.statusCode = 403;
       res.end('Forbidden');
@@ -1576,14 +1576,15 @@ export default async function handler(req, res) {
 
   // Protect the Individual User Profile Dashboard HTML page (/user/:username)
   if (isUserDashboardPage) {
-    if ((pathname === '/dashboard/user' || dashboardMatch) && !currentSession(req)) {
+    const dynamicUserPath = dashboardMatch || pathname.match(/^\/user\/([^/]+)\/?$/);
+    if ((pathname === '/dashboard/user' || dynamicUserPath) && !currentSession(req)) {
       res.statusCode = 401;
       res.end('Authentication required');
       return;
     }
-    if (dashboardMatch) {
+    if (dynamicUserPath) {
       const session = currentSession(req);
-      const requestedUser = decodeURIComponent(dashboardMatch[1]).trim().toLowerCase();
+      const requestedUser = decodeURIComponent(dynamicUserPath[1]).trim().toLowerCase();
       const sessionUser = String(session?.username || session?.email || '').trim().toLowerCase();
       if (!session || requestedUser !== sessionUser) {
         res.statusCode = session ? 403 : 401;
