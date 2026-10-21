@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>RainRoach Sandbox</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>body{background:#080b11;color:#e5e7eb;font-family:Inter,ui-sans-serif,system-ui,sans-serif}.card{background:#0d131e;border:1px solid rgba(255,255,255,.07)}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}</style>
+</head>
+<body class="min-h-screen p-5 sm:p-8">
+  <main class="mx-auto max-w-4xl space-y-5">
+    <header class="flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.07] pb-5">
+      <div><p class="text-xs font-bold uppercase tracking-[.2em] text-[#acff46]">Safe testing</p><h1 class="mt-1 text-2xl font-bold italic text-white">RainRoach Sandbox</h1><p class="mt-1 text-xs text-gray-400">Normal session requests only. No cookie rotation or challenge bypass.</p></div>
+      <button id="tickButton" class="rounded-lg bg-[#acff46] px-4 py-2 text-xs font-bold text-[#080b11] hover:bg-[#96e036] disabled:opacity-50">Run rain tick</button>
+    </header>
+    <section class="grid gap-4 sm:grid-cols-3">
+      <div class="card rounded-xl p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Cycle status</p><p id="cycleStatus" class="mt-2 text-lg font-bold text-white">—</p></div>
+      <div class="card rounded-xl p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Time remaining</p><p id="timeRemaining" class="mt-2 text-lg font-bold text-white">—</p></div>
+      <div class="card rounded-xl p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Accounts processed</p><p id="accountCount" class="mt-2 text-lg font-bold text-[#acff46]">0</p></div>
+    </section>
+    <section class="card rounded-xl p-5"><div class="flex items-center justify-between border-b border-white/[0.06] pb-3"><h2 class="text-sm font-bold text-white">Account results</h2><span id="updatedAt" class="text-[11px] text-gray-500">Never</span></div><div class="mt-3 overflow-x-auto"><table class="w-full text-left text-xs"><thead class="text-[10px] uppercase tracking-wider text-gray-500"><tr><th class="pb-2">Account</th><th class="pb-2">Join result</th><th class="pb-2">Chat</th></tr></thead><tbody id="accounts"><tr><td colspan="3" class="py-5 text-center text-gray-500">Run a tick to test the indexed accounts.</td></tr></tbody></table></div></section>
+    <section class="card rounded-xl p-5"><h2 class="text-sm font-bold text-white">Execution logs</h2><pre id="logs" class="mono mt-3 max-h-80 overflow-auto rounded-lg bg-black/40 p-4 text-[11px] leading-5 text-gray-300">Waiting for a tick...</pre></section>
+  </main>
+  <script>
+    const $=id=>document.getElementById(id), button=$('tickButton');
+    function resultClass(status=''){return /SUCCESS|JOINED/.test(status)?'text-[#acff46]':/CHALLENGE|FAILED/.test(status)?'text-red-400':'text-yellow-300'}
+    function renderStatus(status){
+      if(!status)return;
+      $('cycleStatus').textContent=`${status.status||'—'}${status.join_open?' · JOIN OPEN':''}`;
+      $('timeRemaining').textContent=status.seconds_remaining==null?'—':`${status.seconds_remaining}s`;
+      const rows=status.accounts||[];$('accountCount').textContent=rows.length;
+      $('accounts').innerHTML=rows.length?rows.map(a=>`<tr class="border-t border-white/[0.05]"><td class="py-3 font-semibold text-white">${a.name||'Account'}</td><td class="py-3 font-bold ${resultClass(a.join_status)}">${a.join_status||'WAITING'}</td><td class="py-3 text-gray-400">${a.chat_count??'—'}/3</td></tr>`).join(''):'<tr><td colspan="3" class="py-5 text-center text-gray-500">No accounts processed.</td></tr>';
+      if(status.updated_at)$('updatedAt').textContent=`Updated ${new Date(status.updated_at).toLocaleTimeString()}`;
+      if(status.last_logs?.length)$('logs').textContent=status.last_logs.join('\n');
+    }
+    async function refresh(){try{const r=await fetch('/api/roach/status');const d=await r.json();renderStatus(d.status)}catch(e){$('logs').textContent=`Status error: ${e.message}`}}
+    button.addEventListener('click',async()=>{button.disabled=true;button.textContent='Running...';try{const r=await fetch('/api/roach/tick');const d=await r.json();if(d.logs)$('logs').textContent=d.logs.join('\n');await refresh()}catch(e){$('logs').textContent=`Tick error: ${e.message}`}finally{button.disabled=false;button.textContent='Run rain tick'}});
+    refresh();setInterval(refresh,10000);
+  </script>
+</body>
+</html>

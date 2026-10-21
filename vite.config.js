@@ -183,6 +183,9 @@ export default defineConfig({
           } else if (req.url && req.url === '/dashboard/user') {
             req.url = '/server/dashboard.html';
             next();
+          } else if (req.url && req.url === '/roach/sandbox') {
+            req.url = '/server/sandbox.html';
+            next();
           } else if (req.url && (/^\/users\/[^/]+\/accounts\/?(?:\?.*)?$/.test(req.url) || req.url === '/accounts' || req.url === '/accounts/')) {
             req.url = '/server/accounts.html';
             next();
