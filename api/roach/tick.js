@@ -82,6 +82,13 @@ async function rollbuxFetch(endpoint, sessionToken, options = {}) {
   }
 }
 
+function isBotChallengeResponse(response) {
+  const body = typeof response?.data === 'string'
+    ? response.data
+    : JSON.stringify(response?.data || '');
+  return [403, 429, 503].includes(response?.status) && /cloudflare|turnstile|challenge|captcha/i.test(body);
+}
+
 export default async function handler(req, res) {
   const logs = [];
   const log = (msg) => {
@@ -123,6 +130,25 @@ export default async function handler(req, res) {
 
     let accountsRaw = await redis('get', 'roach:accounts');
     let accounts = accountsRaw ? JSON.parse(accountsRaw) : [];
+
+    // Include accounts saved from private user account pages. They are indexed
+    // separately so private dashboard data is never merged across users.
+    const privateOwnerIds = await redis('smembers', 'roach:account_users');
+    if (Array.isArray(privateOwnerIds)) {
+      const privateLists = await Promise.all(privateOwnerIds.map(async (ownerId) => {
+        const raw = await redis('get', `roach:accounts:user:${ownerId}`);
+        try { return raw ? JSON.parse(raw) : []; } catch { return []; }
+      }));
+      const knownIds = new Set(accounts.map(account => account.id));
+      for (const privateAccounts of privateLists) {
+        for (const account of privateAccounts) {
+          if (account?.token && !knownIds.has(account.id)) {
+            accounts.push(account);
+            knownIds.add(account.id);
+          }
+        }
+      }
+    }
 
     // Fallback: if no accounts in Redis but ENV token exists, treat as single account
     if (accounts.length === 0 && ENV_SESSION_TOKEN) {
@@ -263,6 +289,9 @@ export default async function handler(req, res) {
           await redis('set', joinedKey, '1');
           joinStatus = "SUCCESS";
           isAccountJoined = true;
+        } else if (isBotChallengeResponse(joinRes)) {
+          log(`[${accName}] Join blocked by Cloudflare/Turnstile challenge (HTTP ${joinRes.status}); manual browser verification is required.`);
+          joinStatus = `CHALLENGE_REQUIRED_${joinRes.status}`;
         } else {
           const errDetail = (joinRes.data && (joinRes.data.message || joinRes.data.error)) || JSON.stringify(joinRes.data);
           log(`[${accName}] Join failed (HTTP ${joinRes.status}): ${errDetail}`);

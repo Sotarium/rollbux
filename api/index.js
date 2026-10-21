@@ -151,6 +151,10 @@ export default async function handler(req, res) {
         return;
       }
       await fetch(`${UPSTASH_URL}/pipeline`, { method: 'POST', headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify([['SET', accountKey, JSON.stringify(accounts)]]) });
+      await fetch(`${UPSTASH_URL}/sadd/${encodeURIComponent('roach:account_users')}/${encodeURIComponent(session.sub)}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` }
+      });
       sendJson(res, req.method === 'POST' ? 201 : 200, { ok: true });
     } catch (error) {
       sendJson(res, 500, { error: error.message });
