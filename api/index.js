@@ -1290,7 +1290,7 @@ export default async function handler(req, res) {
     }
   }
 
-  if (pathname === '/sandbox' || pathname === '/roach/sandbox') {
+  if (pathname === '/roach/sandbox') {
     if (!isAllowedIp(req)) {
       res.statusCode = 403;
       res.end('Forbidden');
