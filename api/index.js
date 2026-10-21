@@ -1557,17 +1557,23 @@ export default async function handler(req, res) {
 
   const matchedPath = req.headers['x-matched-path'] || req.headers['x-vercel-matched-path'] || pathname;
   const isUsersPage = matchedPath === '/users' || matchedPath === '/users.html' || pathname === '/users' || pathname === '/users.html' || pathname === '/api/users-page' || url.searchParams.get('view') === 'users';
-  const isUserDashboardPage = matchedPath.startsWith('/user/') || pathname.startsWith('/user/');
+  const isUserDashboardPage = matchedPath === '/dashboard/user' || pathname === '/dashboard/user' || matchedPath.startsWith('/user/') || pathname.startsWith('/user/');
 
   // Protect the Individual User Profile Dashboard HTML page (/user/:username)
   if (isUserDashboardPage) {
-    if (!isAllowedIp(req)) {
+    if (pathname === '/dashboard/user' && !currentSession(req)) {
+      res.statusCode = 401;
+      res.end('Authentication required');
+      return;
+    }
+    if (pathname !== '/dashboard/user' && !isAllowedIp(req)) {
       res.statusCode = 403;
       res.end('Forbidden');
       return;
     }
     try {
       const candidates = [
+        path.resolve(process.cwd(), 'server', 'dashboard.html'),
         path.resolve(process.cwd(), 'dist', 'index.html'),
         path.resolve(process.cwd(), 'index.html')
       ];
