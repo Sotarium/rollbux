@@ -76,8 +76,8 @@ export async function signUp({ identifier, mode, password }) {
   identifier = String(identifier || '').trim();
   const normalized = normalize(identifier);
   if (mode === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) throw new Error('Enter a valid email address');
-  if (mode === 'username' && !/^[a-zA-Z0-9_]{3,24}$/.test(identifier)) throw new Error('Use 3–24 letters, numbers, or underscores');
-  if (typeof password !== 'string' || password.length < 10) throw new Error('Password must be at least 10 characters');
+  if (mode === 'username' && !/^[a-zA-Z0-9_]{5,24}$/.test(identifier)) throw new Error('Use 5–24 letters, numbers, or underscores');
+  if (typeof password !== 'string' || password.length < 5) throw new Error('Password must be at least 5 characters');
   if (await redis('get', identifierKey(mode, normalized))) throw new Error(`That ${mode} is already in use`);
   const user = {
     id: crypto.randomUUID(),
@@ -94,7 +94,7 @@ export async function signUp({ identifier, mode, password }) {
 export async function signIn({ identifier, mode, password }) {
   mode = mode === 'email' ? 'email' : 'username';
   identifier = String(identifier || '').trim();
-  if (!identifier || typeof password !== 'string') throw new Error('Enter your username or email and password');
+  if (!identifier || typeof password !== 'string' || password.length < 5 || (mode === 'username' && identifier.length < 5)) throw new Error('Username and password must be at least 5 characters');
   let raw = await redis('get', identifierKey(mode, normalize(identifier)));
   if (!raw && mode === 'email') raw = await redis('get', legacyEmailKey(identifier));
   const user = raw ? JSON.parse(raw) : null;
