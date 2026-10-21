@@ -1336,6 +1336,7 @@ export default async function handler(req, res) {
       let sessionToken = process.env.ROLLBUX_SESSION_TOKEN;
 
       let allAccountsToSync = [];
+      let hasRegisteredAccounts = false;
       if (upstashToken) {
         // Sync cleared_at timestamp from Upstash if serverless instance lost it
         try {
@@ -1361,10 +1362,19 @@ export default async function handler(req, res) {
         });
         const accData = await accResp.json();
         allAccountsToSync = accData.result ? JSON.parse(accData.result) : [];
+        hasRegisteredAccounts = allAccountsToSync.length > 0;
+        // A user's dashboard must only sync rains belonging to that account.
+        // The Redis list is shared for the farmer, so never merge every account
+        // into the current user's rain history.
+        if (allAccountsToSync.length > 0) {
+          allAccountsToSync = allAccountsToSync.filter((account) =>
+            String(account.name || '').trim().toLowerCase() === username.toLowerCase()
+          );
+        }
       }
 
       // If no accounts found in Redis, fall back to ENV token for the requested username
-      if (allAccountsToSync.length === 0 && process.env.ROLLBUX_SESSION_TOKEN) {
+      if (!hasRegisteredAccounts && allAccountsToSync.length === 0 && process.env.ROLLBUX_SESSION_TOKEN) {
         allAccountsToSync = [{ name: username, token: process.env.ROLLBUX_SESSION_TOKEN }];
       }
 
@@ -1395,7 +1405,7 @@ export default async function handler(req, res) {
         }
       } catch (e) {}
 
-      // 2. Iterate through ALL registered accounts to fetch balances and transactions concurrently
+      // 2. Fetch balance and transactions for this account only
       const clearedAt = user.cleared_at || 0;
       const allRainTxs = [];
 

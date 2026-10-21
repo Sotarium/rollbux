@@ -695,7 +695,9 @@
       return 'Sotarium';
     }
 
-    const targetUsername = getUsernameFromUrl();
+    let targetUsername = getUsernameFromUrl();
+    const isRootDashboard = window.location.pathname === '/' || window.location.pathname === '';
+    let sessionIdentityResolved = !isRootDashboard;
 
     // DOM Elements
     const headerUsername = document.getElementById('headerUsername');
@@ -1471,6 +1473,15 @@
 
     async function fetchUserData() {
       try {
+        if (!sessionIdentityResolved) {
+          const sessionRes = await fetch('/api/auth/me', { credentials: 'include' });
+          if (sessionRes.ok) {
+            const sessionData = await sessionRes.json();
+            const signedInName = sessionData?.user?.username || sessionData?.user?.email;
+            if (signedInName) targetUsername = signedInName;
+          }
+          sessionIdentityResolved = true;
+        }
         const res = await fetch(`/api/user/${encodeURIComponent(targetUsername)}`);
         if (res.status === 403) {
           document.body.innerHTML = `
