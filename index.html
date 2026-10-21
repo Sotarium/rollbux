@@ -27,14 +27,37 @@
           <div class="rounded-xl border border-white/[0.05] bg-[#0a0f17] px-5 py-7 text-center"><p class="text-base font-bold text-white">Safe to use</p></div>
         </div>
 
-        <section class="mt-12 w-full text-left">
+        <section class="mx-auto mt-24 w-full max-w-[660px] text-center">
           <h2 class="text-center text-xl font-bold italic text-white">Preview</h2>
-          <div class="mt-4 rounded-2xl border border-white/[0.06] bg-[#070a0f] p-2 shadow-[0_18px_60px_rgba(0,0,0,.35)] sm:p-3">
-            <img src="https://i.imgur.com/uPJSEXd.png" alt="Rollbux preview" class="block w-full rounded-xl object-contain" />
+          <div id="previewFrame" class="group relative mx-auto mt-5 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#070a0f] p-2 shadow-[0_18px_60px_rgba(0,0,0,.35)] sm:p-3">
+            <img id="previewImage" src="https://i.imgur.com/uPJSEXd.png" alt="Rollbux preview" class="block w-full rounded-xl object-contain transition-transform duration-300 ease-out" />
+            <button id="zoomPreviewBtn" type="button" aria-label="Zoom preview" class="absolute right-4 top-4 flex size-10 items-center justify-center rounded-full border border-white/[0.12] bg-[#080b11]/85 text-white opacity-0 shadow-lg backdrop-blur transition group-hover:opacity-100 hover:bg-[#131a29]">
+              <svg id="zoomPlusIcon" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path><path d="M11 8v6M8 11h6"></path></svg>
+              <svg id="zoomMinusIcon" class="hidden size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path><path d="M8 11h6"></path></svg>
+            </button>
           </div>
         </section>
       </section>
     </div>
   </main>
+  <script>
+    const previewFrame = document.getElementById('previewFrame');
+    const previewImage = document.getElementById('previewImage');
+    const zoomPreviewBtn = document.getElementById('zoomPreviewBtn');
+    const zoomPlusIcon = document.getElementById('zoomPlusIcon');
+    const zoomMinusIcon = document.getElementById('zoomMinusIcon');
+    let previewZoomed = false;
+
+    zoomPreviewBtn.addEventListener('click', () => {
+      previewZoomed = !previewZoomed;
+      previewImage.classList.toggle('scale-[1.8]', previewZoomed);
+      previewImage.classList.toggle('cursor-zoom-out', previewZoomed);
+      previewImage.classList.toggle('cursor-zoom-in', !previewZoomed);
+      zoomPlusIcon.classList.toggle('hidden', previewZoomed);
+      zoomMinusIcon.classList.toggle('hidden', !previewZoomed);
+      zoomPreviewBtn.setAttribute('aria-label', previewZoomed ? 'Reset preview zoom' : 'Zoom preview');
+      previewFrame.classList.toggle('cursor-zoom-out', previewZoomed);
+    });
+  </script>
 </body>
 </html>
