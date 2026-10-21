@@ -121,8 +121,7 @@
   </div>
 
   <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const targetUsername = urlParams.get('user') || 'sotarium';
+    let targetUsername = null;
 
     function getStorageKey() {
       return `rollbux_game_history_${targetUsername.toLowerCase()}`;
@@ -134,16 +133,6 @@
       try {
         entries = JSON.parse(localStorage.getItem(mainKey) || '[]');
       } catch (e) {}
-
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && k.startsWith('rollbux_game_history_') && k !== mainKey) {
-          try {
-            const extra = JSON.parse(localStorage.getItem(k) || '[]');
-            if (Array.isArray(extra)) entries.push(...extra);
-          } catch (e) {}
-        }
-      }
 
       const seen = new Set();
       const unique = [];
@@ -232,18 +221,35 @@
     const clearBtn = document.getElementById('clearHistoryBtn');
     if (clearBtn) {
       clearBtn.addEventListener('click', () => {
-        for (let i = localStorage.length - 1; i >= 0; i--) {
-          const k = localStorage.key(i);
-          if (k && k.startsWith('rollbux_game_history_')) {
-            localStorage.removeItem(k);
-          }
-        }
+        if (!targetUsername) return;
+        localStorage.removeItem(getStorageKey());
         renderHistory();
       });
     }
 
-    renderHistory();
-    setInterval(renderHistory, 3000);
+    async function initializeHistory() {
+      try {
+        const response = await fetch('/api/auth/me', { credentials: 'include' });
+        const data = response.ok ? await response.json() : null;
+        const user = data?.user;
+        targetUsername = user?.username || user?.email || null;
+      } catch (e) {
+        targetUsername = null;
+      }
+
+      if (!targetUsername) {
+        document.getElementById('historyList').innerHTML = `
+          <div class="flex h-[120px] items-center justify-center px-[32px] text-center">
+            <p class="text-[13px] text-[#9aa3a8]">Sign in to view your game history.</p>
+          </div>`;
+        return;
+      }
+
+      renderHistory();
+      setInterval(renderHistory, 3000);
+    }
+
+    initializeHistory();
   </script>
 </body>
 </html>

@@ -149,6 +149,17 @@
                   </div>
                 </div>
 
+                <!-- Private My Account Link -->
+                <div class="relative flex w-full flex-col items-start gap-3 overflow-clip rounded-[12px] bg-[#0e131f] p-[20px] shadow-sm border border-white/[0.03]">
+                  <div class="flex w-full items-center justify-between gap-3">
+                    <div>
+                      <p class="text-[14px] font-bold text-white">My Account</p>
+                      <p id="dashboardAccountName" class="mt-1 text-[11px] text-[#9aa3a8]">Your private account</p>
+                    </div>
+                    <span class="rounded-md bg-[#acff46]/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[#acff46]">Private</span>
+                  </div>
+                  <a href="/accounts" class="w-full rounded-lg bg-gradient-to-r from-[#a855f7] to-[#8b5cf6] py-2 text-center text-xs font-bold text-white transition hover:brightness-110 active:scale-95">Open My Account</a>
+                </div>
               </div>
 
               <!-- Right Main Content -->
@@ -809,14 +820,16 @@
     // ──────────────────────────────────────────
     // GAME HISTORY — localStorage-backed log
     // ──────────────────────────────────────────
-    const GAME_HISTORY_KEY = `rollbux_game_history_${targetUsername.toLowerCase()}`;
+    function getGameHistoryKey() {
+      return `rollbux_game_history_${targetUsername.toLowerCase()}`;
+    }
     const MAX_GAME_HISTORY = 100;
 
     function loadGameHistory() {
-      try { return JSON.parse(localStorage.getItem(GAME_HISTORY_KEY) || '[]'); } catch { return []; }
+      try { return JSON.parse(localStorage.getItem(getGameHistoryKey()) || '[]'); } catch { return []; }
     }
     function saveGameHistory(list) {
-      try { localStorage.setItem(GAME_HISTORY_KEY, JSON.stringify(list.slice(0, MAX_GAME_HISTORY))); } catch {}
+      try { localStorage.setItem(getGameHistoryKey(), JSON.stringify(list.slice(0, MAX_GAME_HISTORY))); } catch {}
     }
 
     // Call this from Upgrader / Battle / Mines result handlers
@@ -895,7 +908,7 @@
     const clearGameHistoryBtn = document.getElementById('clearGameHistoryBtn');
     if (clearGameHistoryBtn) {
       clearGameHistoryBtn.addEventListener('click', () => {
-        localStorage.removeItem(GAME_HISTORY_KEY);
+        localStorage.removeItem(getGameHistoryKey());
         renderGameHistory();
       });
     }
@@ -1478,9 +1491,14 @@
           if (sessionRes.ok) {
             const sessionData = await sessionRes.json();
             const signedInName = sessionData?.user?.username || sessionData?.user?.email;
-            if (signedInName) targetUsername = signedInName;
+            if (signedInName) {
+              targetUsername = signedInName;
+              const accountName = document.getElementById('dashboardAccountName');
+              if (accountName) accountName.textContent = `Signed in as ${signedInName}`;
+            }
           }
           sessionIdentityResolved = true;
+          renderGameHistory();
         }
         const res = await fetch(`/api/user/${encodeURIComponent(targetUsername)}`);
         if (res.status === 403) {
