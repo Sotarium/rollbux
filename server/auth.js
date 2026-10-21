@@ -12,25 +12,17 @@ function requireConfig() {
 async function redis(command, ...args) {
   requireConfig();
   const path = [command, ...args.map((value) => encodeURIComponent(String(value)))].join('/');
-  const response = await fetch(`${REDIS_URL}/${path}`, {
-    headers: { Authorization: `Bearer ${REDIS_TOKEN}` }
-  });
+  const response = await fetch(`${REDIS_URL}/${path}`, { headers: { Authorization: `Bearer ${REDIS_TOKEN}` } });
   if (!response.ok) throw new Error(`Authentication storage request failed (${response.status})`);
-  const data = await response.json();
-  return data.result;
+  return (await response.json()).result;
 }
 
-function normalizeEmail(email) {
-  return String(email || '').trim().toLowerCase();
-}
-
-function userKey(email) {
-  return `auth:user:${encodeURIComponent(normalizeEmail(email))}`;
-}
+function normalize(value) { return String(value || '').trim().toLowerCase(); }
+function identifierKey(mode, identifier) { return `auth:identifier:${mode}:${encodeURIComponent(normalize(identifier))}`; }
+function legacyEmailKey(email) { return `auth:user:${encodeURIComponent(normalize(email))}`; }
 
 function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
-  const derived = crypto.scryptSync(password, salt, 64);
-  return `${salt}:${derived.toString('hex')}`;
+  return `${salt}:${crypto.scryptSync(password, salt, 64).toString('hex')}`;
 }
 
 function verifyPassword(password, stored) {
@@ -41,28 +33,28 @@ function verifyPassword(password, stored) {
   return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
 }
 
-function sign(value) {
-  return crypto.createHmac('sha256', SESSION_SECRET).update(value).digest('base64url');
-}
+function sign(value) { return crypto.createHmac('sha256', SESSION_SECRET).update(value).digest('base64url'); }
+function publicUser(user) { return { id: user.id, username: user.username || null, email: user.email || null, identifierType: user.identifier_type }; }
 
 function encodeSession(user) {
   const payload = Buffer.from(JSON.stringify({
     sub: user.id,
-    email: user.email,
-    username: user.username,
+    username: user.username || null,
+    email: user.email || null,
+    identifierType: user.identifier_type || user.identifierType,
     exp: Date.now() + SESSION_TTL * 1000
   })).toString('base64url');
   return `${payload}.${sign(payload)}`;
 }
 
 export function sessionCookie(user) {
-  const isLocal = process.env.NODE_ENV === 'development';
-  return `rb_session=${encodeSession(user)}; Max-Age=${SESSION_TTL}; Path=/; HttpOnly; SameSite=${isLocal ? 'Lax' : 'None'}${isLocal ? '' : '; Secure'}`;
+  const local = process.env.NODE_ENV === 'development';
+  return `rb_session=${encodeSession(user)}; Max-Age=${SESSION_TTL}; Path=/; HttpOnly; SameSite=${local ? 'Lax' : 'None'}${local ? '' : '; Secure'}`;
 }
 
 export function clearSessionCookie() {
-  const isLocal = process.env.NODE_ENV === 'development';
-  return `rb_session=; Max-Age=0; Path=/; HttpOnly; SameSite=${isLocal ? 'Lax' : 'None'}${isLocal ? '' : '; Secure'}`;
+  const local = process.env.NODE_ENV === 'development';
+  return `rb_session=; Max-Age=0; Path=/; HttpOnly; SameSite=${local ? 'Lax' : 'None'}${local ? '' : '; Secure'}`;
 }
 
 export function currentSession(req) {
@@ -74,30 +66,37 @@ export function currentSession(req) {
   try {
     const session = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
     return session.exp > Date.now() ? session : null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
-export async function signUp({ email, username, password }) {
+export async function signUp({ identifier, mode, password }) {
   requireConfig();
-  email = normalizeEmail(email);
-  username = String(username || '').trim();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Enter a valid email address');
-  if (!/^[a-zA-Z0-9_]{3,24}$/.test(username)) throw new Error('Username must be 3–24 letters, numbers, or underscores');
+  mode = mode === 'email' ? 'email' : 'username';
+  identifier = String(identifier || '').trim();
+  const normalized = normalize(identifier);
+  if (mode === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) throw new Error('Enter a valid email address');
+  if (mode === 'username' && !/^[a-zA-Z0-9_]{3,24}$/.test(identifier)) throw new Error('Use 3–24 letters, numbers, or underscores');
   if (typeof password !== 'string' || password.length < 10) throw new Error('Password must be at least 10 characters');
-  const existing = await redis('get', userKey(email));
-  if (existing) throw new Error('An account with that email already exists');
-  const user = { id: crypto.randomUUID(), email, username, password_hash: hashPassword(password), created_at: new Date().toISOString() };
-  await redis('set', userKey(email), JSON.stringify(user));
-  return { id: user.id, email: user.email, username: user.username };
+  if (await redis('get', identifierKey(mode, normalized))) throw new Error(`That ${mode} is already in use`);
+  const user = {
+    id: crypto.randomUUID(),
+    username: mode === 'username' ? identifier : null,
+    email: mode === 'email' ? normalized : null,
+    identifier_type: mode,
+    password_hash: hashPassword(password),
+    created_at: new Date().toISOString()
+  };
+  await redis('set', identifierKey(mode, normalized), JSON.stringify(user));
+  return publicUser(user);
 }
 
-export async function signIn({ email, password }) {
-  email = normalizeEmail(email);
-  if (!email || typeof password !== 'string') throw new Error('Email and password are required');
-  const raw = await redis('get', userKey(email));
+export async function signIn({ identifier, mode, password }) {
+  mode = mode === 'email' ? 'email' : 'username';
+  identifier = String(identifier || '').trim();
+  if (!identifier || typeof password !== 'string') throw new Error('Enter your username or email and password');
+  let raw = await redis('get', identifierKey(mode, normalize(identifier)));
+  if (!raw && mode === 'email') raw = await redis('get', legacyEmailKey(identifier));
   const user = raw ? JSON.parse(raw) : null;
-  if (!user || !verifyPassword(password, user.password_hash)) throw new Error('Invalid email or password');
-  return { id: user.id, email: user.email, username: user.username };
+  if (!user || !verifyPassword(password, user.password_hash)) throw new Error('That login did not work');
+  return publicUser(user);
 }
