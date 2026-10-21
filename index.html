@@ -49,17 +49,28 @@
   </main>
   <div id="previewModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#020307]/90 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Rollbux preview zoom">
     <button id="closePreviewBtn" type="button" aria-label="Close preview" class="absolute right-5 top-5 flex size-11 items-center justify-center rounded-full border border-white/[0.12] bg-[#0b1018] text-2xl leading-none text-white shadow-xl transition hover:bg-[#172132]">&times;</button>
-    <img id="modalPreviewImage" src="https://i.imgur.com/uPJSEXd.png" alt="Rollbux preview enlarged" class="max-h-[90vh] max-w-[95vw] rounded-xl object-contain shadow-2xl" />
+    <div id="previewStage" class="flex h-full w-full items-center justify-center overflow-hidden">
+      <img id="modalPreviewImage" src="https://i.imgur.com/uPJSEXd.png" alt="Rollbux preview enlarged" draggable="false" class="w-[min(1100px,92vw)] max-w-none select-none rounded-xl object-contain shadow-2xl" style="transform:translate3d(0px,0px,0) scale(1.35);cursor:url('https://i.imgur.com/4BYM1oQ.png') 16 16, grab;" />
+    </div>
   </div>
   <script>
     const previewImage = document.getElementById('previewImage');
     const zoomPreviewBtn = document.getElementById('zoomPreviewBtn');
     const previewModal = document.getElementById('previewModal');
+    const previewStage = document.getElementById('previewStage');
     const modalPreviewImage = document.getElementById('modalPreviewImage');
     const closePreviewBtn = document.getElementById('closePreviewBtn');
+    let panX = 0;
+    let panY = 0;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let dragging = false;
 
     function openPreview() {
       modalPreviewImage.src = previewImage.src;
+      panX = 0;
+      panY = 0;
+      updatePan();
       previewModal.classList.remove('hidden');
       previewModal.classList.add('flex');
       document.body.classList.add('overflow-hidden');
@@ -69,6 +80,29 @@
       previewModal.classList.remove('flex');
       document.body.classList.remove('overflow-hidden');
     }
+    function updatePan() {
+      modalPreviewImage.style.transform = `translate3d(${panX}px, ${panY}px, 0) scale(1.35)`;
+    }
+    previewStage.addEventListener('pointerdown', (event) => {
+      if (event.target !== modalPreviewImage) return;
+      dragging = true;
+      dragStartX = event.clientX - panX;
+      dragStartY = event.clientY - panY;
+      modalPreviewImage.setPointerCapture(event.pointerId);
+      modalPreviewImage.style.cursor = 'url("https://i.imgur.com/4BYM1oQ.png") 16 16, grabbing';
+    });
+    previewStage.addEventListener('pointermove', (event) => {
+      if (!dragging) return;
+      panX = event.clientX - dragStartX;
+      panY = event.clientY - dragStartY;
+      updatePan();
+    });
+    previewStage.addEventListener('pointerup', (event) => {
+      dragging = false;
+      if (modalPreviewImage.hasPointerCapture(event.pointerId)) modalPreviewImage.releasePointerCapture(event.pointerId);
+      modalPreviewImage.style.cursor = 'url("https://i.imgur.com/4BYM1oQ.png") 16 16, grab';
+    });
+    previewStage.addEventListener('pointercancel', () => { dragging = false; });
     previewImage.addEventListener('click', openPreview);
     zoomPreviewBtn.addEventListener('click', openPreview);
     closePreviewBtn.addEventListener('click', closePreview);
