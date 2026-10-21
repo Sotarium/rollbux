@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,600;1,700&display=swap" rel="stylesheet">
   <script>tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans-serif']}}}}</script>
-  <style>body{background:#0b0e14;color:#fff;font-family:Inter,sans-serif}.page-panel{background:#0e131f;min-height:100vh}</style>
+  <style>body{background:#05070b;color:#fff;font-family:Inter,sans-serif}.page-panel{background:#080b11;min-height:100vh}</style>
 </head>
 <body class="min-h-screen">
   <main class="page-panel">
@@ -18,14 +18,29 @@
         <a href="/" class="text-[48px] font-bold italic tracking-[.5px]">Roll<span class="text-[#acff46]">bux</span></a>
         <div class="mt-7 flex w-full flex-col items-center justify-center gap-3 sm:flex-row">
           <a href="/signup" class="w-full max-w-[230px] rounded-lg bg-[#acff46] px-5 py-3.5 text-sm font-bold text-[#121418] transition hover:bg-[#96e036]">Create your account</a>
-          <a href="/login" class="w-full max-w-[230px] rounded-lg border border-white/[0.08] bg-white/[0.04] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-white/[0.08]">Log in</a>
+          <a href="/login" class="w-full max-w-[230px] rounded-lg border border-white/[0.08] bg-[#0b1018] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[#111925]">Log in</a>
         </div>
 
         <div class="mt-12 grid w-full gap-4 sm:grid-cols-3">
-          <div class="rounded-xl border border-white/[0.05] bg-[#131a29] px-5 py-7 text-center"><p class="text-base font-bold text-white">Auto rain</p></div>
-          <div class="rounded-xl border border-white/[0.05] bg-[#131a29] px-5 py-7 text-center"><p class="text-base font-bold text-white">Auto wager</p></div>
-          <div class="rounded-xl border border-white/[0.05] bg-[#131a29] px-5 py-7 text-center"><p class="text-base font-bold text-white">Safe to use</p></div>
+          <div class="rounded-xl border border-white/[0.05] bg-[#0a0f17] px-5 py-7 text-center"><p class="text-base font-bold text-white">Auto rain</p></div>
+          <div class="rounded-xl border border-white/[0.05] bg-[#0a0f17] px-5 py-7 text-center"><p class="text-base font-bold text-white">Auto wager</p></div>
+          <div class="rounded-xl border border-white/[0.05] bg-[#0a0f17] px-5 py-7 text-center"><p class="text-base font-bold text-white">Safe to use</p></div>
         </div>
+
+        <section class="mt-12 w-full text-left">
+          <h2 class="text-center text-xl font-bold italic text-white">Preview</h2>
+          <div class="mt-4 overflow-hidden rounded-xl border border-white/[0.08] bg-[#05070b] shadow-2xl shadow-black/40">
+            <div class="flex items-center gap-2 border-b border-white/[0.06] bg-[#0a0e15] px-4 py-3">
+              <span class="size-2 rounded-full bg-red-400/80"></span>
+              <span class="size-2 rounded-full bg-yellow-400/80"></span>
+              <span class="size-2 rounded-full bg-green-400/80"></span>
+              <span class="ml-2 text-[11px] font-semibold tracking-wide text-[#6d7680]">Sandbox Preview</span>
+            </div>
+            <div class="bg-[#070a0f] p-3 sm:p-5">
+              <img src="https://i.imgur.com/uPJSEXd.png" alt="Rollbux sandbox preview" class="mx-auto block w-full rounded-lg border border-white/[0.06] object-contain" />
+            </div>
+          </div>
+        </section>
       </section>
     </div>
   </main>
