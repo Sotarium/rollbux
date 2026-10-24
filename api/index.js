@@ -69,7 +69,7 @@ export default async function handler(req, res) {
   }
 
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-  const rawPath = req.headers['x-matched-path'] || req.headers['x-vercel-matched-path'] || url.pathname;
+  const rawPath = url.pathname.startsWith('/api') ? url.pathname : (req.headers['x-matched-path'] || req.headers['x-vercel-matched-path'] || url.pathname);
   const pathname = rawPath.split('?')[0];
 
   if (pathname === '/api/auth/signup' && req.method === 'POST') {
@@ -1383,10 +1383,14 @@ export default async function handler(req, res) {
     const user = ownsRequestedUser
       ? getUserForAuth({ id: session.sub, username: session.username, email: session.email, createdAt: session.createdAt })
       : getUser(username);
-    if (!user) {
-      res.status(404).json({ error: 'User not found' });
-      return;
-    }
+    const effectiveUser = user || {
+      username,
+      balance_bux: 0,
+      total_earnings_bux: 0,
+      rains_joined: 0,
+      transactions: [],
+      history: []
+    };
 
     // Cloud Roach Auto-Sync: Fetch live RollBux data directly using saved account token
     try {
@@ -1559,7 +1563,7 @@ export default async function handler(req, res) {
       console.error("Live cloud sync error:", e.message);
     }
 
-    const updatedUser = getUser(username) || user;
+    const updatedUser = getUser(username) || effectiveUser;
     const solPrice = getSolPrice();
     res.status(200).json({
       user: updatedUser,
